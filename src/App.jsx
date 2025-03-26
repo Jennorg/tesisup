@@ -1,15 +1,17 @@
-import { useState } from 'react'
-import { Outlet, Link } from 'react-router-dom';
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import Home from "@/components/Home";
+import Login from "@/components/Auth/Login";
+import SignUp from "@/components/Auth/Signup";
 
-function App() {
-  const [count, setCount] = useState(0)
-
+const App = () => {
   return (
-    <>
-      <Link to={"/login"}>Soy un link</Link>
-      <Outlet />
-    </>
-  )
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signUp" element={<SignUp />}></Route>
+    </Routes>
+  );
 }
 
-export default App
+export default App;

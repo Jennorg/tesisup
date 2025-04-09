@@ -1,7 +1,6 @@
 import { React, useState } from "react";
-import CardList from "@/components/main/CardList"
-import AddButton from "@/components/main/addButton";
-import TesisForm from "@/components/main/tesisForm";
+import CardList from "@/components/main/Card/CardList"
+import AddButton from "@/components/main/Ui/addButton";
 
 const Content = ({ isAsideVisible, isTesisFormVisible, setIsTesisFormVisible }) => {
   const marginLeftClass = isAsideVisible ? 'ml-16' : 'ml-0';

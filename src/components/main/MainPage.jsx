@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import Aside from "@/components/main/Aside";
-import Content from "@/components/main/Content";
-import SearchBar from "@/components/main/SearchBar";
-import TesisForm from "@/components/main/TesisForm";
+import Content from "@/components/main/Layout/Content";
+import TesisForm from "@/components/main/Form/TesisForm";
+import Header from "@/components/main/Layout/Header";
 
 const MainPage = () => {
   const [isAsideVisible, setIsAsideVisible] = useState(false);
@@ -25,13 +24,7 @@ const MainPage = () => {
 
   return (
     <div className="flex flex-col h-dvh m-3">
-      <div className="flex place-items-center gap-3">
-        <Aside
-          isAsideVisible={isAsideVisible}
-          onToggleMenu={setIsAsideVisible}
-        />
-        <SearchBar />
-      </div>
+      <Header isAsideVisible={isAsideVisible} onToggleMenu={setIsAsideVisible} />
       <Content
         isAsideVisible={isAsideVisible}
         isTesisFormVisible={isTesisFormVisible}

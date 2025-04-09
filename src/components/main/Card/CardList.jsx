@@ -1,6 +1,6 @@
 import { React, useState, useEffect } from "react"
 import axios from 'axios'
-import Card from "@/components/main/Card"
+import Card from "@/components/main/Card/Card"
 
 const CardList = () => {
     const [tesis, setTesis] = useState([])

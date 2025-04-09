@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import InputForm from '@/components/main/inputForm';
+import InputForm from '@/components/main/Form/inputForm';
 
 const TesisForm = React.forwardRef((props, ref) => {
   const [isLoading, setIsLoading] = useState(false);

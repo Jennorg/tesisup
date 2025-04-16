@@ -19,9 +19,21 @@ const SignUp = () => {
   }
 
   const validateForm = () => {
-    axios.post('http://localhost:8081/createProfesor', formData)
-    .then(res => console.log(res.data))
-    .catch(err => console.log(err))
+
+    const payload = {
+      ...formData,
+      ci: parseInt(formData.ci),
+      telefono: parseInt(formData.telefono),
+    };
+
+    console.log("Datos enviados al servidor:", payload); // para depurar
+
+    axios.post('http://localhost:8080/api/profesor', payload)
+    .then(res => console.log("Respuesta del servidor:", res.data))
+    .catch(err => {
+      console.error("Error al enviar:", err);
+      console.log("Respuesta del servidor:", err.response?.data);
+    });
   }
 
   return (

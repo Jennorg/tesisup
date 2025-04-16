@@ -1,6 +1,5 @@
-// @/components/main/Search/SearchOptions.jsx
 import React from 'react';
-import Option from '@/components/main/Search/Option'; // Assuming Option is in the same directory
+import Option from '@/components/main/Search/Option';
 
 const SearchOptions = ({ options }) => {
   return (

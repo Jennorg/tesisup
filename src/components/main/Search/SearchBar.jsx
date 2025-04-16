@@ -4,7 +4,7 @@ import { GoSearch } from "react-icons/go";
 import handleInputChange from "@/hooks/utils/handleInputChange";
 import SearchOptions from "@/components/main/Search/SearchOptions";
 
-const SearchBar = () => {
+const SearchBar = ({ setIsLoading }) => {
     const [tesisABuscar, setTesisABuscar] = useState("");
     const [tesisEncontradas, setTesisEncontradas] = useState([]);
     const [showOptions, setShowOptions] = useState(false);
@@ -26,6 +26,7 @@ const SearchBar = () => {
             return;
         }
         try {
+            setIsLoading(true);
             const res = await axios.get(`http://localhost:8080/api/tesis/${query}`);
             console.log("Respuesta completa:", res); // Para ver la estructura completa de la respuesta
             console.log("res.data antes de verificar:", res.data);
@@ -46,6 +47,7 @@ const SearchBar = () => {
 
             setTesisEncontradas(dataToArray);
             setShowOptions(dataToArray.length > 0); // Actualiza showOptions basado en la longitud del array
+            setIsLoading(false);
 
         } catch (error) {
             console.error("Error al obtener las tesis:", error);

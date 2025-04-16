@@ -6,6 +6,7 @@ import Header from "@/components/main/Layout/Header";
 const MainPage = () => {
   const [isAsideVisible, setIsAsideVisible] = useState(false);
   const [isTesisFormVisible, setIsTesisFormVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const tesisFormRef = useRef(null);
 
   useEffect(() => {
@@ -24,11 +25,12 @@ const MainPage = () => {
 
   return (
     <div className="flex flex-col h-dvh m-3">
-      <Header isAsideVisible={isAsideVisible} onToggleMenu={setIsAsideVisible} />
+      <Header isAsideVisible={isAsideVisible} onToggleMenu={setIsAsideVisible} setIsLoading={setIsLoading} />
       <Content
         isAsideVisible={isAsideVisible}
         isTesisFormVisible={isTesisFormVisible}
         setIsTesisFormVisible={setIsTesisFormVisible}
+        isLoading={isLoading}
       />
       {isTesisFormVisible ? (
         <div

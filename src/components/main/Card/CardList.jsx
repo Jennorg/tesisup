@@ -11,6 +11,7 @@ const CardList = () => {
         setIsLoading(true)
         axios.get('http://localhost:8080/api/tesis')
             .then(res => {
+                console.log(res)
                 setTesis(res.data)
                 setIsLoading(false)
             })

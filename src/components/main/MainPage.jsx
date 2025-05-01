@@ -7,6 +7,8 @@ const MainPage = () => {
   const [isAsideVisible, setIsAsideVisible] = useState(false);
   const [isTesisFormVisible, setIsTesisFormVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [tesisEncontradas, setTesisEncontradas] = useState([]);
+  const [haBuscado, setHaBuscado] = useState(false);
   const tesisFormRef = useRef(null);
 
   useEffect(() => {
@@ -25,12 +27,22 @@ const MainPage = () => {
 
   return (
     <div className="flex flex-col h-dvh m-3">
-      <Header isAsideVisible={isAsideVisible} onToggleMenu={setIsAsideVisible} setIsLoading={setIsLoading} />
+      <Header
+        isAsideVisible={isAsideVisible}
+        onToggleMenu={setIsAsideVisible}
+        setIsLoading={setIsLoading}
+
+        tesisEncontradas={tesisEncontradas}
+        setTesisEncontradas={setTesisEncontradas}
+        setHaBuscado={setHaBuscado}
+      />
       <Content
         isAsideVisible={isAsideVisible}
         isTesisFormVisible={isTesisFormVisible}
         setIsTesisFormVisible={setIsTesisFormVisible}
         isLoading={isLoading}
+        tesisEncontradas={tesisEncontradas}
+        haBuscado={haBuscado}
       />
       {isTesisFormVisible ? (
         <div

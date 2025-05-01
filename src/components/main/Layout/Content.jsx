@@ -3,7 +3,7 @@ import CardList from "@/components/main/Card/CardList"
 import AddButton from "@/components/main/Ui/addButton";
 import Spiner from "@/hooks/Modals/LoadingSpinner"
 
-const Content = ({ isAsideVisible, isTesisFormVisible, setIsTesisFormVisible, isLoading }) => {
+const Content = ({ isAsideVisible, isTesisFormVisible, setIsTesisFormVisible, isLoading, tesisEncontradas, haBuscado }) => {
   const marginLeftClass = isAsideVisible ? 'ml-16' : 'ml-0';
 
   return (
@@ -11,7 +11,10 @@ const Content = ({ isAsideVisible, isTesisFormVisible, setIsTesisFormVisible, is
 
       {/* {isLoading ? ( */}
       <div>
-        <CardList />
+        <CardList
+          tesisEncontradas={tesisEncontradas}
+          haBuscado={haBuscado}
+        />
         <AddButton isTesisFormVisible={isTesisFormVisible} onToggleMenu={setIsTesisFormVisible} />
       </div>
       {/* ) : <Spiner />} */}

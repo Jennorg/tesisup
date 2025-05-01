@@ -3,8 +3,10 @@ import axios from "axios";
 import formatDate from "@/hooks/utils/formatDate";
 
 const Card = ({ data }) => {
+    console.log("Contenido de data:", data);
     const [encargadoNombre, setEncargadoNombre] = useState("");
     const [tutorNombre, setTutorNombre] = useState("");
+    const [sedeNombre, setSedeNombre] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -40,6 +42,13 @@ const Card = ({ data }) => {
                     : "Tutor desconocido";
                 setTutorNombre(tutorNombre);
 
+                // Obtener información de la sede
+                const sedeResponse = await axios.get(
+                    `http://localhost:8080/api/sede/search/${data.id_sede}`
+                );
+                const sedeNombre = sedeResponse.data.data?.nombre || "Sede desconocida";
+                setSedeNombre(sedeNombre);
+
                 setLoading(false);  // Finaliza la carga
             } catch (err) {
                 setError("Error al cargar los datos");
@@ -51,7 +60,7 @@ const Card = ({ data }) => {
         fetchData();
 
         return () => controller.abort();
-    }, [data.id_encargado, data.id_tutor]);
+    }, [data.id_encargado, data.id_tutor, data.id_sede]);
 
     if (loading) {
         return <div>Cargando información...</div>;
@@ -87,8 +96,8 @@ const Card = ({ data }) => {
             {isExpanded && (
                 <div className="col-span-12 mt-3 text-xs grid grid-cols-12 gap-3">
                     <p className="col-span-4">CI Encargado: {data.id_encargado}</p>
-                    <p className="col-span-4">CI Tutor: {data.id_tutor}</p>
-                    <p className="col-span-4">Tutor: {tutorNombre}</p>
+                    <p className="col-span-4">Tutor: {tutorNombre} (CI: {data.id_tutor})</p>
+                    <p className="col-span-4">Sede: {sedeNombre}</p>
                 </div>
             )}
         </div>

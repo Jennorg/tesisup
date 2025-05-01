@@ -6,7 +6,7 @@ const TesisForm = React.forwardRef((props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
-    autor: '',
+    id_estudiante: '',
     id_tutor: '',
     id_encargado: '',
     fecha: '',
@@ -19,6 +19,7 @@ const TesisForm = React.forwardRef((props, ref) => {
     profesores: [],
     encargados: [],
     sedes: [],
+    estudiantes: [], // Opciones de estudiantes añadidas
   });
 
   const estados = [
@@ -30,28 +31,31 @@ const TesisForm = React.forwardRef((props, ref) => {
   useEffect(() => {
     const loadFormOptions = async () => {
       try {
-        const [profesoresRes, encargadosRes, sedesRes] = await Promise.all([
+        const [profesoresRes, encargadosRes, sedesRes, estudiantesRes] = await Promise.all([  // Añadir estudiantesRes aquí
           axios.get('http://localhost:8080/api/profesor'),
           axios.get('http://localhost:8080/api/encargado'),
-          axios.get('http://localhost:8080/api/sede')
+          axios.get('http://localhost:8080/api/sede'),
+          axios.get('http://localhost:8080/api/estudiantes')  // Obtener estudiantes
         ]);
-
+  
         setDropdownOptions({
           profesores: Array.isArray(profesoresRes.data.data) ? profesoresRes.data.data : [],
           encargados: Array.isArray(encargadosRes.data.data) ? encargadosRes.data.data : [],
           sedes: Array.isArray(sedesRes.data.data) ? sedesRes.data.data : [],
+          estudiantes: Array.isArray(estudiantesRes.data.data) ? estudiantesRes.data.data : [],  // Agregar estudiantes
         });
-
+  
       } catch (error) {
         console.error('Error al cargar opciones:', error);
         setDropdownOptions({
           profesores: [],
           encargados: [],
           sedes: [],
+          estudiantes: [],
         });
       }
     };
-
+  
     loadFormOptions();
   }, []);
 
@@ -97,7 +101,20 @@ const TesisForm = React.forwardRef((props, ref) => {
           <input type="file" name="archivo_pdf" className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black' required onChange={handleFileChange} />
         </div>
         <InputForm nombre="nombre" className="col-span-2" onChange={handleInputChange} value={formData.nombre} />
-        <InputForm nombre="autor" onChange={handleInputChange} value={formData.autor} />
+
+        {/* Cambiado de 'autor' a 'id_estudiante' */}
+        <InputForm
+          label="Autor"
+          nombre="id_estudiante"
+          onChange={handleInputChange}
+          value={formData.id_estudiante}
+          type="select"
+          options={dropdownOptions.estudiantes?.map((estudiante) => ({
+            value: estudiante.ci, // Asegúrate de usar el identificador correcto
+            label: `${estudiante.nombre} ${estudiante.apellido}`, // Nombre del estudiante
+          }))}
+        />
+
         <InputForm
           label="tutor"
           nombre="id_tutor"

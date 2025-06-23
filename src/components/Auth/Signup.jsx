@@ -1,54 +1,112 @@
-import React from "react";
-import { useState } from "react";  
+import { useState } from "react";
 import axios from "axios";
-
 import handleInputChange from "@/hooks/utils/handleInputChange";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
-    nombre: '',
-    apellido: '',
-    email: '',
-    ci: '',
-    password: '',
-    telefono: '',
+    nombre: "",
+    apellido: "",
+    email: "",
+    ci: "",
+    password: "",
+    telefono: "",
+    id_sede: "",
   });
 
+  const [mensaje, setMensaje] = useState(null);
+
   const handleInput = (e) => {
-    handleInputChange(e, setFormData)
-  }
+    handleInputChange(e, setFormData);
+  };
 
   const validateForm = () => {
-
     const payload = {
       ...formData,
       ci: parseInt(formData.ci),
-      telefono: parseInt(formData.telefono),
+      telefono: formData.telefono, // cambiado: se envía como string
+      id_sede: parseInt(formData.id_sede),
     };
 
-    console.log("Datos enviados al servidor:", payload); // para depurar
+    console.log("Datos enviados al servidor:", payload);
 
-    axios.post('http://localhost:8080/api/profesor', payload)
-    .then(res => console.log("Respuesta del servidor:", res.data))
-    .catch(err => {
-      console.error("Error al enviar:", err);
-      console.log("Respuesta del servidor:", err.response?.data);
-    });
-  }
+    axios
+      .post("http://localhost:8080/api/encargado", payload)
+      .then((res) => {
+        console.log("Respuesta del servidor:", res.data);
+        setMensaje("✔️ Encargado creado correctamente");
+      })
+      .catch((err) => {
+        console.error("Error al enviar:", err);
+        setMensaje(err.response?.data?.message || "❌ Error al registrar encargado");
+      });
+  };
 
   return (
-    <form className="grid place-items-center w-dvw h-dvh" onSubmit={validateForm}>
-      <h1>Registro</h1>
-      <input type="text" name="nombre" placeholder="Nombre" onChange={handleInput}/>
-      <input type="text" name="apellido" placeholder="Apellido" onChange={handleInput}/>
-      <input type="email" name="email" placeholder="Correo" onChange={handleInput}/>
-      <input type="number" name="ci" placeholder="Cédula" onChange={handleInput}/>
-      <input type="password" name="password" placeholder="Contraseña" onChange={handleInput}/>
-      <input type="tel" name="telefono" placeholder="Telefono" onChange={handleInput}/>
-      <button type="button">Cancelar</button>
-      <button type="submit">Continuar</button>
-    </form>
-  )
-}
+    <div className="flex justify-center items-center min-h-screen w-screen bg-blue-600">
+      <form
+        className="p-6 bg-gray-800 shadow-lg rounded-lg flex flex-col gap-6 w-full max-w-md text-center"
+        onSubmit={(e) => {
+          e.preventDefault();
+          validateForm();
+        }}
+      >
+        <img src="/img/uneg-logo.png" alt="Logo UNEG" className="mx-auto w-24 h-24" />
+        <h1 className="text-2xl font-bold text-white">Registro</h1>
 
-export default SignUp
+        {[
+          { name: "nombre", type: "text", label: "Nombre", placeholder: "Ej: Juan" },
+          { name: "apellido", type: "text", label: "Apellido", placeholder: "Ej: Pérez" },
+          { name: "email", type: "email", label: "Correo", placeholder: "Ej: correo@ejemplo.com" },
+          { name: "ci", type: "number", label: "Cédula", placeholder: "Ej: 12345678" },
+          { name: "password", type: "password", label: "Contraseña", placeholder: "Ej: ********" },
+          { name: "telefono", type: "tel", label: "Teléfono", placeholder: "Ej: +584121234567" },
+        ].map(({ name, type, label, placeholder }) => (
+          <div key={name} className="flex flex-col text-left">
+            <label htmlFor={name} className="text-white font-medium">{label}</label>
+            <input
+              className="border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-500 w-full bg-gray-700 text-white"
+              type={type}
+              name={name}
+              id={name}
+              placeholder={placeholder}
+              onChange={handleInput}
+            />
+          </div>
+        ))}
+
+        {/* Campo Sede */}
+        <div className="flex flex-col text-left">
+          <label htmlFor="id_sede" className="text-white font-medium">Sede</label>
+          <select
+            name="id_sede"
+            id="id_sede"
+            className="border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-500 w-full bg-gray-700 text-white"
+            onChange={handleInput}
+            value={formData.id_sede}
+          >
+            <option value="">Selecciona una sede</option>
+            <option value="1">Puerto Ordaz</option>
+            <option value="2">Ciudad Bolívar</option>
+            <option value="3">Upata</option>
+            <option value="4">Tumeremo</option>
+          </select>
+        </div>
+
+        {/* Mensaje visual */}
+        {mensaje && (
+          <div className="text-white bg-gray-700 p-2 rounded border border-gray-500 text-sm">
+            {mensaje}
+          </div>
+        )}
+
+        {/* Botones */}
+        <div className="flex justify-between mt-4">
+          <button type="button" className="px-4 py-2 bg-red-500 text-white rounded">Cancelar</button>
+          <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded">Continuar</button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default SignUp;

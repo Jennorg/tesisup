@@ -27,20 +27,26 @@ const CardList = ({ tesisEncontradas, haBuscado }) => {
         } else if (Array.isArray(tesisEncontradas)) {
             setTesis(tesisEncontradas);
         }
-        // No necesitamos un 'else' para null, ya que no haríamos nada específico
     }, [tesisEncontradas]);
+
+    
+    const eliminarTesisPorId = (id) => {
+        setTesis((prevTesis) => prevTesis.filter((t) => t.id !== id));
+    };
 
     return (
         <ul className="flex flex-col w-full gap-3">
             {isLoading && <p>Cargando tesis...</p>}
             {error && <p className="text-red-500">Error al cargar las tesis: {error.message}</p>}
+
             {!isLoading && !error && tesis.length > 0 && (
-                tesis.map((data, index) => (
-                    <li key={index} className="w-full">
-                        <Card data={data} />
+                tesis.map((data) => (
+                    <li key={data.id} className="w-full">
+                        <Card data={data} onDelete={eliminarTesisPorId} />
                     </li>
                 ))
             )}
+
             {error && !isLoading && tesisEncontradas && (
                 <p className="text-red-500">Error al cargar las tesis: {error.message}</p>
             )}

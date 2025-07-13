@@ -8,10 +8,9 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) navigate("/MainPage"); 
+    if (token) navigate("/MainPage");
   }, [navigate]);
 
   const handleInput = (e) => {
@@ -30,9 +29,9 @@ const Login = () => {
       localStorage.setItem("user", JSON.stringify(user));
 
       console.log("Login exitoso:", user);
-      navigate("/MainPage"); // Redirige después del login
+      navigate("/MainPage");
     } catch (err) {
-      console.error(" Error en login:", err.response?.data || err.message);
+      console.error("Error en login:", err.response?.data || err.message);
       alert("Credenciales inválidas o error del servidor");
     } finally {
       setLoading(false);
@@ -80,7 +79,7 @@ const Login = () => {
             <button
               type="button"
               className="px-4 py-2 bg-red-500 text-white rounded"
-              onClick={() => setFormData({ email: "", password: "" })}
+              onClick={() => navigate(-1)} 
             >
               Cancelar
             </button>

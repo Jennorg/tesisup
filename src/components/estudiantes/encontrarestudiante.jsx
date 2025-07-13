@@ -32,56 +32,58 @@ const EncontrarEstudiantes = () => {
   };
 
   return (
-    <div className="p-6 max-w-xl mx-auto bg-white shadow-md rounded">
-      <h2 className="text-2xl font-bold mb-4 text-center">Buscar Estudiante</h2>
+    <div className="min-h-screen flex items-center justify-center bg-blue-800 p-4">
+      <div className="p-6 max-w-xl w-full bg-neutral-800 shadow-lg rounded text-white">
+        <h2 className="text-2xl font-bold mb-4 text-center">Buscar Estudiante</h2>
 
-      <input
-        type="text"
-        value={ci}
-        onChange={(e) => setCi(e.target.value)}
-        placeholder="Ingrese CI"
-        className="border p-2 rounded w-full text-black mb-4"
-      />
+        <input
+          type="text"
+          value={ci}
+          onChange={(e) => setCi(e.target.value)}
+          placeholder="Ingrese CI"
+          className="border border-neutral-600 p-2 rounded w-full bg-neutral-900 text-white mb-4"
+        />
 
-      <button
-        onClick={buscar}
-        className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Buscar
-      </button>
+        <button
+          onClick={buscar}
+          className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Buscar
+        </button>
 
-      {resultado && (
-        <div className="mt-4 p-4 border rounded bg-gray-50 space-y-2">
-          <h3 className="text-lg font-semibold text-black mb-2">Datos del Estudiante</h3>
-          <Campo label="Nombre" valor={resultado.nombre} />
-          <Campo label="Apellido" valor={resultado.apellido} />
-          <Campo label="Email" valor={resultado.email} />
-          <Campo label="Teléfono" valor={resultado.telefono} />
-        </div>
-      )}
+        {resultado && (
+          <div className="mt-4 p-4 border border-neutral-600 rounded bg-neutral-700 space-y-2">
+            <h3 className="text-lg font-semibold mb-2">Datos del Estudiante</h3>
+            <Campo label="Nombre" valor={resultado.nombre} />
+            <Campo label="Apellido" valor={resultado.apellido} />
+            <Campo label="Email" valor={resultado.email} />
+            <Campo label="Teléfono" valor={resultado.telefono} />
+          </div>
+        )}
 
-      {carrera && (
-        <div className="mt-4 p-4 border rounded bg-gray-100 space-y-2">
-          <h3 className="text-lg font-semibold text-black mb-2">Carrera Asociada</h3>
-          <Campo label="Código de Carrera" valor={carrera.codigo} />
-          <Campo label="Nombre de Carrera" valor={carrera.nombre} />
-          <Campo label="Campo" valor={carrera.campo} />
-        </div>
-      )}
+        {carrera && (
+          <div className="mt-4 p-4 border border-neutral-600 rounded bg-neutral-700 space-y-2">
+            <h3 className="text-lg font-semibold mb-2">Carrera Asociada</h3>
+            <Campo label="Código de Carrera" valor={carrera.codigo} />
+            <Campo label="Nombre de Carrera" valor={carrera.nombre} />
+            <Campo label="Campo" valor={carrera.campo} />
+          </div>
+        )}
 
-      {error && <p className="mt-4 text-red-600 font-semibold">{error}</p>}
+        {error && <p className="mt-4 text-red-400 font-semibold">{error}</p>}
+      </div>
     </div>
   );
 };
 
 const Campo = ({ label, valor }) => (
-  <label className="block text-black">
+  <label className="block text-white">
     {label}:
     <input
       type="text"
       value={valor}
       disabled
-      className="border p-1 rounded w-full bg-white text-black"
+      className="border border-neutral-500 p-1 rounded w-full bg-neutral-900 text-white"
     />
   </label>
 );

@@ -7,7 +7,6 @@ import LogoContainer from "@/components/main/Ui/LogoContainer";
 const Header = ({
   isAsideVisible,
   onToggleMenu,
-  onProfileClick,
   setIsLoading,
   tesisEncontradas,
   setTesisEncontradas,
@@ -18,7 +17,11 @@ const Header = ({
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/"); // Redirige a Home
+    navigate("/"); 
+  };
+
+  const handleProfileClick = () => {
+    navigate("/perfil_estudiantes"); 
   };
 
   return (
@@ -27,7 +30,7 @@ const Header = ({
         <Aside
           isAsideVisible={isAsideVisible}
           onToggleMenu={onToggleMenu}
-          onProfileClick={onProfileClick}
+          onProfileClick={handleProfileClick}
         />
         <SearchBar
           setIsLoading={setIsLoading}

@@ -9,7 +9,7 @@ const Content = ({ isAsideVisible, isTesisFormVisible, setIsTesisFormVisible, is
   return (
     <div className={`flex-grow w-full p-4 overflow-ellipsis transition-margin-left duration-300 ease-in-out ${marginLeftClass}`}>
 
-      {/* {isLoading ? ( */}
+      {}
       <div>
         <CardList
           tesisEncontradas={tesisEncontradas}

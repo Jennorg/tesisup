@@ -1,16 +1,38 @@
-import { React, useState } from 'react'
-import Header from '@/components/main/Layout/Header'
-import ContentPerfil from '@/components/Perfil/ContentPerfil'
+import { useState } from "react";
+import Header from "@/components/main/Layout/Header";
+import Aside from "@/components/main/Layout/Aside";
+import ContentPerfil from "@/components/Perfil/ContentPerfil";
 
 const Perfil = () => {
   const [isAsideVisible, setIsAsideVisible] = useState(false);
+  const [activeSection, setActiveSection] = useState(null);
+
+  const handleProfileClick = () => {
+    setActiveSection("perfil"); // Cambia a Perfil
+    setIsAsideVisible(true);
+  };
+
+  const handleToggleMenu = () => {
+    setIsAsideVisible((prev) => !prev);
+    if (!isAsideVisible) setActiveSection(null); // Limpia la vista activa cuando se cierra el menú
+  };
 
   return (
-    <div>
-      <Header isAsideVisible={isAsideVisible} onToggleMenu={setIsAsideVisible} />
-      <ContentPerfil isAsideVisible={isAsideVisible} />
-    </div>
-  )
-}
+    <div className="flex">
+      <Header isAsideVisible={isAsideVisible} onToggleMenu={handleToggleMenu} onProfileClick={handleProfileClick} />
+      <Aside onProfileClick={handleProfileClick} />
 
-export default Perfil
+      {}
+      {!activeSection && (
+        <div className="mt-4">
+          <p className="text-red-500">Error al cargar las tesis: Network Error</p>
+        </div>
+      )}
+
+      {}
+      {activeSection === "perfil" && <ContentPerfil />}
+    </div>
+  );
+};
+
+export default Perfil;

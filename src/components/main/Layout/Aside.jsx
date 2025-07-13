@@ -1,23 +1,58 @@
-import { React } from "react";
-import { Link } from "react-router-dom";
 import { FaBars } from "react-icons/fa6";
 import { HiOutlineX } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
 
-const Aside = ({ isAsideVisible, onToggleMenu }) => {
+const Aside = ({
+  isAsideVisible,
+  onToggleMenu,
+  onProfileClick,
+  onTesisClick,
+  onAjustesClick,
+}) => {
+  const navigate = useNavigate();
+
   return (
-    <aside className="">
+    <aside className="z-50">
+      {/* Botón hamburguesa */}
       <button
         onClick={() => onToggleMenu(!isAsideVisible)}
-        className="text-secundary rounded-md">
-        {isAsideVisible ? <HiOutlineX /> : <FaBars />}
-      </button>
-      <ul
-        className={`absolute top-10 left-0 grid place-items-start gap-2 m-2.5 ml-3.5 text-secundary transition-transform duration-300 ease-in-out ${isAsideVisible ? "translate-x-0" : "-translate-x-100"
-          }`}
+        className="text-white p-2 bg-blue-600 hover:bg-blue-700 rounded-md transition"
       >
-        <Link to="/Perfil">Perfil</Link>
-        <a>Tesis</a>
-        <a>Ajustes</a>
+        {isAsideVisible ? <HiOutlineX size={20} /> : <FaBars size={20} />}
+      </button>
+
+      {/* Menú lateral */}
+      <ul
+        className={`fixed top-14 left-4 w-44 bg-gray-800 rounded-lg shadow-lg p-4 text-white transition-all duration-300 ease-in-out z-50
+        ${isAsideVisible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"}`}
+      >
+        <li>
+          <button
+            onClick={() => {
+              onProfileClick();
+              navigate("/perfil_estudiantes");
+            }}
+            className="w-full text-left py-2 hover:text-blue-400"
+          >
+            Estudiantes
+          </button>
+        </li>
+        <li>
+          <button
+            onClick={onTesisClick}
+            className="w-full text-left py-2 hover:text-blue-400"
+          >
+            Tesis
+          </button>
+        </li>
+        <li>
+          <button
+            onClick={onAjustesClick}
+            className="w-full text-left py-2 hover:text-blue-400"
+          >
+            Ajustes
+          </button>
+        </li>
       </ul>
     </aside>
   );

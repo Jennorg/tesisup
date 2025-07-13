@@ -1,4 +1,3 @@
-// @/components/main/Search/Option.jsx
 import React from 'react';
 
 const Option = ({ data }) => {

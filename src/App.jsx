@@ -6,7 +6,7 @@ import SignUp from "@/components/Auth/Signup";
 import MainPage from "@/components/main/MainPage";
 import Perfil from "@/components/Perfil/Perfil";
 import PerfilEstudiantes from "@/components/estudiantes/perfil_estudiantes";
-import EncontrarEstudiantes from "@/components/estudiantes/encontrarestudiantes";
+import EncontrarEstudiantes from "@/components/estudiantes/encontrarestudiante";
 
 const App = () => {
   return (

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import formatDate from "@/hooks/utils/formatDate";
 
-const Card = ({ data }) => {
+const Card = ({ data, onDelete }) => {
   const [encargadoNombre, setEncargadoNombre] = useState("");
   const [tutorNombre, setTutorNombre] = useState("");
   const [sedeNombre, setSedeNombre] = useState("");
@@ -43,6 +43,20 @@ const Card = ({ data }) => {
     fetchData();
   }, [data.id_encargado, data.id_tutor, data.id_sede]);
 
+  const handleEliminar = async () => {
+    const confirmar = window.confirm("¿Estás seguro de que deseas eliminar esta tesis?");
+    if (!confirmar) return;
+
+    try {
+      await axios.delete(`http://localhost:8080/api/tesis/${data.id}`);
+      alert("Tesis eliminada correctamente");
+      onDelete?.(data.id); 
+    } catch (err) {
+      console.error("Error al eliminar tesis:", err);
+      alert("Hubo un error al eliminar la tesis.");
+    }
+  };
+
   if (loading) return <div>Cargando información...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
@@ -73,7 +87,7 @@ const Card = ({ data }) => {
           <p className="col-span-4">Tutor: {tutorNombre} (CI: {data.id_tutor})</p>
           <p className="col-span-4">Sede: {sedeNombre}</p>
 
-          <div className="col-span-12 flex justify-end mt-4">
+          <div className="col-span-12 flex justify-end mt-4 gap-3">
             <a
               href={`http://localhost:8080/api/tesis/${data.id}/download`}
               target="_blank"
@@ -82,6 +96,16 @@ const Card = ({ data }) => {
             >
               Descargar tesis
             </a>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); 
+                handleEliminar();
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-semibold"
+            >
+              Eliminar tesis
+            </button>
           </div>
         </div>
       )}

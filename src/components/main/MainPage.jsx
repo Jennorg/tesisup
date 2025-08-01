@@ -13,16 +13,17 @@ const MainPage = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isTesisFormVisible && tesisFormRef.current && !tesisFormRef.current.contains(event.target)) {
+      if (
+        isTesisFormVisible &&
+        tesisFormRef.current &&
+        !tesisFormRef.current.contains(event.target)
+      ) {
         setIsTesisFormVisible(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isTesisFormVisible]);
 
   return (
@@ -31,24 +32,33 @@ const MainPage = () => {
         isAsideVisible={isAsideVisible}
         onToggleMenu={setIsAsideVisible}
         setIsLoading={setIsLoading}
-
         tesisEncontradas={tesisEncontradas}
         setTesisEncontradas={setTesisEncontradas}
         setHaBuscado={setHaBuscado}
       />
-      <Content
-        isAsideVisible={isAsideVisible}
-        isTesisFormVisible={isTesisFormVisible}
-        setIsTesisFormVisible={setIsTesisFormVisible}
-        isLoading={isLoading}
-        tesisEncontradas={tesisEncontradas}
-        haBuscado={haBuscado}
-      />
+      <main
+        className={`relative z-10 flex-grow pr-4 pt-4 overflow-y-auto transition-all duration-300 ${
+          isAsideVisible ? "pl-32" : "pl-4"
+        }`}
+      >
+        <Content
+          isAsideVisible={isAsideVisible}
+          isTesisFormVisible={isTesisFormVisible}
+          setIsTesisFormVisible={setIsTesisFormVisible}
+          isLoading={isLoading}
+          tesisEncontradas={tesisEncontradas}
+          haBuscado={haBuscado}
+        />
+      </main>
+
       {isTesisFormVisible ? (
         <div
-          className="absolute top-0 left-0 grid place-items-center h-full w-full bg-background bg-opacity-50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid place-items-center bg-background bg-opacity-50 backdrop-blur-sm"
           onClick={(event) => {
-            if (tesisFormRef.current && !tesisFormRef.current.contains(event.target)) {
+            if (
+              tesisFormRef.current &&
+              !tesisFormRef.current.contains(event.target)
+            ) {
               setIsTesisFormVisible(false);
             }
           }}

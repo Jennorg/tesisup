@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import handleInputChange from "@/hooks/utils/handleInputChange";
 
 const SignUp = () => {
@@ -14,6 +15,7 @@ const SignUp = () => {
   });
 
   const [mensaje, setMensaje] = useState(null);
+  const navigate = useNavigate(); 
 
   const handleInput = (e) => {
     handleInputChange(e, setFormData);
@@ -23,7 +25,7 @@ const SignUp = () => {
     const payload = {
       ...formData,
       ci: parseInt(formData.ci),
-      telefono: formData.telefono, // cambiado: se envía como string
+      telefono: formData.telefono,
       id_sede: parseInt(formData.id_sede),
     };
 
@@ -33,11 +35,11 @@ const SignUp = () => {
       .post("http://localhost:8080/api/encargado", payload)
       .then((res) => {
         console.log("Respuesta del servidor:", res.data);
-        setMensaje("✔️ Encargado creado correctamente");
+        setMensaje(" Encargado creado correctamente");
       })
       .catch((err) => {
         console.error("Error al enviar:", err);
-        setMensaje(err.response?.data?.message || "❌ Error al registrar encargado");
+        setMensaje(err.response?.data?.message || " Error al registrar encargado");
       });
   };
 
@@ -74,7 +76,7 @@ const SignUp = () => {
           </div>
         ))}
 
-        {/* Campo Sede */}
+        {}
         <div className="flex flex-col text-left">
           <label htmlFor="id_sede" className="text-white font-medium">Sede</label>
           <select
@@ -92,17 +94,25 @@ const SignUp = () => {
           </select>
         </div>
 
-        {/* Mensaje visual */}
+        {}
         {mensaje && (
           <div className="text-white bg-gray-700 p-2 rounded border border-gray-500 text-sm">
             {mensaje}
           </div>
         )}
 
-        {/* Botones */}
+        {}
         <div className="flex justify-between mt-4">
-          <button type="button" className="px-4 py-2 bg-red-500 text-white rounded">Cancelar</button>
-          <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded">Continuar</button>
+          <button
+            type="button"
+            onClick={() => navigate(-1)} 
+            className="px-4 py-2 bg-red-500 text-white rounded"
+          >
+            Cancelar
+          </button>
+          <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded">
+            Continuar
+          </button>
         </div>
       </form>
     </div>

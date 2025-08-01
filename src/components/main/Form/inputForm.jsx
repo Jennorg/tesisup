@@ -5,7 +5,7 @@ const InputForm = ({ label, nombre, className, onChange, value, type = "text", o
     return (
       <div className={`${className}`}>
         <label htmlFor={nombre} className='block text-sm font-medium text-gray-700'>
-          {label || nombre[0].toUpperCase() + nombre.slice(1)} {/* Usa el label personalizado o genera uno */}
+          {label || nombre[0].toUpperCase() + nombre.slice(1)} {}
         </label>
         <select
           id={nombre}
@@ -15,7 +15,7 @@ const InputForm = ({ label, nombre, className, onChange, value, type = "text", o
           className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black'
           required
         >
-          <option value="" disabled hidden> {/* Opción inicial */}
+          <option value="" disabled hidden> {}
             {`Seleccione un ${label || nombre.replace('id_', '')}`}
           </option>
           {options.map((option) => (
@@ -31,7 +31,7 @@ const InputForm = ({ label, nombre, className, onChange, value, type = "text", o
   return (
     <div className={`${className}`}>
       <label htmlFor={nombre} className='block text-sm font-medium text-gray-700'>
-        {label || nombre[0].toUpperCase() + nombre.slice(1)} {/* Label personalizado o generado */}
+        {label || nombre[0].toUpperCase() + nombre.slice(1)} {}
       </label>
       <input
         type={type}

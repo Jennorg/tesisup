@@ -1,5 +1,5 @@
-import React from 'react';
-import Option from '@/components/main/Search/Option';
+import React from "react";
+import Option from "@/components/main/Search/Option";
 
 const SearchOptions = ({ options }) => {
   return (

@@ -5,7 +5,6 @@ const Home = () => {
   return (
     <div className="grid place-items-center w-dvw h-dvh bg-blue-600">
       <div className="bg-gray-800 p-8 rounded-xl shadow-xl w-[90%] max-w-sm h-[500px] flex flex-col justify-start text-white space-y-5">
-        
         {}
         <img
           src="/img/uneg-logo.png"

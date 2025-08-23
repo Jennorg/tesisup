@@ -42,15 +42,28 @@ const Login = () => {
     <div className="flex justify-center items-center min-h-screen w-screen bg-blue-600">
       <div className="flex w-full max-w-lg bg-gray-800 shadow-lg rounded-lg overflow-hidden">
         <div className="flex-1">
-          <img src="/img/fondo1.jpg" alt="Imagen Login" className="w-full h-full object-cover" />
+          <img
+            src="/img/fondo1.jpg"
+            alt="Imagen Login"
+            className="w-full h-full object-cover"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4 p-6 text-center">
-          <img src="/img/uneg-logo.png" alt="Logo UNEG" className="mx-auto w-24 h-24" />
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-1 flex-col gap-4 p-6 text-center"
+        >
+          <img
+            src="/img/uneg-logo.png"
+            alt="Logo UNEG"
+            className="mx-auto w-24 h-24"
+          />
           <h1 className="text-2xl font-bold text-white">Iniciar sesión</h1>
 
           <div className="flex flex-col text-left">
-            <label htmlFor="email" className="text-white font-medium">Usuario</label>
+            <label htmlFor="email" className="text-white font-medium">
+              Usuario
+            </label>
             <input
               className="border rounded px-3 py-2 bg-gray-700 text-white"
               type="email"
@@ -63,7 +76,9 @@ const Login = () => {
           </div>
 
           <div className="flex flex-col text-left">
-            <label htmlFor="password" className="text-white font-medium">Contraseña</label>
+            <label htmlFor="password" className="text-white font-medium">
+              Contraseña
+            </label>
             <input
               className="border rounded px-3 py-2 bg-gray-700 text-white"
               type="password"
@@ -79,7 +94,7 @@ const Login = () => {
             <button
               type="button"
               className="px-4 py-2 bg-red-500 text-white rounded"
-              onClick={() => navigate(-1)} 
+              onClick={() => navigate(-1)}
             >
               Cancelar
             </button>

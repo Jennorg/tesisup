@@ -8,24 +8,30 @@ const Perfil = () => {
   const [activeSection, setActiveSection] = useState(null);
 
   const handleProfileClick = () => {
-    setActiveSection("perfil"); 
+    setActiveSection("perfil");
     setIsAsideVisible(true);
   };
 
   const handleToggleMenu = () => {
     setIsAsideVisible((prev) => !prev);
-    if (!isAsideVisible) setActiveSection(null); 
+    if (!isAsideVisible) setActiveSection(null);
   };
 
   return (
     <div className="flex">
-      <Header isAsideVisible={isAsideVisible} onToggleMenu={handleToggleMenu} onProfileClick={handleProfileClick} />
+      <Header
+        isAsideVisible={isAsideVisible}
+        onToggleMenu={handleToggleMenu}
+        onProfileClick={handleProfileClick}
+      />
       <Aside onProfileClick={handleProfileClick} />
 
       {}
       {!activeSection && (
         <div className="mt-4">
-          <p className="text-red-500">Error al cargar las tesis: Network Error</p>
+          <p className="text-red-500">
+            Error al cargar las tesis: Network Error
+          </p>
         </div>
       )}
 

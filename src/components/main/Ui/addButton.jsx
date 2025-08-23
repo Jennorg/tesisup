@@ -9,7 +9,7 @@ const AddButton = ({ isTesisFormVisible, onToggleMenu }) => {
     >
       <IoMdAdd className="text-2xl" />
     </button>
-  )
-}
+  );
+};
 
 export default AddButton;

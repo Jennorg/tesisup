@@ -30,7 +30,7 @@ const Aside = ({
           <button
             onClick={() => {
               onProfileClick();
-              navigate("/perfil_estudiantes");
+              navigate("/registrar-estudiante");
             }}
             className="w-full text-left py-2 hover:text-blue-400"
           >

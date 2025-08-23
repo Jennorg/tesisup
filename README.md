@@ -3,9 +3,11 @@
 ## Pasos para correr el programa
 
 1- Instalar dependencias
+
 - npm i
 
 2- Correr el main
+
 - npm run dev
 
 ## Tecnologias usadas
@@ -18,4 +20,3 @@
 
 -Nodes.js
 -react
-

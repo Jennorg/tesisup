@@ -1,5 +1,5 @@
-import { FaSpinner } from 'react-icons/fa';
-import { motion } from 'framer-motion';
+import { FaSpinner } from "react-icons/fa";
+import { motion } from "framer-motion";
 
 export default function LoadingSpinner({ isOpen }) {
   if (!isOpen) return null;

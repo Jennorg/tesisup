@@ -1,9 +1,14 @@
 // LoadingModal.jsx
-import { useEffect } from 'react';
-import { FaSpinner, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-import { motion } from 'framer-motion';
+import { useEffect } from "react";
+import { FaSpinner, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { motion } from "framer-motion";
 
-export default function LoadingModal({ isOpen, status = "loading", message = "Cargando, por favor espera...", onClose }) {
+export default function LoadingModal({
+  isOpen,
+  status = "loading",
+  message = "Cargando, por favor espera...",
+  onClose,
+}) {
   if (!isOpen) return null;
 
   // Icono dinámico según el estado
@@ -20,7 +25,7 @@ export default function LoadingModal({ isOpen, status = "loading", message = "Ca
 
   // Efecto: cerrar modal automáticamente si es success o error
   useEffect(() => {
-    if (status === 'success' || status === 'error') {
+    if (status === "success" || status === "error") {
       const timeout = setTimeout(() => {
         onClose?.(); // Llama a la función para cerrar el modal
       }, 1000); // 1 segundo

@@ -1,5 +1,5 @@
-import React from 'react';
-import { useNavigate } from "react-router-dom"; 
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import Aside from "@/components/main/Layout/Aside";
 import SearchBar from "@/components/main/Search/SearchBar";
 import LogoContainer from "@/components/main/Ui/LogoContainer";
@@ -10,18 +10,18 @@ const Header = ({
   setIsLoading,
   tesisEncontradas,
   setTesisEncontradas,
-  setHaBuscado
+  setHaBuscado,
 }) => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/"); 
+    navigate("/");
   };
 
   const handleProfileClick = () => {
-    navigate("/perfil_estudiantes"); 
+    navigate("/registrar-estudiante");
   };
 
   return (

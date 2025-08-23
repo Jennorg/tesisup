@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Content from "@/components/main/Layout/Content";
-import TesisForm from "@/components/main/Form/TesisForm";
+import TesisForm from "@/components/main/Form/tesisForm";
 import Header from "@/components/main/Layout/Header";
 
 const MainPage = () => {

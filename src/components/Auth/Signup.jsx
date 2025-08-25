@@ -10,6 +10,8 @@ import {
   InputLabel,
   FormControl,
   Box,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
 
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
@@ -19,6 +21,8 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import NumbersOutlinedIcon from "@mui/icons-material/NumbersOutlined";
 import LocationCityOutlinedIcon from "@mui/icons-material/LocationCityOutlined";
 import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -33,6 +37,8 @@ const SignUp = () => {
   });
 
   const [sedeOptions, setSedeOptions] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
+
   const fetchSedes = async () => {
     try {
       setSedeOptions(["Puerto Ordaz", "San Félix", "Ciudad Bolívar"]);
@@ -78,6 +84,11 @@ const SignUp = () => {
           err.response?.data?.message || " Error al registrar encargado"
         );
       });
+  };
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
   };
 
   return (
@@ -266,13 +277,26 @@ const SignUp = () => {
             fullWidth
             label="Contraseña"
             name="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={formData.password}
             onChange={handleInput}
             variant="standard"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={handleClickShowPassword}
+                    onMouseDown={handleMouseDownPassword}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
         </Box>
-
         <div className="flex justify-between mt-4">
           <button
             type="button"
@@ -291,7 +315,6 @@ const SignUp = () => {
       </form>
     </div>
   );
-  s;
 };
 
 export default SignUp;

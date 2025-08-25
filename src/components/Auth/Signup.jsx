@@ -297,7 +297,7 @@ const SignUp = () => {
             }}
           />
         </Box>
-        <div className="flex justify-between mt-4">
+        <div className="flex justify-center gap-10 mt-4">
           <button
             type="button"
             onClick={() => navigate(-1)}

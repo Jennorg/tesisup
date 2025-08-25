@@ -141,7 +141,7 @@ const Login = () => {
           />
         </Box>
 
-        <div className="flex gap-10 mt-4">
+        <div className="flex justify-center gap-10 mt-4">
           <button
             type="button"
             className="px-4 py-2 bg-red-500 text-white rounded"

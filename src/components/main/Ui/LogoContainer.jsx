@@ -5,7 +5,7 @@ const LogoContainer = () => {
   return (
     <Link to="/MainPage">
       <img
-        className="object-center max-w-48 max-h-10"
+        className="h-12 w-auto object-contain"
         src="/img/uneg-logo.png"
         alt="UNEG Logo"
       />

@@ -31,7 +31,7 @@ const SearchBar = ({
       setIsLoading(true);
 
       const res = await axios.get(
-        `http://localhost:8080/api/tesis/cadena/${query}`,
+        `http://localhost:8080/api/tesis/cadena/${query}`
       );
 
       let dataToArray = res.data;
@@ -73,16 +73,16 @@ const SearchBar = ({
   };
 
   return (
-    <div className="flex max-h-8 place-items-center border-primary border-2 rounded-lg p-1 w-11/12 relative">
+    <div className="flex max-h-10 max-w-2xl p-3 place-items-center border-2 rounded-lg w-11/12 relative">
       <input
         type="text"
-        className="text-primary w-full pr-8"
+        className="w-full pr-8"
         placeholder="Buscar tesis"
         onChange={handleInput}
         onBlur={handleBlur}
         onFocus={handleFocus}
       />
-      <GoSearch className="absolute right-1.5 text-primary pointer-events-none" />
+      <GoSearch className="pointer-events-none" />
     </div>
   );
 };

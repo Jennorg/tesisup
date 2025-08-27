@@ -92,8 +92,8 @@ const SignUp = () => {
   };
 
   return (
-    <div className="grid min-h-screen w-screen bg-blue-600 grid-cols-1 md:grid-cols-2">
-      <div className="hidden md:flex flex-1">
+    <div className="flex w-dvw h-dvh bg-gray-800 shadow-lg overflow-hidden">
+      <div className="hidden md:flex">
         <img
           src="/img/fondo1.jpg"
           alt="Imagen Login"
@@ -101,7 +101,7 @@ const SignUp = () => {
         />
       </div>
       <form
-        className="p-6 bg-gray-800 shadow-lg flex flex-col gap-6 w-full text-center"
+        className="p-6 bg-gray-800 shadow-lg flex flex-col gap-6 w-full text-center justify-center"
         onSubmit={(e) => {
           e.preventDefault();
           validateForm();

@@ -70,7 +70,7 @@ const Login = () => {
         <img
           src="/img/fondo1.jpg"
           alt="Imagen Login"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover overflow-clip"
         />
       </div>
 

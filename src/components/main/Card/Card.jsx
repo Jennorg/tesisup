@@ -154,7 +154,7 @@ const Card = ({ data, onDelete, isLoading = false }) => {
         </p>
       </div>
 
-      <p className="bg-gray-600 w-fit px-3 py-0.5 rounded-full text-white"></p>
+      <div className="bg-gray-600 w-fit px-3 py-0.5 rounded-full text-white"></div>
 
       <div className="flex gap-2">
         <Button

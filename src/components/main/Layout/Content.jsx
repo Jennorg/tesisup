@@ -24,16 +24,15 @@ const Content = ({
     <div
       className={`flex-grow w-full p-4 overflow-ellipsis transition-margin-left duration-300 ease-in-out ${marginLeftClass}`}
     >
+      <div>
+        <CardList tesisEncontradas={tesisEncontradas} haBuscado={haBuscado} />
+      </div>
+
       <div className="absolute bottom-20 right-10 z-10">
         <Fab color="primary" aria-label="add">
           <AddIcon />
         </Fab>
       </div>
-
-      <div>
-        <CardList tesisEncontradas={tesisEncontradas} haBuscado={haBuscado} />
-      </div>
-      {/* ) : <Spiner />} */}
     </div>
   );
 };

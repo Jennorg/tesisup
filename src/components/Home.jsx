@@ -41,6 +41,14 @@ const Home = () => {
               Main Page
             </Link>
           </div>
+          <div className="bg-blue-500 hover:bg-blue-600 rounded-lg shadow-lg transition">
+            <Link
+              to="/busqueda-avanzada"
+              className="block py-3 text-white text-lg font-medium text-center"
+            >
+              Busqueda Avanzada
+            </Link>
+          </div>
         </div>
       </div>
     </div>

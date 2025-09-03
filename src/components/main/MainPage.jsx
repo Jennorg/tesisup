@@ -27,7 +27,7 @@ const MainPage = () => {
   }, [isTesisFormVisible]);
 
   return (
-    <div className="flex flex-col h-dvh m-3">
+    <div className="flex flex-col h-dvh">
       <Header
         isAsideVisible={isAsideVisible}
         onToggleMenu={setIsAsideVisible}

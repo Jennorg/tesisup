@@ -47,8 +47,7 @@ const Header = ({
   };
 
   return (
-    <div className="flex gap-3 justify-between items-center w-full">
-
+    <div className="flex gap-3 justify-between items-center w-full p-3">
       <LogoContainer />
 
       <SearchBar
@@ -59,20 +58,20 @@ const Header = ({
       />
 
       <Avatar
-        sx={{ 
+        sx={{
           bgcolor: deepOrange[500],
-          cursor: 'pointer',
-          '&:hover': {
+          cursor: "pointer",
+          "&:hover": {
             opacity: 0.8,
-          }
+          },
         }}
         alt="Usuario"
         src="/broken-image.jpg"
         size="medium"
         onClick={handleAvatarClick}
-        aria-controls={open ? 'avatar-menu' : undefined}
+        aria-controls={open ? "avatar-menu" : undefined}
         aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
+        aria-expanded={open ? "true" : undefined}
       >
         U
       </Avatar>
@@ -82,8 +81,8 @@ const Header = ({
         open={open}
         onClose={handleClose}
         onClick={handleClose}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
       >
         <MenuItem onClick={handleProfileClick}>
           <ListItemIcon>

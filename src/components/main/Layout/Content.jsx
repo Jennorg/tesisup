@@ -29,7 +29,11 @@ const Content = ({
       </div>
 
       <div className="absolute bottom-20 right-10 z-10">
-        <Fab color="primary" aria-label="add">
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={() => setIsTesisFormVisible(true)}
+        >
           <AddIcon />
         </Fab>
       </div>

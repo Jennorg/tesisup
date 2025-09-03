@@ -2,7 +2,24 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import InputForm from "@/components/main/Form/inputForm";
 
+import {
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Button,
+  Box,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+
 const TesisForm = React.forwardRef((props, ref) => {
+  const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     id_tesis: "",
@@ -66,6 +83,26 @@ const TesisForm = React.forwardRef((props, ref) => {
     setFormData((prev) => ({ ...prev, archivo_pdf: e.target.files[0] }));
   };
 
+  const handleDragEvents = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e) => {
+    handleDragEvents(e);
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    handleDragEvents(e);
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    handleDragEvents(e);
+    setIsDragging(false);
+    setFormData((prev) => ({ ...prev, archivo_pdf: e.dataTransfer.files[0] }));
+  };
   const sendForm = async () => {
     setIsLoading(true);
 
@@ -102,153 +139,199 @@ const TesisForm = React.forwardRef((props, ref) => {
     setIsLoading(false);
   };
 
+  const VisuallyHiddenInput = styled("input")({
+    clip: "rect(0 0 0 0)",
+    clipPath: "inset(50%)",
+    height: 1,
+    overflow: "hidden",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    whiteSpace: "nowrap",
+    width: 1,
+  });
   return (
-    <form
-      ref={ref}
-      className="w-max h-max rounded-lg bg-secundary grid place-items-center py-3 px-5"
-    >
-      <h1 className="text-xl font-bold text-black">Formulario de Tesis</h1>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box
+        component="form"
+        ref={ref}
+        sx={{
+          bgcolor: "background.paper", // Usa el color de fondo del tema
+          color: "text.primary", // Usa el color de texto del tema
+          p: 3,
+          borderRadius: 2,
+          boxShadow: 24,
+          maxWidth: "600px",
+          width: "90%",
+        }}
+      >
+        <h1 className="text-2xl font-bold text-center mb-4">
+          Formulario de Tesis
+        </h1>
 
-      <div className="grid grid-cols-2 gap-4">
-        {}
-        <div className="col-span-2">
-          <label className="text-black">¿Cómo desea subir la tesis?</label>
-          <select
-            name="modo_envio"
-            value={formData.modo_envio}
-            onChange={handleInputChange}
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black"
+        <div className="flex flex-col gap-4">
+          <FormControl variant="filled" fullWidth>
+            <InputLabel id="autor-label">
+              ¿Cómo desea subir la tesis?
+            </InputLabel>
+            <Select
+              labelId="modo-envio-label"
+              id="modo-envio-select"
+              name="modo_envio"
+              value={formData.modo_envio}
+              onChange={handleInputChange}
+            >
+              <MenuItem value="normal">Subir archivo PDF</MenuItem>
+              <MenuItem value="digitalizar">
+                Escanear imagen y convertir a PDF
+              </MenuItem>
+            </Select>
+          </FormControl>
+
+          <Box
+            component="label"
+            htmlFor="file-upload"
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragEvents}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            sx={{
+              border: "2px dashed",
+              borderColor: isDragging ? "primary.main" : "grey.400",
+              borderRadius: 1,
+              p: 3,
+              textAlign: "center",
+              cursor: "pointer",
+              transition: "border-color 0.3s, background-color 0.3s",
+              backgroundColor: isDragging ? "action.hover" : "transparent",
+            }}
           >
-            <option value="normal">Subir archivo PDF</option>
-            <option value="digitalizar">
-              Escanear imagen y convertir a PDF
-            </option>
-          </select>
-        </div>
+            <VisuallyHiddenInput
+              id="file-upload"
+              type="file"
+              onChange={handleFileChange}
+              accept={
+                formData.modo_envio === "digitalizar"
+                  ? "image/*"
+                  : "application/pdf"
+              }
+            />
+            <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
+            <p>
+              {formData.archivo_pdf?.name ||
+                "Arrastra un archivo o haz clic para subir"}
+            </p>
+          </Box>
 
-        {}
-        <div className="col-span-2">
-          <label className="text-black">
-            {formData.modo_envio === "digitalizar"
-              ? "Adjunte imagen para escanear"
-              : "Adjunte archivo PDF"}
-          </label>
-          <input
-            type="file"
-            name="archivo_pdf"
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black"
-            required
-            onChange={handleFileChange}
-            accept={
-              formData.modo_envio === "digitalizar"
-                ? "image/*"
-                : "application/pdf"
-            }
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-end",
+              width: "100%",
+              marginBottom: 2,
+            }}
+          >
+            {/* <PersonOutlineOutlinedIcon
+            sx={{ color: "action.active", mr: 1, my: 0.5 }}
+          /> */}
+            <TextField
+              fullWidth
+              label="Titulo"
+              name="titulo"
+              variant="standard"
+            />
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-end",
+              width: "100%",
+              marginBottom: 2,
+            }}
+          >
+            {/* <PersonOutlineOutlinedIcon
+            sx={{ color: "action.active", mr: 1, my: 0.5 }}
+          /> */}
+            <TextField
+              fullWidth
+              label="Autor"
+              name="autor"
+              variant="standard"
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-end",
+              width: "100%",
+              marginBottom: 2,
+            }}
+          >
+            {/* <PersonOutlineOutlinedIcon
+            sx={{ color: "action.active", mr: 1, my: 0.5 }}
+          /> */}
+            <TextField
+              fullWidth
+              label="Tutor"
+              name="tutor"
+              variant="standard"
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-end",
+              width: "100%",
+              marginBottom: 2,
+            }}
+          >
+            {/* <PersonOutlineOutlinedIcon
+            sx={{ color: "action.active", mr: 1, my: 0.5 }}
+          /> */}
+            <TextField
+              fullWidth
+              label="Encargado"
+              name="encargado"
+              variant="standard"
+            />
+          </Box>
+
+          <DatePicker
+            label="Fecha de aprobaciòn"
+            format="DD/MM/YYYY"
+            slotProps={{ textField: { variant: "filled", fullWidth: true } }}
           />
-        </div>
 
-        {}
-        <InputForm
-          nombre="nombre"
-          className="col-span-2"
-          onChange={handleInputChange}
-          value={formData.nombre}
-        />
-        <InputForm
-          label="ID Tesis"
-          nombre="id_tesis"
-          onChange={handleInputChange}
-          value={formData.id_tesis}
-        />
+          <FormControl variant="filled" fullWidth>
+            <InputLabel id="autor-label">Estado</InputLabel>
+            <Select labelId="autor-label" id="autor-select" name="estado">
+              {estados.map((estado) => (
+                <MenuItem key={estado} value={estado}>
+                  {estado}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-        <InputForm
-          label="Autor"
-          nombre="id_estudiante"
-          onChange={handleInputChange}
-          value={formData.id_estudiante}
-          type="select"
-          options={dropdownOptions.estudiantes.map((e) => ({
-            value: e.ci,
-            label: `${e.nombre} ${e.apellido}`,
-          }))}
-        />
-
-        <InputForm
-          label="Tutor"
-          nombre="id_tutor"
-          onChange={handleInputChange}
-          value={formData.id_tutor}
-          type="select"
-          options={dropdownOptions.profesores.map((p) => ({
-            value: p.ci,
-            label: `${p.nombre} ${p.apellido}`,
-          }))}
-        />
-
-        <InputForm
-          label="Encargado"
-          nombre="id_encargado"
-          onChange={handleInputChange}
-          value={formData.id_encargado}
-          type="select"
-          options={dropdownOptions.encargados.map((c) => ({
-            value: c.ci,
-            label: `${c.nombre} ${c.apellido}`,
-          }))}
-        />
-
-        <div className="col-span-2 flex flex-col items-center justify-center">
-          <label className="text-black">Fecha de publicación</label>
-          <input
-            type="date"
-            name="fecha"
-            value={formData.fecha}
-            onChange={handleInputChange}
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black"
-            required
-          />
-        </div>
-
-        <InputForm
-          label="Sede"
-          nombre="id_sede"
-          onChange={handleInputChange}
-          value={formData.id_sede}
-          type="select"
-          options={dropdownOptions.sedes.map((sede) => ({
-            value: sede.id,
-            label: `${sede.nombre}`,
-          }))}
-        />
-
-        <InputForm
-          label="Estado de la Tesis"
-          nombre="estado"
-          onChange={handleInputChange}
-          value={formData.estado}
-          type="select"
-          options={estados.map((estado) => ({
-            value: estado,
-            label: estado,
-          }))}
-        />
-
-        <button
-          type="button"
-          className="col-span-2 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
-          disabled={isLoading}
-          onClick={sendForm}
-        >
-          {isLoading
-            ? formData.modo_envio === "digitalizar"
-              ? "Digitalizando..."
-              : "Enviando..."
-            : formData.modo_envio === "digitalizar"
+          <button
+            type="button"
+            className="col-span-2 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+            disabled={isLoading}
+            onClick={sendForm}
+          >
+            {isLoading
+              ? formData.modo_envio === "digitalizar"
+                ? "Digitalizando..."
+                : "Enviando..."
+              : formData.modo_envio === "digitalizar"
               ? "Digitalizar tesis"
               : "Subir PDF"}
-        </button>
-      </div>
-    </form>
+          </button>
+        </div>
+      </Box>
+    </LocalizationProvider>
   );
 });
 

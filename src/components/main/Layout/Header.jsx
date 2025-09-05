@@ -42,7 +42,7 @@ const Header = ({
   };
 
   const handleProfileClick = () => {
-    navigate("/registrar-estudiante");
+    navigate("/perfil");
     handleClose();
   };
 

@@ -137,36 +137,48 @@ const CardList = ({ tesisEncontradas, haBuscado }) => {
   };
 
   return (
-    <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-      {isLoading ? (
-        // Mostrar skeletons mientras carga
-        Array.from({ length: 6 }).map((_, index) => (
-          <li key={`skeleton-${index}`} className="w-full">
-            <Card isLoading={true} />
-          </li>
-        ))
-      ) : (
-        // Mostrar cards reales cuando ya cargó
-        !error &&
-        tesis.length > 0 &&
-        tesis.map((data) => (
-          <li key={data.id} className="w-full">
-            <Card data={data} onDelete={eliminarTesisPorId} isLoading={false} />
-          </li>
-        ))
-      )}
+    <div className="w-full">
+      <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+        {isLoading
+          ? // Mostrar skeletons mientras carga
+            Array.from({ length: 6 }).map((_, index) => (
+              <li key={`skeleton-${index}`} className="w-full">
+                <Card isLoading={true} />
+              </li>
+            ))
+          : // Mostrar cards reales cuando ya cargó
+            !error &&
+            tesis.length > 0 &&
+            tesis.map((data) => (
+              <li key={data.id} className="w-full">
+                <Card
+                  data={data}
+                  onDelete={eliminarTesisPorId}
+                  isLoading={false}
+                />
+              </li>
+            ))}
 
-      {error && !isLoading && tesisEncontradas && (
-        <p className="text-red-500">
-          Error al cargar las tesis: {error.message}
-        </p>
-      )}
+        {error && !isLoading && tesisEncontradas && (
+          <li className="col-span-full">
+            <p className="text-red-500 text-center py-8">
+              Error al cargar las tesis: {error.message}
+            </p>
+          </li>
+        )}
 
-      {!isLoading &&
-        !error &&
-        tesisEncontradas.length === 0 &&
-        tesis.length === 0 && <p>No hay tesis disponibles.</p>}
-    </ul>
+        {!isLoading &&
+          !error &&
+          tesisEncontradas.length === 0 &&
+          tesis.length === 0 && (
+            <li className="col-span-full">
+              <p className="text-gray-400 text-center py-8">
+                No hay tesis disponibles.
+              </p>
+            </li>
+          )}
+      </ul>
+    </div>
   );
 };
 

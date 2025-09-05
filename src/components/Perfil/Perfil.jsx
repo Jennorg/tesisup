@@ -18,25 +18,9 @@ const Perfil = () => {
   };
 
   return (
-    <div className="flex">
-      <Header
-        isAsideVisible={isAsideVisible}
-        onToggleMenu={handleToggleMenu}
-        onProfileClick={handleProfileClick}
-      />
-      <Aside onProfileClick={handleProfileClick} />
-
-      {}
-      {!activeSection && (
-        <div className="mt-4">
-          <p className="text-red-500">
-            Error al cargar las tesis: Network Error
-          </p>
-        </div>
-      )}
-
-      {}
-      {activeSection === "perfil" && <ContentPerfil />}
+    <div>
+      <Header />
+      <ContentPerfil />
     </div>
   );
 };

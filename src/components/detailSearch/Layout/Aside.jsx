@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+ import React, { useState } from "react";
 
 import TextField from "@mui/material/TextField";
 import Select from "@mui/material/Select";
@@ -8,6 +8,10 @@ import FormControl from "@mui/material/FormControl";
 import Button from "@mui/material/Button";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
+import CloseIcon from "@mui/icons-material/Close";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -24,7 +28,7 @@ const initialFilters = {
   estado: "",
 };
 
-const Aside = () => {
+const Aside = ({ onClose }) => {
   const [filters, setFilters] = useState(initialFilters);
 
   const handleInputChange = (e) => {
@@ -50,141 +54,395 @@ const Aside = () => {
   const handleFilter = () => {
     // Aquí iría la lógica para aplicar los filtros
     console.log("Filtrando con:", filters);
+    if (onClose) {
+      onClose(); // Cerrar drawer en móvil después de filtrar
+    }
   };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <div className="grid gap-4 p-4 border-r border-gray-200 h-full">
-        <h2 className="text-xl font-semibold">Filtros</h2>
+      <Box 
+        sx={{ 
+          height: '100%',
+          bgcolor: 'rgba(31, 41, 55, 0.95)',
+          backdropFilter: 'blur(10px)',
+          borderRight: '1px solid rgba(75, 85, 99, 0.3)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        {/* Header */}
+        <Box 
+          sx={{ 
+            p: 2, 
+            borderBottom: '1px solid rgba(75, 85, 99, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+            Filtros
+          </Typography>
+          {onClose && (
+            <IconButton 
+              onClick={onClose}
+              sx={{ color: 'white' }}
+              size="small"
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
+        </Box>
 
-        <TextField
-          id="nombre-tesis"
-          name="nombre"
-          label="Nombre de la Tesis"
-          variant="filled"
-          value={filters.nombre}
-          onChange={handleInputChange}
-          fullWidth
-        />
-
-        <FormControl variant="filled" fullWidth>
-          <InputLabel id="autor-label">Autor</InputLabel>
-          <Select
-            labelId="autor-label"
-            id="autor-select"
-            name="autor"
-            value={filters.autor}
+        {/* Filters Content */}
+        <Box 
+          sx={{ 
+            p: 2, 
+            flex: 1, 
+            overflow: 'auto',
+            '& .MuiTextField-root': {
+              mb: 2,
+            },
+            '& .MuiFormControl-root': {
+              mb: 2,
+            }
+          }}
+        >
+          <TextField
+            id="nombre-tesis"
+            name="nombre"
+            label="Nombre de la Tesis"
+            variant="filled"
+            value={filters.nombre}
             onChange={handleInputChange}
-          >
-            <MenuItem value="">
-              <em>Ninguno</em>
-            </MenuItem>
-            {/* TODO: Llenar con datos reales */}
-          </Select>
-        </FormControl>
-
-        <FormControl variant="filled" fullWidth>
-          <InputLabel id="encargado-label">Encargado</InputLabel>
-          <Select
-            labelId="encargado-label"
-            id="encargado-select"
-            name="encargado"
-            value={filters.encargado}
-            onChange={handleInputChange}
-          >
-            <MenuItem value="">
-              <em>Ninguno</em>
-            </MenuItem>
-            {/* TODO: Llenar con datos reales */}
-          </Select>
-        </FormControl>
-
-        <div className="grid gap-4 grid-cols-2">
-          <DatePicker
-            label="Fecha desde"
-            value={filters.fechaDesde}
-            onChange={handleDateChange("fechaDesde")}
-            format="DD/MM/YYYY"
-            slotProps={{ textField: { variant: "filled", fullWidth: true } }}
+            fullWidth
+            sx={{
+              '& .MuiFilledInput-root': {
+                bgcolor: 'rgba(55, 65, 81, 0.5)',
+                '&:hover': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '&.Mui-focused': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: 'rgba(156, 163, 175, 0.8)',
+                '&.Mui-focused': {
+                  color: '#60A5FA',
+                },
+              },
+              '& .MuiFilledInput-input': {
+                color: 'white',
+              },
+            }}
           />
 
-          <DatePicker
-            label="Fecha hasta"
-            value={filters.fechaHasta}
-            onChange={handleDateChange("fechaHasta")}
-            format="DD/MM/YYYY"
-            slotProps={{ textField: { variant: "filled", fullWidth: true } }}
-          />
-        </div>
+          <FormControl variant="filled" fullWidth>
+            <InputLabel 
+              id="autor-label"
+              sx={{
+                color: 'rgba(156, 163, 175, 0.8)',
+                '&.Mui-focused': {
+                  color: '#60A5FA',
+                },
+              }}
+            >
+              Autor
+            </InputLabel>
+            <Select
+              labelId="autor-label"
+              id="autor-select"
+              name="autor"
+              value={filters.autor}
+              onChange={handleInputChange}
+              sx={{
+                bgcolor: 'rgba(55, 65, 81, 0.5)',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '&.Mui-focused': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '& .MuiSvgIcon-root': {
+                  color: 'white',
+                },
+              }}
+            >
+              <MenuItem value="">
+                <em>Ninguno</em>
+              </MenuItem>
+              {/* TODO: Llenar con datos reales */}
+            </Select>
+          </FormControl>
 
-        <FormControl variant="filled" fullWidth>
-          <InputLabel id="tutor-label">Tutor</InputLabel>
-          <Select
-            labelId="tutor-label"
-            id="tutor-select"
-            name="tutor"
-            value={filters.tutor}
-            onChange={handleInputChange}
-          >
-            <MenuItem value="">
-              <em>Ninguno</em>
-            </MenuItem>
-            {/* TODO: Llenar con datos reales */}
-          </Select>
-        </FormControl>
+          <FormControl variant="filled" fullWidth>
+            <InputLabel 
+              id="encargado-label"
+              sx={{
+                color: 'rgba(156, 163, 175, 0.8)',
+                '&.Mui-focused': {
+                  color: '#60A5FA',
+                },
+              }}
+            >
+              Encargado
+            </InputLabel>
+            <Select
+              labelId="encargado-label"
+              id="encargado-select"
+              name="encargado"
+              value={filters.encargado}
+              onChange={handleInputChange}
+              sx={{
+                bgcolor: 'rgba(55, 65, 81, 0.5)',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '&.Mui-focused': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '& .MuiSvgIcon-root': {
+                  color: 'white',
+                },
+              }}
+            >
+              <MenuItem value="">
+                <em>Ninguno</em>
+              </MenuItem>
+              {/* TODO: Llenar con datos reales */}
+            </Select>
+          </FormControl>
 
-        <FormControl variant="filled" fullWidth>
-          <InputLabel id="sede-label">Sede</InputLabel>
-          <Select
-            labelId="sede-label"
-            id="sede-select"
-            name="sede"
-            value={filters.sede}
-            onChange={handleInputChange}
-          >
-            <MenuItem value="">
-              <em>Ninguno</em>
-            </MenuItem>
-            {/* TODO: Llenar con datos reales */}
-          </Select>
-        </FormControl>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+            <DatePicker
+              label="Fecha desde"
+              value={filters.fechaDesde}
+              onChange={handleDateChange("fechaDesde")}
+              format="DD/MM/YYYY"
+              slotProps={{ 
+                textField: { 
+                  variant: "filled", 
+                  fullWidth: true,
+                  sx: {
+                    '& .MuiFilledInput-root': {
+                      bgcolor: 'rgba(55, 65, 81, 0.5)',
+                      '&:hover': {
+                        bgcolor: 'rgba(55, 65, 81, 0.7)',
+                      },
+                      '&.Mui-focused': {
+                        bgcolor: 'rgba(55, 65, 81, 0.7)',
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: 'rgba(156, 163, 175, 0.8)',
+                      '&.Mui-focused': {
+                        color: '#60A5FA',
+                      },
+                    },
+                    '& .MuiFilledInput-input': {
+                      color: 'white',
+                    },
+                  }
+                } 
+              }}
+            />
 
-        <FormControl variant="filled" fullWidth>
-          <InputLabel id="estado-label">Estado</InputLabel>
-          <Select
-            labelId="estado-label"
-            id="estado-select"
-            name="estado"
-            value={filters.estado}
-            onChange={handleInputChange}
-          >
-            <MenuItem value="">
-              <em>Ninguno</em>
-            </MenuItem>
-            {/* TODO: Llenar con datos reales */}
-          </Select>
-        </FormControl>
+            <DatePicker
+              label="Fecha hasta"
+              value={filters.fechaHasta}
+              onChange={handleDateChange("fechaHasta")}
+              format="DD/MM/YYYY"
+              slotProps={{ 
+                textField: { 
+                  variant: "filled", 
+                  fullWidth: true,
+                  sx: {
+                    '& .MuiFilledInput-root': {
+                      bgcolor: 'rgba(55, 65, 81, 0.5)',
+                      '&:hover': {
+                        bgcolor: 'rgba(55, 65, 81, 0.7)',
+                      },
+                      '&.Mui-focused': {
+                        bgcolor: 'rgba(55, 65, 81, 0.7)',
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: 'rgba(156, 163, 175, 0.8)',
+                      '&.Mui-focused': {
+                        color: '#60A5FA',
+                      },
+                    },
+                    '& .MuiFilledInput-input': {
+                      color: 'white',
+                    },
+                  }
+                } 
+              }}
+            />
+          </Box>
 
-        <div className="flex gap-2 mt-4">
+          <FormControl variant="filled" fullWidth>
+            <InputLabel 
+              id="tutor-label"
+              sx={{
+                color: 'rgba(156, 163, 175, 0.8)',
+                '&.Mui-focused': {
+                  color: '#60A5FA',
+                },
+              }}
+            >
+              Tutor
+            </InputLabel>
+            <Select
+              labelId="tutor-label"
+              id="tutor-select"
+              name="tutor"
+              value={filters.tutor}
+              onChange={handleInputChange}
+              sx={{
+                bgcolor: 'rgba(55, 65, 81, 0.5)',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '&.Mui-focused': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '& .MuiSvgIcon-root': {
+                  color: 'white',
+                },
+              }}
+            >
+              <MenuItem value="">
+                <em>Ninguno</em>
+              </MenuItem>
+              {/* TODO: Llenar con datos reales */}
+            </Select>
+          </FormControl>
+
+          <FormControl variant="filled" fullWidth>
+            <InputLabel 
+              id="sede-label"
+              sx={{
+                color: 'rgba(156, 163, 175, 0.8)',
+                '&.Mui-focused': {
+                  color: '#60A5FA',
+                },
+              }}
+            >
+              Sede
+            </InputLabel>
+            <Select
+              labelId="sede-label"
+              id="sede-select"
+              name="sede"
+              value={filters.sede}
+              onChange={handleInputChange}
+              sx={{
+                bgcolor: 'rgba(55, 65, 81, 0.5)',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '&.Mui-focused': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '& .MuiSvgIcon-root': {
+                  color: 'white',
+                },
+              }}
+            >
+              <MenuItem value="">
+                <em>Ninguno</em>
+              </MenuItem>
+              {/* TODO: Llenar con datos reales */}
+            </Select>
+          </FormControl>
+
+          <FormControl variant="filled" fullWidth>
+            <InputLabel 
+              id="estado-label"
+              sx={{
+                color: 'rgba(156, 163, 175, 0.8)',
+                '&.Mui-focused': {
+                  color: '#60A5FA',
+                },
+              }}
+            >
+              Estado
+            </InputLabel>
+            <Select
+              labelId="estado-label"
+              id="estado-select"
+              name="estado"
+              value={filters.estado}
+              onChange={handleInputChange}
+              sx={{
+                bgcolor: 'rgba(55, 65, 81, 0.5)',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '&.Mui-focused': {
+                  bgcolor: 'rgba(55, 65, 81, 0.7)',
+                },
+                '& .MuiSvgIcon-root': {
+                  color: 'white',
+                },
+              }}
+            >
+              <MenuItem value="">
+                <em>Ninguno</em>
+              </MenuItem>
+              {/* TODO: Llenar con datos reales */}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Action Buttons */}
+        <Box 
+          sx={{ 
+            p: 2, 
+            borderTop: '1px solid rgba(75, 85, 99, 0.3)',
+            display: 'flex',
+            gap: 1
+          }}
+        >
           <Button
             variant="outlined"
-            // startIcon={<DeleteIcon />}
             onClick={handleClearFilters}
             fullWidth
+            sx={{
+              color: 'rgba(156, 163, 175, 0.8)',
+              borderColor: 'rgba(75, 85, 99, 0.5)',
+              '&:hover': {
+                borderColor: 'rgba(75, 85, 99, 0.8)',
+                bgcolor: 'rgba(75, 85, 99, 0.1)',
+              }
+            }}
           >
             Limpiar
           </Button>
 
           <Button
             variant="contained"
-            // endIcon={<DownloadIcon />}
             onClick={handleFilter}
             fullWidth
+            sx={{
+              bgcolor: '#3B82F6',
+              '&:hover': {
+                bgcolor: '#2563EB',
+              }
+            }}
           >
             Filtrar
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
     </LocalizationProvider>
   );
 };

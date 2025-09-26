@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, forwardRef } from "react";
 import axios from "axios";
-import InputForm from "@/components/main/Form/inputForm";
-
 import {
   TextField,
   Select,
@@ -17,21 +15,49 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
 
-const TesisForm = React.forwardRef((props, ref) => {
+const API_URL = import.meta.env.VITE_API_URL;
+const VITE_API_URL = API_URL || "http://localhost:8080/api";
+
+const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
+  height: 1,
+  overflow: "hidden",
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  whiteSpace: "nowrap",
+  width: 1,
+});
+
+const TesisForm = forwardRef((props, ref) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     id_tesis: "",
-    nombre: "",
+    nombre: "", // Título de la tesis
     id_estudiante: "",
     id_tutor: "",
     id_encargado: "",
-    fecha: "",
+    fecha: null,
     id_sede: "",
     estado: "",
     archivo_pdf: null,
     modo_envio: "normal",
+    // Campos para crear nuevo autor/estudiante
+    nuevo_autor_cedula: "",
+    nuevo_autor_nombre: "",
+    nuevo_autor_apellido: "",
+    // Campos para crear nuevo tutor
+    nuevo_tutor_cedula: "",
+    nuevo_tutor_nombre: "",
+    nuevo_tutor_apellido: "",
+    // Campos para crear nuevo encargado
+    nuevo_encargado_cedula: "",
+    nuevo_encargado_nombre: "",
+    nuevo_encargado_apellido: "",
   });
 
   const [dropdownOptions, setDropdownOptions] = useState({
@@ -42,41 +68,69 @@ const TesisForm = React.forwardRef((props, ref) => {
   });
 
   const estados = ["Aprobada", "Rechazada", "Pendiente"];
+  const NUEVO_ITEM_VALUE = "new";
+
+  const loadFormOptions = useCallback(async () => {
+    try {
+      const [profesoresRes, encargadosRes, sedesRes, estudiantesRes] =
+        await Promise.all([
+          axios.get(`${VITE_API_URL}/profesor`),
+          axios.get(`${VITE_API_URL}/encargado`),
+          axios.get(`${VITE_API_URL}/sede`),
+          axios.get(`${VITE_API_URL}/estudiantes`),
+        ]);
+
+      setDropdownOptions({
+        profesores: profesoresRes.data.data || [],
+        encargados: encargadosRes.data.data || [],
+        sedes: sedesRes.data.data || [],
+        estudiantes: estudiantesRes.data.data || [],
+      });
+    } catch (error) {
+      console.error("Error al cargar opciones:", error);
+      setDropdownOptions({
+        profesores: [],
+        encargados: [],
+        sedes: [],
+        estudiantes: [],
+      });
+    }
+  }, []);
 
   useEffect(() => {
-    const loadFormOptions = async () => {
-      try {
-        const [profesoresRes, encargadosRes, sedesRes, estudiantesRes] =
-          await Promise.all([
-            axios.get("http://localhost:8080/api/profesor"),
-            axios.get("http://localhost:8080/api/encargado"),
-            axios.get("http://localhost:8080/api/sede"),
-            axios.get("http://localhost:8080/api/estudiantes"),
-          ]);
-
-        setDropdownOptions({
-          profesores: profesoresRes.data.data || [],
-          encargados: encargadosRes.data.data || [],
-          sedes: sedesRes.data.data || [],
-          estudiantes: estudiantesRes.data.data || [],
-        });
-      } catch (error) {
-        console.error("Error al cargar opciones:", error);
-        setDropdownOptions({
-          profesores: [],
-          encargados: [],
-          sedes: [],
-          estudiantes: [],
-        });
-      }
-    };
-
     loadFormOptions();
-  }, []);
+  }, [loadFormOptions]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => {
+      const newState = { ...prev, [name]: value };
+
+      // Limpiar campos si se cambia de "Crear Nuevo" a una selección existente
+      if (name === "id_estudiante" && value !== NUEVO_ITEM_VALUE) {
+        newState.nuevo_autor_cedula = "";
+        newState.nuevo_autor_nombre = "";
+        newState.nuevo_autor_apellido = "";
+      } else if (name === "id_tutor" && value !== NUEVO_ITEM_VALUE) {
+        newState.nuevo_tutor_cedula = "";
+        newState.nuevo_tutor_nombre = "";
+        newState.nuevo_tutor_apellido = "";
+      } else if (name === "id_encargado" && value !== NUEVO_ITEM_VALUE) {
+        newState.nuevo_encargado_cedula = "";
+        newState.nuevo_encargado_nombre = "";
+        newState.nuevo_encargado_apellido = "";
+      }
+
+      return newState;
+    });
+  };
+
+  const handleDateChange = (date) => {
+    setFormData((prev) => ({
+      ...prev,
+      fecha: date,
+    }));
   };
 
   const handleFileChange = (e) => {
@@ -103,75 +157,90 @@ const TesisForm = React.forwardRef((props, ref) => {
     setIsDragging(false);
     setFormData((prev) => ({ ...prev, archivo_pdf: e.dataTransfer.files[0] }));
   };
+
   const sendForm = async () => {
     setIsLoading(true);
-
-    if (!formData.id_tesis) {
-      alert("Debes ingresar un ID para la tesis.");
-      setIsLoading(false);
-      return;
-    }
-
     const datos = new FormData();
+
     Object.keys(formData).forEach((key) => {
+      // Excluir campos de "nuevo" si no se está creando uno
+      if (
+        key.startsWith("nuevo_autor_") &&
+        formData.id_estudiante !== NUEVO_ITEM_VALUE
+      )
+        return;
+      if (
+        key.startsWith("nuevo_tutor_") &&
+        formData.id_tutor !== NUEVO_ITEM_VALUE
+      )
+        return;
+      if (
+        key.startsWith("nuevo_encargado_") &&
+        formData.id_encargado !== NUEVO_ITEM_VALUE
+      )
+        return;
+
       if (key === "archivo_pdf") {
-        datos.append("archivo", formData[key]);
-      } else {
+        if (formData[key]) datos.append("archivo_pdf", formData[key]);
+      } else if (key === "fecha" && formData[key]) {
+        datos.append("fecha", dayjs(formData[key]).format("YYYY-MM-DD"));
+      } else if (key === "nombre" && formData[key]) {
+        datos.append("titulo", formData[key]); // El campo 'nombre' del estado es el 'titulo' para el backend
+      } else if (formData[key] !== null && formData[key] !== "") {
         datos.append(key, formData[key]);
       }
     });
 
     const endpoint =
       formData.modo_envio === "digitalizar"
-        ? "http://localhost:8080/api/tesis/digital"
-        : "http://localhost:8080/api/tesis";
+        ? `${VITE_API_URL}/tesis/digital`
+        : `${VITE_API_URL}/tesis`;
 
     try {
+      console.log("Datos a enviar:", Object.fromEntries(datos.entries()));
       const res = await axios.post(endpoint, datos, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       console.log(res.data);
+      if (
+        formData.id_tutor === NUEVO_ITEM_VALUE ||
+        formData.id_encargado === NUEVO_ITEM_VALUE ||
+        formData.id_estudiante === NUEVO_ITEM_VALUE
+      ) {
+        loadFormOptions(); // Recargar para ver las nuevas opciones
+      }
     } catch (err) {
-      console.error("Error al enviar:", err);
+      console.error("Error al enviar:", err.response?.data || err.message);
     }
 
     setIsLoading(false);
   };
 
-  const VisuallyHiddenInput = styled("input")({
-    clip: "rect(0 0 0 0)",
-    clipPath: "inset(50%)",
-    height: 1,
-    overflow: "hidden",
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    whiteSpace: "nowrap",
-    width: 1,
-  });
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box
         component="form"
         ref={ref}
+        onSubmit={(e) => e.preventDefault()}
         sx={{
-          bgcolor: "background.paper", // Usa el color de fondo del tema
-          color: "text.primary", // Usa el color de texto del tema
+          bgcolor: "background.paper",
+          color: "text.primary",
           p: 3,
           borderRadius: 2,
           boxShadow: 24,
           maxWidth: "600px",
           width: "90%",
+          mx: "auto",
         }}
       >
         <h1 className="text-2xl font-bold text-center mb-4">
           Formulario de Tesis
         </h1>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 overflow-y-scroll max-h-[80vh] pr-2">
           <FormControl variant="filled" fullWidth>
-            <InputLabel id="autor-label">
+            <InputLabel id="modo-envio-label">
               ¿Cómo desea subir la tesis?
             </InputLabel>
             <Select
@@ -223,90 +292,202 @@ const TesisForm = React.forwardRef((props, ref) => {
             </p>
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "flex-end",
-              width: "100%",
-              marginBottom: 2,
-            }}
-          >
-            {/* <PersonOutlineOutlinedIcon
-            sx={{ color: "action.active", mr: 1, my: 0.5 }}
-          /> */}
-            <TextField
-              fullWidth
-              label="Titulo"
-              name="titulo"
-              variant="standard"
-            />
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "flex-end",
-              width: "100%",
-              marginBottom: 2,
-            }}
-          >
-            {/* <PersonOutlineOutlinedIcon
-            sx={{ color: "action.active", mr: 1, my: 0.5 }}
-          /> */}
-            <TextField
-              fullWidth
-              label="Autor"
-              name="autor"
-              variant="standard"
-            />
-          </Box>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "flex-end",
-              width: "100%",
-              marginBottom: 2,
-            }}
-          >
-            {/* <PersonOutlineOutlinedIcon
-            sx={{ color: "action.active", mr: 1, my: 0.5 }}
-          /> */}
-            <TextField
-              fullWidth
-              label="Tutor"
-              name="tutor"
-              variant="standard"
-            />
-          </Box>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "flex-end",
-              width: "100%",
-              marginBottom: 2,
-            }}
-          >
-            {/* <PersonOutlineOutlinedIcon
-            sx={{ color: "action.active", mr: 1, my: 0.5 }}
-          /> */}
-            <TextField
-              fullWidth
-              label="Encargado"
-              name="encargado"
-              variant="standard"
-            />
-          </Box>
-
-          <DatePicker
-            label="Fecha de aprobaciòn"
-            format="DD/MM/YYYY"
-            slotProps={{ textField: { variant: "filled", fullWidth: true } }}
+          <TextField
+            fullWidth
+            label="Título de la Tesis"
+            name="nombre"
+            variant="filled"
+            value={formData.nombre}
+            onChange={handleInputChange}
           />
 
           <FormControl variant="filled" fullWidth>
-            <InputLabel id="autor-label">Estado</InputLabel>
-            <Select labelId="autor-label" id="autor-select" name="estado">
+            <InputLabel id="estudiante-label">Autor/Estudiante</InputLabel>
+            <Select
+              labelId="estudiante-label"
+              id="estudiante-select"
+              name="id_estudiante"
+              value={formData.id_estudiante}
+              onChange={handleInputChange}
+            >
+              <MenuItem key="new-student" value={NUEVO_ITEM_VALUE}>
+                <span style={{ fontStyle: "italic", color: "grey" }}>
+                  Crear Nuevo Estudiante...
+                </span>
+              </MenuItem>
+              {dropdownOptions.estudiantes.map((estudiante) => (
+                <MenuItem key={estudiante.id} value={estudiante.id}>
+                  {estudiante.nombre_completo || estudiante.nombre}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {formData.id_estudiante === NUEVO_ITEM_VALUE && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: -2 }}>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  fullWidth
+                  label="Nombre"
+                  name="nuevo_autor_nombre"
+                  variant="filled"
+                  value={formData.nuevo_autor_nombre}
+                  onChange={handleInputChange}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Apellido"
+                  name="nuevo_autor_apellido"
+                  variant="filled"
+                  value={formData.nuevo_autor_apellido}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Box>
+              <TextField
+                fullWidth
+                label="Cédula"
+                name="nuevo_autor_cedula"
+                variant="filled"
+                value={formData.nuevo_autor_cedula}
+                onChange={handleInputChange}
+                required
+              />
+            </Box>
+          )}
+
+          <FormControl variant="filled" fullWidth>
+            <InputLabel id="tutor-label">Tutor</InputLabel>
+            <Select
+              labelId="tutor-label"
+              id="tutor-select"
+              name="id_tutor"
+              value={formData.id_tutor}
+              onChange={handleInputChange}
+            >
+              <MenuItem key="new-tutor" value={NUEVO_ITEM_VALUE}>
+                <span style={{ fontStyle: "italic", color: "grey" }}>
+                  Crear Nuevo Tutor...
+                </span>
+              </MenuItem>
+              {dropdownOptions.profesores.map((profesor) => (
+                <MenuItem key={profesor.id} value={profesor.id}>
+                  {profesor.nombre_completo || profesor.nombre}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {formData.id_tutor === NUEVO_ITEM_VALUE && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: -2 }}>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  fullWidth
+                  label="Nombre"
+                  name="nuevo_tutor_nombre"
+                  variant="filled"
+                  value={formData.nuevo_tutor_nombre}
+                  onChange={handleInputChange}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Apellido"
+                  name="nuevo_tutor_apellido"
+                  variant="filled"
+                  value={formData.nuevo_tutor_apellido}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Box>
+              <TextField
+                fullWidth
+                label="Cédula"
+                name="nuevo_tutor_cedula"
+                variant="filled"
+                value={formData.nuevo_tutor_cedula}
+                onChange={handleInputChange}
+                required
+              />
+            </Box>
+          )}
+
+          <FormControl variant="filled" fullWidth>
+            <InputLabel id="encargado-label">Encargado</InputLabel>
+            <Select
+              labelId="encargado-label"
+              id="encargado-select"
+              name="id_encargado"
+              value={formData.id_encargado}
+              onChange={handleInputChange}
+            >
+              <MenuItem key="new-encargado" value={NUEVO_ITEM_VALUE}>
+                <span style={{ fontStyle: "italic", color: "grey" }}>
+                  Crear Nuevo Encargado...
+                </span>
+              </MenuItem>
+              {dropdownOptions.encargados.map((encargado) => (
+                <MenuItem key={encargado.id} value={encargado.id}>
+                  {encargado.nombre_completo || encargado.nombre}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {formData.id_encargado === NUEVO_ITEM_VALUE && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: -2 }}>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  fullWidth
+                  label="Nombre"
+                  name="nuevo_encargado_nombre"
+                  variant="filled"
+                  value={formData.nuevo_encargado_nombre}
+                  onChange={handleInputChange}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Apellido"
+                  name="nuevo_encargado_apellido"
+                  variant="filled"
+                  value={formData.nuevo_encargado_apellido}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Box>
+              <TextField
+                fullWidth
+                label="Cédula"
+                name="nuevo_encargado_cedula"
+                variant="filled"
+                value={formData.nuevo_encargado_cedula}
+                onChange={handleInputChange}
+                required
+              />
+            </Box>
+          )}
+
+          <DatePicker
+            label="Fecha de aprobación"
+            format="DD/MM/YYYY"
+            value={formData.fecha}
+            onChange={handleDateChange}
+            slotProps={{
+              popper: {
+                onMouseDown: (e) => e.stopPropagation(),
+              },
+              textField: { variant: "filled", fullWidth: true },
+            }}
+          />
+
+          <FormControl variant="filled" fullWidth>
+            <InputLabel id="estado-label">Estado</InputLabel>
+            <Select
+              labelId="estado-label"
+              id="estado-select"
+              name="estado"
+              value={formData.estado}
+              onChange={handleInputChange}
+            >
               {estados.map((estado) => (
                 <MenuItem key={estado} value={estado}>
                   {estado}
@@ -315,20 +496,23 @@ const TesisForm = React.forwardRef((props, ref) => {
             </Select>
           </FormControl>
 
-          <button
+          <Button
             type="button"
-            className="col-span-2 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
-            disabled={isLoading}
+            variant="contained"
+            color="primary"
+            fullWidth
             onClick={sendForm}
+            disabled={isLoading}
+            sx={{ py: 2, mt: 1 }}
           >
             {isLoading
               ? formData.modo_envio === "digitalizar"
                 ? "Digitalizando..."
                 : "Enviando..."
               : formData.modo_envio === "digitalizar"
-              ? "Digitalizar tesis"
+              ? "Digitalizar Tesis"
               : "Subir PDF"}
-          </button>
+          </Button>
         </div>
       </Box>
     </LocalizationProvider>

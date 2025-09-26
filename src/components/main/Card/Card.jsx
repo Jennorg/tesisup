@@ -1,95 +1,12 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React from "react";
 import formatDate from "@/hooks/utils/formatDate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
 
-const Card = ({ data, onDelete, isLoading = false }) => {
-  const [encargadoNombre, setEncargadoNombre] = useState("");
-  const [tutorNombre, setTutorNombre] = useState("");
-  const [sedeNombre, setSedeNombre] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       setLoading(true);
-
-  //       const encargadoRes = await axios.get(
-  //         `http://localhost:8080/api/encargado/${data.id_encargado}`
-  //       );
-  //       const encargadoNombre = encargadoRes.data.data
-  //         ? `${encargadoRes.data.data.nombre} ${encargadoRes.data.data.apellido}`
-  //         : "Encargado desconocido";
-  //       setEncargadoNombre(encargadoNombre);
-
-  //       const tutorRes = await axios.get(
-  //         `http://localhost:8080/api/profesor/${data.id_tutor}`
-  //       );
-  //       const tutorNombre = tutorRes.data.data
-  //         ? `${tutorRes.data.data.nombre} ${tutorRes.data.data.apellido}`
-  //         : "Tutor desconocido";
-  //       setTutorNombre(tutorNombre);
-
-  //       const sedeRes = await axios.get(
-  //         `http://localhost:8080/api/sede/search/${data.id_sede}`
-  //       );
-  //       const sedeNombre = sedeRes.data.data?.nombre || "Sede desconocida";
-  //       setSedeNombre(sedeNombre);
-
-  //       setLoading(false);
-  //     } catch (err) {
-  //       setError("Error al cargar los datos");
-  //       setLoading(false);
-  //       console.error("Detalles del error:", err);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, [data.id_encargado, data.id_tutor, data.id_sede]);
-  useEffect(() => {
-    // Si isLoading viene como prop, usar ese valor
-    if (isLoading !== undefined) {
-      setLoading(isLoading);
-      return;
-    }
-
-    // Simular delay de carga solo si no hay isLoading prop
-    // setTimeout(() => {
-    //   if (!data) {
-    //     setLoading(true);
-    //   }
-    //   if (data.encargado) {
-    //     setLoading(false);
-    //   } else {
-    //     setError("Error al cargar los datos");
-    //     setLoading(false);
-    //   }
-    // }, 500);
-  }, [isLoading, data]);
-
-  const handleEliminar = async () => {
-    const confirmar = window.confirm(
-      "¿Estás seguro de que deseas eliminar esta tesis?"
-    );
-    if (!confirmar) return;
-
-    // try {
-    //   await axios.delete(`http://localhost:8080/api/tesis/${data.id}`);
-    //   alert("Tesis eliminada correctamente");
-    //   onDelete?.(data.id);
-    // } catch (err) {
-    //   console.error("Error al eliminar tesis:", err);
-    //   alert("Hubo un error al eliminar la tesis.");
-    // }
-  };
-
-  if (loading || isLoading) {
+const Card = ({ data, isLoading = false }) => {
+  if (isLoading) {
     return (
       <div className="flex flex-col w-full gap-2 animate-pulse border-gray-800 border-2 p-4 rounded-lg h-full">
         <Skeleton variant="text" width="60%" height={32} />
@@ -108,22 +25,10 @@ const Card = ({ data, onDelete, isLoading = false }) => {
       </div>
     );
   }
-  if (error) return <div className="text-red-500">{error}</div>;
-
-  // const cardStyle = {
-  //   transition: "transform 0.3s ease, box-shadow 0.3s ease",
-  //   transform: isHovered ? "scale(1.015)" : "scale(1)",
-  //   boxShadow: isHovered
-  //     ? "0 6px 12px rgba(0, 0, 0, 0.1)"
-  //     : "0 3px 6px rgba(0, 0, 0, 0.08)",
-  // };
 
   return (
     <div
       className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => setIsExpanded(!isExpanded)}
     >
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold text-white line-clamp-2">{data.nombre}</h2>
@@ -159,7 +64,6 @@ const Card = ({ data, onDelete, isLoading = false }) => {
           startIcon={<DeleteIcon />}
           onClick={(e) => {
             e.stopPropagation();
-            handleEliminar();
           }}
           sx={{
             color: '#EF4444',

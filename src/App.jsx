@@ -6,7 +6,6 @@ import SignUp from "@/components/Auth/Signup";
 import MainPage from "@/components/main/MainPage";
 import Perfil from "@/components/Perfil/Perfil";
 import BusquedaAvanzada from "@/components/detailSearch/DetailSearch";
-// import BusquedaAvanzada from "src/components/detailSearch";
 import FormularioRegistroEstudiante from "@/components/estudiantes/FormularioRegistroEstudiante";
 import FormularioBusquedaEstudiante from "@/components/estudiantes/FormularioBusquedaEstudiante";
 

@@ -13,10 +13,18 @@ const MainPage = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      const isClickInsideForm =
+        tesisFormRef.current && tesisFormRef.current.contains(event.target);
+      const isClickOnDropdown = event.target.closest(".MuiMenu-root");
+      const isClickOnDatePicker = event.target.closest(
+        ".MuiPickersPopper-root"
+      );
+
       if (
         isTesisFormVisible &&
-        tesisFormRef.current &&
-        !tesisFormRef.current.contains(event.target)
+        !isClickInsideForm &&
+        !isClickOnDropdown &&
+        !isClickOnDatePicker
       ) {
         setIsTesisFormVisible(false);
       }
@@ -52,17 +60,7 @@ const MainPage = () => {
       </main>
 
       {isTesisFormVisible ? (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-background bg-opacity-50 backdrop-blur-sm"
-          onClick={(event) => {
-            if (
-              tesisFormRef.current &&
-              !tesisFormRef.current.contains(event.target)
-            ) {
-              setIsTesisFormVisible(false);
-            }
-          }}
-        >
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background bg-opacity-50 backdrop-blur-sm">
           <TesisForm ref={tesisFormRef} />
         </div>
       ) : null}

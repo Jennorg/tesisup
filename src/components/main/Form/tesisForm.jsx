@@ -37,7 +37,7 @@ const TesisForm = forwardRef((props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     id_tesis: "",
-    nombre: "", // Título de la tesis
+    nombre: "",
     id_estudiante: "",
     id_tutor: "",
     id_encargado: "",
@@ -46,18 +46,10 @@ const TesisForm = forwardRef((props, ref) => {
     estado: "",
     archivo_pdf: null,
     modo_envio: "normal",
-    // Campos para crear nuevo autor/estudiante
-    nuevo_autor_cedula: "",
-    nuevo_autor_nombre: "",
-    nuevo_autor_apellido: "",
     // Campos para crear nuevo tutor
     nuevo_tutor_cedula: "",
     nuevo_tutor_nombre: "",
     nuevo_tutor_apellido: "",
-    // Campos para crear nuevo encargado
-    nuevo_encargado_cedula: "",
-    nuevo_encargado_nombre: "",
-    nuevo_encargado_apellido: "",
   });
 
   const [dropdownOptions, setDropdownOptions] = useState({
@@ -108,18 +100,10 @@ const TesisForm = forwardRef((props, ref) => {
       const newState = { ...prev, [name]: value };
 
       // Limpiar campos si se cambia de "Crear Nuevo" a una selección existente
-      if (name === "id_estudiante" && value !== NUEVO_ITEM_VALUE) {
-        newState.nuevo_autor_cedula = "";
-        newState.nuevo_autor_nombre = "";
-        newState.nuevo_autor_apellido = "";
-      } else if (name === "id_tutor" && value !== NUEVO_ITEM_VALUE) {
+      if (name === "id_tutor" && value !== NUEVO_ITEM_VALUE) {
         newState.nuevo_tutor_cedula = "";
         newState.nuevo_tutor_nombre = "";
         newState.nuevo_tutor_apellido = "";
-      } else if (name === "id_encargado" && value !== NUEVO_ITEM_VALUE) {
-        newState.nuevo_encargado_cedula = "";
-        newState.nuevo_encargado_nombre = "";
-        newState.nuevo_encargado_apellido = "";
       }
 
       return newState;
@@ -165,18 +149,8 @@ const TesisForm = forwardRef((props, ref) => {
     Object.keys(formData).forEach((key) => {
       // Excluir campos de "nuevo" si no se está creando uno
       if (
-        key.startsWith("nuevo_autor_") &&
-        formData.id_estudiante !== NUEVO_ITEM_VALUE
-      )
-        return;
-      if (
         key.startsWith("nuevo_tutor_") &&
         formData.id_tutor !== NUEVO_ITEM_VALUE
-      )
-        return;
-      if (
-        key.startsWith("nuevo_encargado_") &&
-        formData.id_encargado !== NUEVO_ITEM_VALUE
       )
         return;
 
@@ -203,11 +177,7 @@ const TesisForm = forwardRef((props, ref) => {
       });
 
       console.log(res.data);
-      if (
-        formData.id_tutor === NUEVO_ITEM_VALUE ||
-        formData.id_encargado === NUEVO_ITEM_VALUE ||
-        formData.id_estudiante === NUEVO_ITEM_VALUE
-      ) {
+      if (formData.id_tutor === NUEVO_ITEM_VALUE) {
         loadFormOptions(); // Recargar para ver las nuevas opciones
       }
     } catch (err) {
@@ -310,51 +280,17 @@ const TesisForm = forwardRef((props, ref) => {
               value={formData.id_estudiante}
               onChange={handleInputChange}
             >
-              <MenuItem key="new-student" value={NUEVO_ITEM_VALUE}>
-                <span style={{ fontStyle: "italic", color: "grey" }}>
-                  Crear Nuevo Estudiante...
-                </span>
-              </MenuItem>
-              {dropdownOptions.estudiantes.map((estudiante) => (
-                <MenuItem key={estudiante.id} value={estudiante.id}>
-                  {estudiante.nombre_completo || estudiante.nombre}
-                </MenuItem>
-              ))}
+              {dropdownOptions.estudiantes.length === 0 ? (
+                <MenuItem disabled>No hay estudiantes registrados</MenuItem>
+              ) : (
+                dropdownOptions.estudiantes.map((estudiante) => (
+                  <MenuItem key={estudiante.id} value={String(estudiante.id)}>
+                    {estudiante.nombre_completo || estudiante.nombre}
+                  </MenuItem>
+                ))
+              )}
             </Select>
           </FormControl>
-          {formData.id_estudiante === NUEVO_ITEM_VALUE && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: -2 }}>
-              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <TextField
-                  fullWidth
-                  label="Nombre"
-                  name="nuevo_autor_nombre"
-                  variant="filled"
-                  value={formData.nuevo_autor_nombre}
-                  onChange={handleInputChange}
-                  required
-                />
-                <TextField
-                  fullWidth
-                  label="Apellido"
-                  name="nuevo_autor_apellido"
-                  variant="filled"
-                  value={formData.nuevo_autor_apellido}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Box>
-              <TextField
-                fullWidth
-                label="Cédula"
-                name="nuevo_autor_cedula"
-                variant="filled"
-                value={formData.nuevo_autor_cedula}
-                onChange={handleInputChange}
-                required
-              />
-            </Box>
-          )}
 
           <FormControl variant="filled" fullWidth>
             <InputLabel id="tutor-label">Tutor</InputLabel>
@@ -370,16 +306,19 @@ const TesisForm = forwardRef((props, ref) => {
                   Crear Nuevo Tutor...
                 </span>
               </MenuItem>
-              {dropdownOptions.profesores.map((profesor) => (
-                <MenuItem key={profesor.id} value={profesor.id}>
-                  {profesor.nombre_completo || profesor.nombre}
-                </MenuItem>
-              ))}
             </Select>
           </FormControl>
           {formData.id_tutor === NUEVO_ITEM_VALUE && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: -2 }}>
-              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+            <Box
+              sx={{ display: "flex", flexDirection: "column", gap: 2, mt: -2 }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 2,
+                  flexDirection: { xs: "column", sm: "row" },
+                }}
+              >
                 <TextField
                   fullWidth
                   label="Nombre"
@@ -420,51 +359,34 @@ const TesisForm = forwardRef((props, ref) => {
               value={formData.id_encargado}
               onChange={handleInputChange}
             >
-              <MenuItem key="new-encargado" value={NUEVO_ITEM_VALUE}>
-                <span style={{ fontStyle: "italic", color: "grey" }}>
-                  Crear Nuevo Encargado...
-                </span>
-              </MenuItem>
-              {dropdownOptions.encargados.map((encargado) => (
-                <MenuItem key={encargado.id} value={encargado.id}>
-                  {encargado.nombre_completo || encargado.nombre}
+              {dropdownOptions.encargados.length === 0 ? (
+                <MenuItem disabled>No hay encargados registrados</MenuItem>
+              ) : (
+                dropdownOptions.encargados.map((encargado) => (
+                  <MenuItem key={encargado.id} value={String(encargado.id)}>
+                    {encargado.nombre_completo || encargado.nombre}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+
+          <FormControl variant="filled" fullWidth>
+            <InputLabel id="sede-label">Sede</InputLabel>
+            <Select
+              labelId="sede-label"
+              id="sede-select"
+              name="id_sede"
+              value={formData.id_sede}
+              onChange={handleInputChange}
+            >
+              {dropdownOptions.sedes.map((sede) => (
+                <MenuItem key={sede.id} value={sede.id}>
+                  {sede.nombre}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-          {formData.id_encargado === NUEVO_ITEM_VALUE && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: -2 }}>
-              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <TextField
-                  fullWidth
-                  label="Nombre"
-                  name="nuevo_encargado_nombre"
-                  variant="filled"
-                  value={formData.nuevo_encargado_nombre}
-                  onChange={handleInputChange}
-                  required
-                />
-                <TextField
-                  fullWidth
-                  label="Apellido"
-                  name="nuevo_encargado_apellido"
-                  variant="filled"
-                  value={formData.nuevo_encargado_apellido}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Box>
-              <TextField
-                fullWidth
-                label="Cédula"
-                name="nuevo_encargado_cedula"
-                variant="filled"
-                value={formData.nuevo_encargado_cedula}
-                onChange={handleInputChange}
-                required
-              />
-            </Box>
-          )}
 
           <DatePicker
             label="Fecha de aprobación"

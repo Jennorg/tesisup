@@ -3,8 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import handleInputChange from "@/hooks/utils/handleInputChange";
 
-const API_URL = import.meta.env.VITE_API_URL;
-const VITE_API_URL = "http://localhost:8080/api";
+const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 import {
   TextField,
@@ -46,9 +45,7 @@ const SignUp = () => {
 
   const fetchSedes = async () => {
     try {
-      // Obtener sedes desde el backend
       const res = await axios.get(`${VITE_API_URL}/sede/`);
-      // Si la respuesta es un objeto, busca la propiedad que contiene el array
       let sedesArray = Array.isArray(res.data)
         ? res.data
         : res.data.sedes || res.data.data || [];
@@ -89,6 +86,9 @@ const SignUp = () => {
       .then((res) => {
         console.log("Respuesta del servidor:", res.data);
         setMensaje(" Encargado creado correctamente");
+        setTimeout(() => {
+          navigate("/mainPage");
+        }, 1200);
       })
       .catch((err) => {
         console.error("Error al enviar:", err);

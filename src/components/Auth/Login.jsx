@@ -1,14 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import handleInputChange from "@/hooks/utils/handleInputChange";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 import {
   TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
   Box,
 } from "@mui/material";
 
@@ -17,27 +14,19 @@ import IconButton from "@mui/material/IconButton";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
-import MailOutlineIcon from "@mui/icons-material/MailOutline";
-import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import NumbersOutlinedIcon from "@mui/icons-material/NumbersOutlined";
-import LocationCityOutlinedIcon from "@mui/icons-material/LocationCityOutlined";
-import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   };
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) navigate("/MainPage");
-  }, [navigate]);
 
   const handleInput = (e) => {
     handleInputChange(e, setFormData);
@@ -51,11 +40,10 @@ const Login = () => {
       const res = await axios.post("http://localhost:8080/api/login", formData);
       const { token, user } = res.data;
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      login(user, token);
 
       console.log("Login exitoso:", user);
-      navigate("/MainPage");
+      navigate("/mainPage");
     } catch (err) {
       console.error("Error en login:", err.response?.data || err.message);
       alert("Credenciales inválidas o error del servidor");

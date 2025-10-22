@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import axios from "axios";
 import handleInputChange from "@/hooks/utils/handleInputChange";
 import { useNavigate, Link } from "react-router-dom";
@@ -66,12 +66,13 @@ const Login = () => {
     }
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     if (modalState.status === "success") {
       navigate("/mainPage");
     }
+    // Siempre cierra el modal, sin importar el estado
     setModalState({ isOpen: false, status: "loading", message: "" });
-  };
+  }, [modalState.status, navigate]);
 
   return (
     <div className="flex w-dvw h-dvh bg-gray-800 shadow-lg overflow-hidden">

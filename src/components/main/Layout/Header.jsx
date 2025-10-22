@@ -53,10 +53,7 @@ const Header = ({
     handleClose();
   };
 
-  const handleProfileClick = () => {
-    navigate("/perfil");
-    handleClose();
-  };
+  console.log("User in Header:", user);
 
   return (
     <div className="flex gap-3 justify-between items-center w-full p-3">
@@ -117,21 +114,36 @@ const Header = ({
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        <Box sx={{ px: 2, py: 1 }}>
+        <Box
+          sx={{
+            px: 2,
+            py: 1,
+          }}
+        >
           <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
             {user?.nombre} {user?.apellido}
+            {user?.user_type && (
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "inline-block",
+                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                  color: "rgba(255, 255, 255, 0.7)",
+                  px: 1,
+                  py: 0.25,
+                  ml: 2,
+                  borderRadius: 1,
+                }}
+              >
+                {user.user_type}
+              </Typography>
+            )}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
             {user?.email}
           </Typography>
         </Box>
         <Divider />
-        <MenuItem onClick={handleProfileClick}>
-          <ListItemIcon>
-            <PersonIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Perfil</ListItemText>
-        </MenuItem>
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import handleInputChange from "@/hooks/utils/handleInputChange";
+
+const VITE_API_URL = import.meta.env.VITE_API_URL;
 import LoadingModal from "@/hooks/Modals/LoadingModal";
 
 import {
@@ -38,8 +40,10 @@ const SignUp = () => {
     user_type: "Encargado",
   });
 
+  // sedeOptions ahora es un array de objetos { id, nombre }
   const [sedeOptions, setSedeOptions] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [modalState, setModalState] = useState({
     isOpen: false,
     status: "loading",
@@ -54,6 +58,7 @@ const SignUp = () => {
       console.log("Sedes obtenidas:", response.data.data);
     } catch (error) {
       console.error("Error fetching sedes:", error);
+      setSedeOptions([]);
     }
   };
 
@@ -90,6 +95,8 @@ const SignUp = () => {
     const payload = {
       ...formData,
       ci: parseInt(formData.ci),
+      telefono: formData.telefono,
+      id_sede: parseInt(formData.id_sede), // Guardar como número
     };
 
     delete payload.user_type;

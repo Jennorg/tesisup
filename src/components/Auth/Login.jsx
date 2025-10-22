@@ -1,13 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
 import handleInputChange from "@/hooks/utils/handleInputChange";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import LoadingModal from "@/hooks/Modals/LoadingModal";
 
-import {
-  TextField,
-  Box,
-} from "@mui/material";
+import { TextField, Box } from "@mui/material";
 
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
@@ -18,10 +16,14 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    status: "loading",
+    message: "",
+  });
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event) => {
@@ -34,22 +36,41 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setModalState({
+      isOpen: true,
+      status: "loading",
+      message: "Iniciando sesión...",
+    });
 
     try {
-      const res = await axios.post("http://localhost:8080/api/login", formData);
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/login`,
+        formData
+      );
       const { token, user } = res.data;
-
       login(user, token);
 
       console.log("Login exitoso:", user);
-      navigate("/mainPage");
+      setModalState({
+        isOpen: true,
+        status: "success",
+        message: "¡Bienvenido!",
+      });
     } catch (err) {
       console.error("Error en login:", err.response?.data || err.message);
-      alert("Credenciales inválidas o error del servidor");
-    } finally {
-      setLoading(false);
+      setModalState({
+        isOpen: true,
+        status: "error",
+        message: "Credenciales inválidas o error del servidor",
+      });
     }
+  };
+
+  const handleCloseModal = () => {
+    if (modalState.status === "success") {
+      navigate("/mainPage");
+    }
+    setModalState({ isOpen: false, status: "loading", message: "" });
   };
 
   return (
@@ -61,7 +82,12 @@ const Login = () => {
           className="w-full h-full object-cover overflow-clip"
         />
       </div>
-
+      <LoadingModal
+        isOpen={modalState.isOpen}
+        status={modalState.status}
+        message={modalState.message}
+        onClose={handleCloseModal}
+      />
       <form
         onSubmit={handleSubmit}
         className="flex flex-1 flex-col gap-4 p-6 text-center justify-center align-middle items-center"
@@ -72,7 +98,6 @@ const Login = () => {
           className="mx-auto w-24 h-24"
         />
         <h1 className="text-2xl font-bold text-white">Iniciar sesión</h1>
-
         <Box
           sx={{
             display: "flex",
@@ -129,6 +154,13 @@ const Login = () => {
           />
         </Box>
 
+        <p className="text-white">
+          ¿No tienes una cuenta?{" "}
+          <Link to="/signup" className="text-blue-500 hover:underline">
+            Regístrate
+          </Link>
+        </p>
+
         <div className="flex justify-center gap-10 mt-4">
           <button
             type="button"
@@ -140,9 +172,11 @@ const Login = () => {
           <button
             type="submit"
             className="px-4 py-2 bg-green-500 text-white rounded"
-            disabled={loading}
+            disabled={modalState.isOpen && modalState.status === "loading"}
           >
-            {loading ? "Cargando..." : "Continuar"}
+            {modalState.isOpen && modalState.status === "loading"
+              ? "Cargando..."
+              : "Continuar"}
           </button>
         </div>
       </form>

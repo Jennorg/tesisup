@@ -24,7 +24,11 @@ const Aside = ({
       {}
       <ul
         className={`fixed top-14 left-4 w-44 bg-gray-800 rounded-lg shadow-lg p-4 text-white transition-all duration-300 ease-in-out z-50
-        ${isAsideVisible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"}`}
+        ${
+          isAsideVisible
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-full opacity-0"
+        }`}
       >
         <li>
           <button

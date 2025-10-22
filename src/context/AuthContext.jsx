@@ -7,11 +7,22 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
 
   useEffect(() => {
-    if (token) {
+    if (token && token !== "null" && token !== "undefined") {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error("Failed to parse user from localStorage", error);
+          // Optionally, clear the corrupted user data
+          localStorage.removeItem("user");
+        }
       }
+    } else if (token === "null" || token === "undefined") {
+      // If the token is explicitly the string "null" or "undefined",
+      // it indicates a logout or an invalid state.
+      // We should clear any lingering user data.
+      logout();
     }
   }, [token]);
 
@@ -30,7 +41,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = () => {
-    return !!token;
+    return !!token && token !== "null" && token !== "undefined";
   };
 
   return (

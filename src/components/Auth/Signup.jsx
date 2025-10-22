@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import handleInputChange from "@/hooks/utils/handleInputChange";
+import LoadingModal from "@/hooks/Modals/LoadingModal";
 
 import {
   TextField,
@@ -34,14 +35,23 @@ const SignUp = () => {
     telefono: "",
     id_sede: "",
     ci_type: "V",
+    user_type: "Encargado",
   });
 
   const [sedeOptions, setSedeOptions] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    status: "loading",
+    message: "",
+  });
+  const navigate = useNavigate();
 
   const fetchSedes = async () => {
     try {
-      setSedeOptions(["Puerto Ordaz", "San Félix", "Ciudad Bolívar"]);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/sede`);
+      setSedeOptions(response.data.data);
+      console.log("Sedes obtenidas:", response.data.data);
     } catch (error) {
       console.error("Error fetching sedes:", error);
     }
@@ -50,9 +60,6 @@ const SignUp = () => {
   useEffect(() => {
     fetchSedes();
   }, []);
-
-  const [mensaje, setMensaje] = useState(null);
-  const navigate = useNavigate();
 
   const handleInput = (e) => {
     const { name, value } = e.target;
@@ -63,32 +70,67 @@ const SignUp = () => {
   };
 
   const validateForm = () => {
+    const userTypeEndpoint = {
+      Encargado: "encargado",
+      Profesor: "profesor",
+      Estudiante: "estudiantes",
+    };
+
+    const endpoint = userTypeEndpoint[formData.user_type];
+
+    if (!endpoint) {
+      setModalState({
+        isOpen: true,
+        status: "error",
+        message: "Tipo de usuario no válido",
+      });
+      return;
+    }
+
     const payload = {
       ...formData,
       ci: parseInt(formData.ci),
-      telefono: formData.telefono,
-      id_sede: parseInt(formData.id_sede),
     };
+
+    delete payload.user_type;
 
     console.log("Datos enviados al servidor:", payload);
 
+    setModalState({
+      isOpen: true,
+      status: "loading",
+      message: "Registrando usuario...",
+    });
+
     axios
-      .post("http://localhost:8080/api/encargado", payload)
+      .post(`${import.meta.env.VITE_API_URL}/${endpoint}`, payload)
       .then((res) => {
         console.log("Respuesta del servidor:", res.data);
-        setMensaje(" Encargado creado correctamente");
+        setModalState({
+          isOpen: true,
+          status: "success",
+          message: `${formData.user_type} creado correctamente`,
+        });
       })
       .catch((err) => {
         console.error("Error al enviar:", err);
-        setMensaje(
-          err.response?.data?.message || " Error al registrar encargado"
-        );
+        setModalState({
+          isOpen: true,
+          status: "error",
+          message:
+            err.response?.data?.message ||
+            `Error al registrar ${formData.user_type}`,
+        });
       });
   };
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
+  };
+  const handleCloseModal = () => {
+    if (modalState.status === "success") navigate("/login");
+    setModalState({ isOpen: false, status: "loading", message: "" });
   };
 
   return (
@@ -100,6 +142,12 @@ const SignUp = () => {
           className="w-full h-full object-cover"
         />
       </div>
+      <LoadingModal
+        isOpen={modalState.isOpen}
+        status={modalState.status}
+        message={modalState.message}
+        onClose={handleCloseModal}
+      />
       <form
         className="p-6 bg-gray-800 shadow-lg flex flex-col gap-6 w-full text-center justify-center"
         onSubmit={(e) => {
@@ -173,6 +221,21 @@ const SignUp = () => {
             onChange={handleInput}
             variant="standard"
           />
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "flex-end", flexShrink: 0 }}>
+          <BadgeOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
+          <FormControl variant="standard">
+            <Select
+              name="user_type"
+              value={formData.user_type}
+              onChange={handleInput}
+            >
+              <MenuItem value="Encargado">Encargado</MenuItem>
+              <MenuItem value="Profesor">Profesor</MenuItem>
+              <MenuItem value="Estudiante">Estudiante</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
 
         <div className="flex justify-center items-center gap-4">
@@ -255,11 +318,12 @@ const SignUp = () => {
                 value={formData.id_sede}
                 onChange={handleInput}
               >
-                {sedeOptions.map((sede) => (
-                  <MenuItem key={sede} value={sede}>
-                    {sede}
-                  </MenuItem>
-                ))}
+                {sedeOptions &&
+                  sedeOptions.map((sede) => (
+                    <MenuItem key={sede.id} value={sede.id}>
+                      {sede.nombre}
+                    </MenuItem>
+                  ))}
               </Select>
             </FormControl>
           </Box>
@@ -297,6 +361,12 @@ const SignUp = () => {
             }}
           />
         </Box>
+        <p className="text-white">
+          ¿Ya tienes una cuenta?{" "}
+          <Link to="/login" className="text-blue-500 hover:underline">
+            Inicia sesión
+          </Link>
+        </p>
         <div className="flex justify-center gap-10 mt-4">
           <button
             type="button"
@@ -308,8 +378,11 @@ const SignUp = () => {
           <button
             type="submit"
             className="px-4 py-2 bg-green-500 text-white rounded"
+            disabled={modalState.isOpen && modalState.status === "loading"}
           >
-            Continuar
+            {modalState.isOpen && modalState.status === "loading"
+              ? "Cargando..."
+              : "Continuar"}
           </button>
         </div>
       </form>

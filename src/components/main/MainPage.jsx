@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import Content from "@/components/main/Layout/Content";
 import TesisForm from "@/components/main/Form/tesisForm";
 import Header from "@/components/main/Layout/Header";
+import Filters from "@/components/main/Layout/Filters";
 
 const MainPage = () => {
   const [isAsideVisible, setIsAsideVisible] = useState(false);
   const [isTesisFormVisible, setIsTesisFormVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [tesisEncontradas, setTesisEncontradas] = useState([]);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [haBuscado, setHaBuscado] = useState(false);
   const tesisFormRef = useRef(null);
 
@@ -43,6 +45,8 @@ const MainPage = () => {
         tesisEncontradas={tesisEncontradas}
         setTesisEncontradas={setTesisEncontradas}
         setHaBuscado={setHaBuscado}
+        isFilterVisible={isFilterVisible}
+        onToggleFilter={setIsFilterVisible}
       />
       <main
         className={`relative z-10 flex-grow pr-4 pt-4 overflow-y-auto transition-all duration-300 ${
@@ -58,6 +62,15 @@ const MainPage = () => {
           haBuscado={haBuscado}
         />
       </main>
+      {/* Panel de Filtros Absoluto */}
+      <div
+        className={`absolute top-0 left-0 h-full z-30 transition-transform duration-300 ease-in-out ${
+          isFilterVisible ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ width: "300px" }}
+      >
+        <Filters onClose={() => setIsFilterVisible(false)} />
+      </div>
 
       {isTesisFormVisible ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background bg-opacity-50 backdrop-blur-sm">

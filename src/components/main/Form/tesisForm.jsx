@@ -147,7 +147,6 @@ const TesisForm = forwardRef((props, ref) => {
     const datos = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      // Excluir campos de "nuevo" si no se está creando uno
       if (
         key.startsWith("nuevo_tutor_") &&
         formData.id_tutor !== NUEVO_ITEM_VALUE
@@ -159,7 +158,7 @@ const TesisForm = forwardRef((props, ref) => {
       } else if (key === "fecha" && formData[key]) {
         datos.append("fecha", dayjs(formData[key]).format("YYYY-MM-DD"));
       } else if (key === "nombre" && formData[key]) {
-        datos.append("titulo", formData[key]); // El campo 'nombre' del estado es el 'titulo' para el backend
+        datos.append("titulo", formData[key]);
       } else if (formData[key] !== null && formData[key] !== "") {
         datos.append(key, formData[key]);
       }
@@ -178,7 +177,7 @@ const TesisForm = forwardRef((props, ref) => {
 
       console.log(res.data);
       if (formData.id_tutor === NUEVO_ITEM_VALUE) {
-        loadFormOptions(); // Recargar para ver las nuevas opciones
+        loadFormOptions();
       }
     } catch (err) {
       console.error("Error al enviar:", err.response?.data || err.message);
@@ -284,7 +283,7 @@ const TesisForm = forwardRef((props, ref) => {
                 <MenuItem disabled>No hay estudiantes registrados</MenuItem>
               ) : (
                 dropdownOptions.estudiantes.map((estudiante) => (
-                  <MenuItem key={estudiante.id} value={String(estudiante.id)}>
+                  <MenuItem key={estudiante.ci} value={String(estudiante.ci)}>
                     {estudiante.nombre_completo || estudiante.nombre}
                   </MenuItem>
                 ))
@@ -301,6 +300,15 @@ const TesisForm = forwardRef((props, ref) => {
               value={formData.id_tutor}
               onChange={handleInputChange}
             >
+              {dropdownOptions.profesores.length === 0 ? (
+                <MenuItem disabled>No hay profesores registrados</MenuItem>
+              ) : (
+                dropdownOptions.profesores.map((profesore) => (
+                  <MenuItem key={profesore.ci} value={String(profesore.ci)}>
+                    {profesore.nombre_completo || profesore.nombre}
+                  </MenuItem>
+                ))
+              )}
               <MenuItem key="new-tutor" value={NUEVO_ITEM_VALUE}>
                 <span style={{ fontStyle: "italic", color: "grey" }}>
                   Crear Nuevo Tutor...
@@ -363,7 +371,7 @@ const TesisForm = forwardRef((props, ref) => {
                 <MenuItem disabled>No hay encargados registrados</MenuItem>
               ) : (
                 dropdownOptions.encargados.map((encargado) => (
-                  <MenuItem key={encargado.id} value={String(encargado.id)}>
+                  <MenuItem key={encargado.ci} value={String(encargado.ci)}>
                     {encargado.nombre_completo || encargado.nombre}
                   </MenuItem>
                 ))

@@ -27,11 +27,11 @@ const Card = ({ data, isLoading = false }) => {
   }
 
   return (
-    <div
-      className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full"
-    >
+    <div className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full">
       <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-semibold text-white line-clamp-2">{data.nombre}</h2>
+        <h2 className="text-lg font-semibold text-white line-clamp-2">
+          {data.nombre}
+        </h2>
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
@@ -44,16 +44,23 @@ const Card = ({ data, isLoading = false }) => {
 
       <div className="space-y-1 flex-1">
         <p className="text-sm">
-          <span className="text-gray-400">Autor:</span> 
-          <span className="text-white ml-1">{data.autor}</span>
+          <span className="text-gray-400">Autor:</span>
+          <span className="text-white ml-1">
+            {data.autores?.map((autor) => autor.nombre).join(", ") ||
+              "No asignado"}
+          </span>
         </p>
         <p className="text-sm">
-          <span className="text-gray-400">Encargado:</span> 
-          <span className="text-white ml-1">{data.encargado}</span>
+          <span className="text-gray-400">Encargado:</span>
+          <span className="text-white ml-1">
+            {data.encargado?.nombre || "No asignado"}
+          </span>
         </p>
         <p className="text-sm">
-          <span className="text-gray-400">Tutor:</span> 
-          <span className="text-white ml-1">{data.tutor}</span>
+          <span className="text-gray-400">Tutor:</span>
+          <span className="text-white ml-1">
+            {data.tutor?.nombre || "No asignado"}
+          </span>
         </p>
       </div>
 
@@ -66,12 +73,12 @@ const Card = ({ data, isLoading = false }) => {
             e.stopPropagation();
           }}
           sx={{
-            color: '#EF4444',
-            borderColor: '#EF4444',
-            '&:hover': {
-              borderColor: '#DC2626',
-              bgcolor: 'rgba(239, 68, 68, 0.1)',
-            }
+            color: "#EF4444",
+            borderColor: "#EF4444",
+            "&:hover": {
+              borderColor: "#DC2626",
+              bgcolor: "rgba(239, 68, 68, 0.1)",
+            },
           }}
         >
           Eliminar
@@ -86,10 +93,10 @@ const Card = ({ data, isLoading = false }) => {
             console.log("Descargar tesis:", data.nombre);
           }}
           sx={{
-            bgcolor: '#3B82F6',
-            '&:hover': {
-              bgcolor: '#2563EB',
-            }
+            bgcolor: "#3B82F6",
+            "&:hover": {
+              bgcolor: "#2563EB",
+            },
           }}
         >
           Descargar

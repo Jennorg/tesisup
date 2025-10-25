@@ -157,8 +157,6 @@ const TesisForm = forwardRef((props, ref) => {
         if (formData[key]) datos.append("archivo_pdf", formData[key]);
       } else if (key === "fecha" && formData[key]) {
         datos.append("fecha", dayjs(formData[key]).format("YYYY-MM-DD"));
-      } else if (key === "nombre" && formData[key]) {
-        datos.append("titulo", formData[key]);
       } else if (formData[key] !== null && formData[key] !== "") {
         datos.append(key, formData[key]);
       }

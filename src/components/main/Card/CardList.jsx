@@ -7,14 +7,32 @@ const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
 const CardList = () => {
   const [tesis, setTesis] = useState([]);
+  const [data, setData] = useState({
+    profesores: [],
+    encargados: [],
+    estudiantes: [],
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchTesis = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(`${VITE_API_URL}/tesis`);
-        setTesis(response.data);
+        const [tesisRes, profesoresRes, encargadosRes, estudiantesRes] =
+          await Promise.all([
+            axios.get(`${VITE_API_URL}/tesis`),
+            axios.get(`${VITE_API_URL}/profesor`),
+            axios.get(`${VITE_API_URL}/encargado`),
+            axios.get(`${VITE_API_URL}/estudiantes`),
+          ]);
+
+        setTesis(tesisRes.data || []);
+        setData({
+          profesores: profesoresRes.data.data || [],
+          encargados: encargadosRes.data.data || [],
+          estudiantes: estudiantesRes.data.data || [],
+        });
+        console.log(tesisRes.data);
       } catch (error) {
         setError(error);
       } finally {
@@ -22,8 +40,22 @@ const CardList = () => {
       }
     };
 
-    fetchTesis();
+    fetchData();
   }, []);
+
+  const getFullTesisData = (tesisItem) => {
+    const autor = data.estudiantes.find(
+      (e) => String(e.ci) === String(tesisItem.id_estudiante)
+    );
+    const tutor = data.profesores.find(
+      (p) => String(p.ci) === String(tesisItem.id_tutor)
+    );
+    const encargado = data.encargados.find(
+      (e) => String(e.ci) === String(tesisItem.id_encargado)
+    );
+
+    return { ...tesisItem, autor, tutor, encargado };
+  };
 
   return (
     <div className="w-full">
@@ -36,9 +68,12 @@ const CardList = () => {
             ))
           : !error &&
             tesis.length > 0 &&
-            tesis.map((data) => (
-              <li key={data.id} className="w-full">
-                <Card data={data} />
+            tesis.map((tesisItem) => (
+              <li
+                key={tesisItem.id_tesis || tesisItem.id || tesisItem.nombre}
+                className="w-full"
+              >
+                <Card data={getFullTesisData(tesisItem)} />
               </li>
             ))}
 

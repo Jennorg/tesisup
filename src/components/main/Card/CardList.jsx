@@ -5,7 +5,7 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
-const CardList = () => {
+const CardList = ({ reloadKey }) => {
   const [tesis, setTesis] = useState([]);
   const [data, setData] = useState({
     profesores: [],
@@ -41,7 +41,7 @@ const CardList = () => {
     };
 
     fetchData();
-  }, []);
+  }, [reloadKey]);
 
   const getFullTesisData = (tesisItem) => {
     const autor = data.estudiantes.find(

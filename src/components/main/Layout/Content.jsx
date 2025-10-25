@@ -13,6 +13,7 @@ const Content = ({
   isLoading,
   tesisEncontradas,
   haBuscado,
+  reloadKey,
 }) => {
   const marginLeftClass = isAsideVisible ? "ml-16" : "ml-0";
 
@@ -20,7 +21,7 @@ const Content = ({
     <div
       className={`flex-grow w-full p-4 overflow-ellipsis transition-margin-left duration-300 ease-in-out ${marginLeftClass}`}
     >
-      <CardList tesisEncontradas={tesisEncontradas} haBuscado={haBuscado} />
+  <CardList reloadKey={reloadKey} tesisEncontradas={tesisEncontradas} haBuscado={haBuscado} />
 
       <div className="absolute bottom-20 right-10 z-10">
         <Fab

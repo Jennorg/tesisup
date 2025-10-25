@@ -1,11 +1,12 @@
 import { React, useState, useEffect } from "react";
 import Card from "@/components/main/Card/Card";
 import axios from "axios";
+import dayjs from "dayjs";
 
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
-const CardList = () => {
+const CardList = ({ reloadKey, filters }) => {
   const [tesis, setTesis] = useState([]);
   const [data, setData] = useState({
     profesores: [],
@@ -14,6 +15,7 @@ const CardList = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filteredTesis, setFilteredTesis] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,7 +43,87 @@ const CardList = () => {
     };
 
     fetchData();
-  }, []);
+  }, [reloadKey]);
+
+  // Apply client-side filters whenever tesis/data/filters change
+  useEffect(() => {
+    if (!filters) {
+      setFilteredTesis(tesis);
+      return;
+    }
+
+    const fNombre = (filters.nombre || "").trim().toLowerCase();
+    const fAutor = filters.autor || "";
+    const fEncargado = filters.encargado || "";
+    const fTutor = filters.tutor || "";
+    const fSede = filters.sede || "";
+    const fEstado = filters.estado || "";
+    const fechaDesde = filters.fechaDesde || null;
+    const fechaHasta = filters.fechaHasta || null;
+
+    const getId = (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      if (typeof val === "object") return Number(val.ci ?? val.id ?? null);
+      return Number(val);
+    };
+
+    const result = tesis.filter((t) => {
+      // Nombre
+      if (fNombre) {
+        const nombre = (t.nombre || t.titulo || "").toLowerCase();
+        if (!nombre.includes(fNombre)) return false;
+      }
+
+      // Autor
+      if (fAutor) {
+        // The backend returns authors as an array under `autores` (each with `ci`).
+        // Check if any of the autores has ci === fAutor.
+        const autoresArr = t.autores || [];
+        const hasAutor = autoresArr.some((a) => Number(a.ci) === Number(fAutor));
+        if (!hasAutor) return false;
+      }
+
+      // Encargado
+      if (fEncargado) {
+        const thesisEncargadoId = getId(t.id_encargado ?? t.encargado ?? (t.encargado_data || null));
+        if (thesisEncargadoId === null) return false;
+        if (thesisEncargadoId !== Number(fEncargado)) return false;
+      }
+
+      // Tutor
+      if (fTutor) {
+        const thesisTutorId = getId(t.id_tutor ?? t.tutor ?? (t.tutor_data || null));
+        if (thesisTutorId === null) return false;
+        if (thesisTutorId !== Number(fTutor)) return false;
+      }
+
+      // Sede
+      if (fSede) {
+        if (String(t.id_sede) !== String(fSede)) return false;
+      }
+
+      // Estado
+      if (fEstado) {
+        if (String(t.estado) !== String(fEstado)) return false;
+      }
+
+      // Fecha range
+      if (fechaDesde || fechaHasta) {
+        if (!t.fecha) return false;
+        const tesisDate = dayjs(t.fecha);
+        if (fechaDesde && tesisDate.isBefore(dayjs(fechaDesde), "day")) {
+          return false;
+        }
+        if (fechaHasta && tesisDate.isAfter(dayjs(fechaHasta), "day")) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    setFilteredTesis(result);
+  }, [tesis, data, filters]);
 
   const getFullTesisData = (tesisItem) => {
     const autor = data.estudiantes.find(
@@ -67,8 +149,8 @@ const CardList = () => {
               </li>
             ))
           : !error &&
-            tesis.length > 0 &&
-            tesis.map((tesisItem) => (
+            filteredTesis.length > 0 &&
+            filteredTesis.map((tesisItem) => (
               <li
                 key={tesisItem.id_tesis || tesisItem.id || tesisItem.nombre}
                 className="w-full"
@@ -85,7 +167,7 @@ const CardList = () => {
           </li>
         )}
 
-        {!isLoading && !error && tesis.length === 0 && (
+        {!isLoading && !error && filteredTesis.length === 0 && (
           <li className="col-span-full">
             <p className="text-gray-400 text-center py-8">
               No hay tesis disponibles.

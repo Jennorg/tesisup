@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const Home = () => {
   return (
     <div className="grid place-items-center w-dvw h-dvh bg-blue-600">
-      <div className="bg-gray-800 p-8 rounded-xl shadow-xl w-[90%] max-w-sm h-[500px] flex flex-col justify-start text-white space-y-5">
+      <div className="bg-gray-800 p-8 rounded-xl shadow-xl w-[90%] max-w-sm min-h-[500px] flex flex-col justify-between text-white">
         {}
         <img
           src="/img/uneg-logo.png"
@@ -16,7 +16,7 @@ const Home = () => {
         <h1 className="text-3xl font-bold text-center mb-4 mt-1">Digitalys</h1>
 
         {}
-        <div className="flex flex-col gap-5 w-full px-3 mt-2">
+  <div className="flex flex-col gap-5 w-full px-3 mt-2 mb-2">
           <div className="bg-blue-500 hover:bg-blue-600 rounded-lg shadow-lg transition">
             <Link
               to="/login"

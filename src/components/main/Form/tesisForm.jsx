@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, forwardRef } from "react";
+import React, { useState, useEffect, useCallback, forwardRef, useRef } from "react";
 import axios from "axios";
 import {
   TextField,
@@ -16,6 +16,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
+import LoadingModal from "@/hooks/Modals/LoadingModal";
 
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
@@ -35,7 +36,9 @@ const VisuallyHiddenInput = styled("input")({
 const TesisForm = forwardRef((props, ref) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const fileInputRef = useRef(null);
+
+  const initialFormData = {
     id_tesis: "",
     nombre: "",
     id_estudiante: "",
@@ -50,6 +53,14 @@ const TesisForm = forwardRef((props, ref) => {
     nuevo_tutor_cedula: "",
     nuevo_tutor_nombre: "",
     nuevo_tutor_apellido: "",
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
+
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    status: "loading",
+    message: "",
   });
 
   const [dropdownOptions, setDropdownOptions] = useState({
@@ -59,7 +70,7 @@ const TesisForm = forwardRef((props, ref) => {
     estudiantes: [],
   });
 
-  const estados = ["Aprobada", "Rechazada", "Pendiente"];
+  const estados = ["Aprobado", "Rechazado", "Pendiente", "en revisión"];
   const NUEVO_ITEM_VALUE = "new";
 
   const loadFormOptions = useCallback(async () => {
@@ -144,6 +155,7 @@ const TesisForm = forwardRef((props, ref) => {
 
   const sendForm = async () => {
     setIsLoading(true);
+    setModalState({ isOpen: true, status: "loading", message: "Enviando tesis..." });
     const datos = new FormData();
 
     Object.keys(formData).forEach((key) => {
@@ -174,14 +186,44 @@ const TesisForm = forwardRef((props, ref) => {
       });
 
       console.log(res.data);
+      // On success: show success modal, then clear form and close (handled on modal close)
+      setModalState({ isOpen: true, status: "success", message: "Tesis subida correctamente" });
+
       if (formData.id_tutor === NUEVO_ITEM_VALUE) {
         loadFormOptions();
       }
     } catch (err) {
       console.error("Error al enviar:", err.response?.data || err.message);
+      // Show error modal but keep form as-is so user can edit
+      setModalState({ isOpen: true, status: "error", message: err.response?.data?.message || "Error al subir la tesis" });
     }
 
     setIsLoading(false);
+  };
+
+  const clearForm = () => {
+    setFormData(initialFormData);
+    // Clear file input DOM value if present
+    if (fileInputRef.current) {
+      try {
+        fileInputRef.current.value = "";
+      } catch (e) {
+        // ignore
+      }
+    }
+  };
+
+  const handleModalClose = () => {
+    // Called by LoadingModal after success/error display timeout
+    if (modalState.status === "success") {
+      // clear form and request parent to close the form overlay (if provided)
+      clearForm();
+      props.onSuccess?.();
+      props.onClose?.();
+    }
+
+    // Always close the modal
+    setModalState((s) => ({ ...s, isOpen: false }));
   };
 
   return (
@@ -244,6 +286,7 @@ const TesisForm = forwardRef((props, ref) => {
           >
             <VisuallyHiddenInput
               id="file-upload"
+              ref={fileInputRef}
               type="file"
               onChange={handleFileChange}
               accept={
@@ -443,6 +486,12 @@ const TesisForm = forwardRef((props, ref) => {
           </Button>
         </div>
       </Box>
+      <LoadingModal
+        isOpen={modalState.isOpen}
+        status={modalState.status}
+        message={modalState.message}
+        onClose={handleModalClose}
+      />
     </LocalizationProvider>
   );
 });

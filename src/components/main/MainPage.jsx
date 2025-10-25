@@ -7,6 +7,8 @@ import Filters from "@/components/main/Layout/Filters";
 const MainPage = () => {
   const [isAsideVisible, setIsAsideVisible] = useState(false);
   const [isTesisFormVisible, setIsTesisFormVisible] = useState(false);
+  const [reloadTesisKey, setReloadTesisKey] = useState(0);
+  const [activeFilters, setActiveFilters] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tesisEncontradas, setTesisEncontradas] = useState([]);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -60,6 +62,8 @@ const MainPage = () => {
           isLoading={isLoading}
           tesisEncontradas={tesisEncontradas}
           haBuscado={haBuscado}
+          reloadKey={reloadTesisKey}
+          filters={activeFilters}
         />
       </main>
       {/* Panel de Filtros Absoluto */}
@@ -69,16 +73,23 @@ const MainPage = () => {
         }`}
         style={{ width: "300px" }}
       >
-        <Filters onClose={() => setIsFilterVisible(false)} />
+          <Filters
+            onClose={() => setIsFilterVisible(false)}
+            onApply={(f) => setActiveFilters(f)}
+          />
       </div>
 
       {isTesisFormVisible ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background bg-opacity-50 backdrop-blur-sm">
-          <TesisForm ref={tesisFormRef} />
+          <TesisForm
+            ref={tesisFormRef}
+            onClose={() => setIsTesisFormVisible(false)}
+            onSuccess={() => setReloadTesisKey((k) => k + 1)}
+          />
         </div>
       ) : null}
     </div>
   );
-};
+}; 
 
 export default MainPage;

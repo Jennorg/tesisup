@@ -22,16 +22,16 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const initialFilters = {
   nombre: "",
-  autor: "",
-  encargado: "",
+  autor: null,
+  encargado: null,
   fechaDesde: null,
   fechaHasta: null,
-  tutor: "",
-  sede: "",
+  tutor: null,
+  sede: null,
   estado: "",
 };
 
-const Filters = ({ onClose }) => {
+const Filters = ({ onClose, onApply }) => {
   const [filters, setFilters] = useState(initialFilters);
   const [dropdownOptions, setDropdownOptions] = useState({
     autores: [], // Estudiantes
@@ -40,7 +40,8 @@ const Filters = ({ onClose }) => {
     sedes: [],
   });
 
-  const estados = ["Aprobada", "Rechazada", "Pendiente"]; // Asumiendo que estos son estáticos
+  // Asegurarse que estos estados coincidan con los valores que guarda el backend
+  const estados = ["aprobado", "rechazado", "pendiente", "en revisión"]; // Asumiendo que estos son estáticos
 
   useEffect(() => {
     const fetchDropdownOptions = async () => {
@@ -68,9 +69,17 @@ const Filters = ({ onClose }) => {
   }, []);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    // Normalizar ids numéricos para autor/encargado/tutor/sede
+    const numericFields = ["autor", "encargado", "tutor", "sede"];
+    const newValue = numericFields.includes(name)
+      ? value === "" || value === null
+        ? null
+        : Number(value)
+      : value;
+
     setFilters({
       ...filters,
-      [name]: value,
+      [name]: newValue,
     });
   };
 
@@ -84,11 +93,14 @@ const Filters = ({ onClose }) => {
   const handleClearFilters = () => {
     setFilters(initialFilters);
     console.log("Filtros limpiados");
+    // Notify parent that filters were cleared
+    onApply?.(initialFilters);
   };
 
   const handleFilter = () => {
-    // Aquí iría la lógica para aplicar los filtros
+    // Llama al callback proporcionado por el padre con los filtros actuales
     console.log("Filtrando con:", filters);
+    onApply?.(filters);
     if (onClose) {
       onClose(); // Cerrar drawer en móvil después de filtrar
     }
@@ -206,7 +218,7 @@ const Filters = ({ onClose }) => {
                 <em>Ninguno</em>
               </MenuItem>
               {dropdownOptions.autores.map((autor) => (
-                <MenuItem key={autor.id} value={String(autor.id)}>
+                <MenuItem key={autor.ci ?? autor.id} value={autor.ci ?? autor.id}>
                   {autor.nombre_completo || autor.nombre}
                 </MenuItem>
               ))}
@@ -249,7 +261,7 @@ const Filters = ({ onClose }) => {
                 <em>Ninguno</em>
               </MenuItem>
               {dropdownOptions.encargados.map((encargado) => (
-                <MenuItem key={encargado.id} value={String(encargado.id)}>
+                <MenuItem key={encargado.ci ?? encargado.id} value={encargado.ci ?? encargado.id}>
                   {encargado.nombre_completo || encargado.nombre}
                 </MenuItem>
               ))}
@@ -367,7 +379,7 @@ const Filters = ({ onClose }) => {
                 <em>Ninguno</em>
               </MenuItem>
               {dropdownOptions.tutores.map((tutor) => (
-                <MenuItem key={tutor.id} value={String(tutor.id)}>
+                <MenuItem key={tutor.ci ?? tutor.id} value={tutor.ci ?? tutor.id}>
                   {tutor.nombre_completo || tutor.nombre}
                 </MenuItem>
               ))}
@@ -410,7 +422,7 @@ const Filters = ({ onClose }) => {
                 <em>Ninguno</em>
               </MenuItem>
               {dropdownOptions.sedes.map((sede) => (
-                <MenuItem key={sede.id} value={String(sede.id)}>
+                <MenuItem key={sede.id} value={sede.id}>
                   {sede.nombre}
                 </MenuItem>
               ))}

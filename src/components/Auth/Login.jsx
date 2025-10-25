@@ -68,7 +68,7 @@ const Login = () => {
 
   const handleCloseModal = useCallback(() => {
     if (modalState.status === "success") {
-      navigate("/mainPage");
+      navigate("/");
     }
     // Siempre cierra el modal, sin importar el estado
     setModalState({ isOpen: false, status: "loading", message: "" });

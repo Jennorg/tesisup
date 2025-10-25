@@ -1,6 +1,5 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import Home from "@/components/Home";
 import Login from "@/components/Auth/Login";
 import SignUp from "@/components/Auth/Signup";
 import MainPage from "@/components/main/MainPage";
@@ -10,13 +9,12 @@ const App = () => {
   return (
     <Routes>
       {/* Rutas públicas */}
-      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signUp" element={<SignUp />} />
 
-      {/* Rutas protegidas */}
+      {/* Rutas protegidas: la ruta raíz (/) será MainPage y requerirá autenticación */}
       <Route element={<Auth />}>
-        {/* unicamente un usuario previamente registrado puede registrar a otro usuario */}
+        <Route path="/" element={<MainPage />} />
         <Route path="/mainPage" element={<MainPage />} />
       </Route>
 

@@ -40,14 +40,14 @@ const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
     } catch (err) {
       console.error(
         "Error al eliminar la tesis:",
-        err.response?.data || err.message
+        err.response?.data.error || err.message
       );
       // Mostrar modal de ERROR
       setModalState({
         isOpen: true,
         status: "error",
         message:
-          err.response?.data?.message ||
+          err.response?.data.error ||
           "Error al eliminar la tesis. Intente de nuevo.",
       });
     } finally {
@@ -108,13 +108,13 @@ const useDownloadTesis = (tesisId, setModalState) => {
     } catch (err) {
       console.error(
         "Error al descargar la tesis:",
-        err.response?.data || err.message
+        err.response?.data.error || err.message
       );
       setModalState({
         isOpen: true,
         status: "error",
         message:
-          err.response?.data?.message ||
+          err.response?.data.error ||
           "Error al descargar el archivo. Intente de nuevo.",
       });
     } finally {

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, forwardRef, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useRef,
+} from "react";
 import axios from "axios";
 import {
   TextField,
@@ -155,7 +161,11 @@ const TesisForm = forwardRef((props, ref) => {
 
   const sendForm = async () => {
     setIsLoading(true);
-    setModalState({ isOpen: true, status: "loading", message: "Enviando tesis..." });
+    setModalState({
+      isOpen: true,
+      status: "loading",
+      message: "Enviando tesis...",
+    });
     const datos = new FormData();
 
     Object.keys(formData).forEach((key) => {
@@ -187,15 +197,26 @@ const TesisForm = forwardRef((props, ref) => {
 
       console.log(res.data);
       // On success: show success modal, then clear form and close (handled on modal close)
-      setModalState({ isOpen: true, status: "success", message: "Tesis subida correctamente" });
+      setModalState({
+        isOpen: true,
+        status: "success",
+        message: "Tesis subida correctamente",
+      });
 
       if (formData.id_tutor === NUEVO_ITEM_VALUE) {
         loadFormOptions();
       }
     } catch (err) {
-      console.error("Error al enviar:", err.response?.data || err.message);
+      console.error(
+        "Error al enviar:",
+        err.response?.data?.error || err.message
+      );
       // Show error modal but keep form as-is so user can edit
-      setModalState({ isOpen: true, status: "error", message: err.response?.data?.message || "Error al subir la tesis" });
+      setModalState({
+        isOpen: true,
+        status: "error",
+        message: err.response?.data?.error || "Error al subir la tesis",
+      });
     }
 
     setIsLoading(false);

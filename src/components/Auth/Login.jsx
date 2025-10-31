@@ -57,7 +57,7 @@ const Login = () => {
         message: "¡Bienvenido!",
       });
     } catch (err) {
-      console.error("Error en login:", err.response?.data || err.message);
+      console.error("Error en login:", err.response?.data.error || err.message);
       setModalState({
         isOpen: true,
         status: "error",

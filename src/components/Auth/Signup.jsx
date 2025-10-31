@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import handleInputChange from "@/hooks/utils/handleInputChange"; 
+import handleInputChange from "@/hooks/utils/handleInputChange";
 import { useNavigate, Link } from "react-router-dom";
 import LoadingModal from "@/hooks/Modals/LoadingModal";
 
@@ -52,7 +52,7 @@ const SignUp = () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/sede`);
       if (response.data.data.length > 0 && !formData.id_sede) {
-        setFormData(prev => ({ ...prev, id_sede: response.data.data[0].id }));
+        setFormData((prev) => ({ ...prev, id_sede: response.data.data[0].id }));
       }
       setSedeOptions(response.data.data);
       console.log("Sedes obtenidas:", response.data.data);
@@ -112,7 +112,7 @@ const SignUp = () => {
         `${import.meta.env.VITE_API_URL}/${endpoint}`,
         payload
       );
-      
+
       console.log("Respuesta del servidor:", res.data);
       setModalState({
         isOpen: true,
@@ -125,7 +125,7 @@ const SignUp = () => {
         isOpen: true,
         status: "error",
         message:
-          err.response?.data?.message ||
+          err.response?.data?.error ||
           `Error al registrar ${formData.user_type}. Intente de nuevo.`,
       });
     }
@@ -135,7 +135,7 @@ const SignUp = () => {
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   };
-  
+
   const handleCloseModal = useCallback(() => {
     if (modalState.status === "success") {
       navigate("/login");
@@ -167,44 +167,90 @@ const SignUp = () => {
           alt="Logo UNEG"
           className="mx-auto w-24 h-24"
         />
-        <h1 className="text-2xl font-bold text-white mt-4">Registro de Usuario</h1> 
+        <h1 className="text-2xl font-bold text-white mt-4">
+          Registro de Usuario
+        </h1>
 
         {/* -------------------- INICIO CAMPOS AGRUPADOS -------------------- */}
-        
+
         {/* Nombre y Apellido en la misma línea */}
-        <Box 
-          sx={{ 
-            display: "flex", 
-            width: "90%", 
+        <Box
+          sx={{
+            display: "flex",
+            width: "90%",
             gap: 2, // Espacio entre campos
             alignItems: "flex-end",
-            marginBottom: 2
+            marginBottom: 2,
           }}
         >
           {/* Nombre */}
           <Box sx={{ display: "flex", alignItems: "flex-end", flex: 1 }}>
-            <PersonOutlineOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
-            <TextField fullWidth label="Nombre" name="nombre" value={formData.nombre} onChange={handleInput} variant="standard" />
+            <PersonOutlineOutlinedIcon
+              sx={{ color: "action.active", mr: 1, my: 0.5 }}
+            />
+            <TextField
+              fullWidth
+              label="Nombre"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleInput}
+              variant="standard"
+            />
           </Box>
           {/* Apellido */}
           <Box sx={{ display: "flex", alignItems: "flex-end", flex: 1 }}>
-            <PersonOutlineOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
-            <TextField fullWidth label="Apellido" name="apellido" value={formData.apellido} onChange={handleInput} variant="standard" />
+            <PersonOutlineOutlinedIcon
+              sx={{ color: "action.active", mr: 1, my: 0.5 }}
+            />
+            <TextField
+              fullWidth
+              label="Apellido"
+              name="apellido"
+              value={formData.apellido}
+              onChange={handleInput}
+              variant="standard"
+            />
           </Box>
         </Box>
 
         {/* Correo (mantiene columna completa) */}
-        <Box sx={{ display: "flex", alignItems: "flex-end", width: "90%", marginBottom: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-end",
+            width: "90%",
+            marginBottom: 2,
+          }}
+        >
           <MailOutlineIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
-          <TextField fullWidth label="Correo" name="email" type="email" value={formData.email} onChange={handleInput} variant="standard" />
+          <TextField
+            fullWidth
+            label="Correo"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleInput}
+            variant="standard"
+          />
         </Box>
 
         {/* Tipo de usuario (mantiene columna completa) */}
-        <Box sx={{ display: "flex", alignItems: "flex-end", width: "90%", marginBottom: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-end",
+            width: "90%",
+            marginBottom: 2,
+          }}
+        >
           <BadgeOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
           <FormControl variant="standard" fullWidth>
             <InputLabel>Tipo de Usuario</InputLabel>
-            <Select name="user_type" value={formData.user_type} onChange={handleInput}>
+            <Select
+              name="user_type"
+              value={formData.user_type}
+              onChange={handleInput}
+            >
               <MenuItem value="Encargado">Encargado</MenuItem>
               <MenuItem value="Profesor">Profesor</MenuItem>
               <MenuItem value="Estudiante">Estudiante</MenuItem>
@@ -213,59 +259,130 @@ const SignUp = () => {
         </Box>
 
         {/* Cédula (tipo y número) en la misma línea */}
-        <Box 
-          sx={{ 
-            display: "flex", 
-            alignItems: "flex-end", 
-            width: "90%", 
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-end",
+            width: "90%",
             marginBottom: 2,
-            gap: 1 // Espacio reducido para cédula
+            gap: 1, // Espacio reducido para cédula
           }}
         >
           <BadgeOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
           {/* Tipo de Cédula (ocupa menos espacio) */}
           <FormControl variant="standard" sx={{ minWidth: 80 }}>
             <InputLabel>Tipo</InputLabel>
-            <Select name="ci_type" value={formData.ci_type} onChange={handleInput}>
+            <Select
+              name="ci_type"
+              value={formData.ci_type}
+              onChange={handleInput}
+            >
               <MenuItem value="V">V</MenuItem>
               <MenuItem value="E">E</MenuItem>
             </Select>
           </FormControl>
-          <NumbersOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
+          <NumbersOutlinedIcon
+            sx={{ color: "action.active", mr: 1, my: 0.5 }}
+          />
           {/* Número de Cédula (ocupa el resto del espacio) */}
-          <TextField fullWidth label="Cédula" name="ci" type="number" value={formData.ci} onChange={handleInput} variant="standard" />
+          <TextField
+            fullWidth
+            label="Cédula"
+            name="ci"
+            type="number"
+            value={formData.ci}
+            onChange={handleInput}
+            variant="standard"
+          />
         </Box>
-        
+
         {/* -------------------- FIN CAMPOS AGRUPADOS -------------------- */}
 
-
         {/* Teléfono (mantiene columna completa) */}
-        <Box sx={{ display: "flex", alignItems: "flex-end", width: "90%", marginBottom: 2 }}>
-          <LocalPhoneOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
-          <TextField fullWidth label="Teléfono" name="telefono" type="tel" value={formData.telefono} onChange={handleInput} variant="standard" />
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-end",
+            width: "90%",
+            marginBottom: 2,
+          }}
+        >
+          <LocalPhoneOutlinedIcon
+            sx={{ color: "action.active", mr: 1, my: 0.5 }}
+          />
+          <TextField
+            fullWidth
+            label="Teléfono"
+            name="telefono"
+            type="tel"
+            value={formData.telefono}
+            onChange={handleInput}
+            variant="standard"
+          />
         </Box>
 
         {/* Sede (mantiene columna completa) */}
-        <Box sx={{ display: "flex", alignItems: "flex-end", width: "90%", marginBottom: 2 }}>
-          <LocationCityOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-end",
+            width: "90%",
+            marginBottom: 2,
+          }}
+        >
+          <LocationCityOutlinedIcon
+            sx={{ color: "action.active", mr: 1, my: 0.5 }}
+          />
           <FormControl fullWidth variant="standard">
             <InputLabel>Sede</InputLabel>
-            <Select name="id_sede" value={formData.id_sede} onChange={handleInput}>
-              {sedeOptions && sedeOptions.map((sede) => (
-                <MenuItem key={sede.id} value={sede.id}>{sede.nombre}</MenuItem>
-              ))}
+            <Select
+              name="id_sede"
+              value={formData.id_sede}
+              onChange={handleInput}
+            >
+              {sedeOptions &&
+                sedeOptions.map((sede) => (
+                  <MenuItem key={sede.id} value={sede.id}>
+                    {sede.nombre}
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
         </Box>
 
         {/* Contraseña (mantiene columna completa) */}
-        <Box sx={{ display: "flex", alignItems: "flex-end", width: "90%", marginBottom: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-end",
+            width: "90%",
+            marginBottom: 2,
+          }}
+        >
           <LockOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
-          <TextField fullWidth label="Contraseña" name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleInput} variant="standard" InputProps={{ endAdornment: (
-            <InputAdornment position="end">
-              <IconButton aria-label="toggle password visibility" onClick={handleClickShowPassword} onMouseDown={handleMouseDownPassword} edge="end">{showPassword ? <VisibilityOff /> : <Visibility />}</IconButton>
-            </InputAdornment>
-          ), }} />
+          <TextField
+            fullWidth
+            label="Contraseña"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={formData.password}
+            onChange={handleInput}
+            variant="standard"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={handleClickShowPassword}
+                    onMouseDown={handleMouseDownPassword}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
         </Box>
         <p className="text-white">
           ¿Ya tienes una cuenta?{" "}

@@ -11,7 +11,6 @@ const SearchBar = ({
 }) => {
   const [tesisABuscar, setTesisABuscar] = useState("");
 
-  // Debounce function to limit API calls
   const debounce = (func, delay) => {
     let timeoutId;
     return (...args) => {
@@ -20,7 +19,6 @@ const SearchBar = ({
     };
   };
 
-  // Function to fetch search results
   const fetchtesisEncontradas = useCallback(async (query) => {
     if (!query.trim()) {
       setTesisEncontradas([]);
@@ -44,7 +42,6 @@ const SearchBar = ({
     }
   }, []);
 
-  // Debounced version of fetchtesisEncontradas
   const debouncedFetch = useCallback(debounce(fetchtesisEncontradas, 300), [
     fetchtesisEncontradas,
   ]);

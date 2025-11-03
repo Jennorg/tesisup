@@ -5,7 +5,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
-// Asegúrate de importar tu modal de carga
 import LoadingModal from "@/hooks/Modals/LoadingModal";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
@@ -52,7 +51,6 @@ const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
       });
     } finally {
       setIsDeleting(false);
-      // El modal se cierra solo después de 1 segundo (definido en LoadingModal.jsx)
     }
   };
   return { handleDelete, isDeleting };
@@ -137,10 +135,8 @@ const Card = ({ data, isLoading = false, onTesisDeleted }) => {
     message: "",
   });
 
-  // 💡 NOTA: La lógica del hook ahora se ejecuta SOLO si 'data' existe.
-  // Esto es crucial para evitar el error "reading 'id'".
   const { handleDelete, isDeleting } = useDeleteTesis(
-    data?.id, // Pasamos data.id (con optional chaining por si acaso)
+    data?.id, 
     onTesisDeleted,
     setModalState
   );

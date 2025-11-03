@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
-const CardList = ({ filters }) => { 
+const CardList = ({ filters }) => {
   const [tesis, setTesis] = useState([]);
   const [data, setData] = useState({
     profesores: [],
@@ -16,16 +16,15 @@ const CardList = ({ filters }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredTesis, setFilteredTesis] = useState([]);
-  
+
   // ESTADO CLAVE: Contador para forzar la recarga
-  const [reloadCounter, setReloadCounter] = useState(0); 
+  const [reloadCounter, setReloadCounter] = useState(0);
 
   // FUNCIÓN CLAVE: Llama a esta función después de una eliminación exitosa
   const handleTesisDeleted = useCallback(() => {
     // Incrementar el contador para disparar el useEffect
-    setReloadCounter(prev => prev + 1);
+    setReloadCounter((prev) => prev + 1);
   }, []);
-
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -33,7 +32,7 @@ const CardList = ({ filters }) => {
     try {
       const [tesisRes, profesoresRes, encargadosRes, estudiantesRes] =
         await Promise.all([
-          axios.get(`${VITE_API_URL}/tesis`), 
+          axios.get(`${VITE_API_URL}/tesis`),
           axios.get(`${VITE_API_URL}/profesor`),
           axios.get(`${VITE_API_URL}/encargado`),
           axios.get(`${VITE_API_URL}/estudiantes`),
@@ -51,13 +50,12 @@ const CardList = ({ filters }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [reloadCounter]); 
+  }, [reloadCounter]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]); 
+  }, [fetchData]);
 
-  // Apply client-side filters whenever tesis/data/filters change
   useEffect(() => {
     if (!filters) {
       setFilteredTesis(tesis);
@@ -74,69 +72,74 @@ const CardList = ({ filters }) => {
     const fechaHasta = filters.fechaHasta || null;
 
     const getId = (val) => {
-        if (val === null || val === undefined || val === "") return null;
-        if (typeof val === "object") return Number(val.ci ?? val.id ?? null);
-        return Number(val);
+      if (val === null || val === undefined || val === "") return null;
+      if (typeof val === "object") return Number(val.ci ?? val.id ?? null);
+      return Number(val);
     };
 
     const result = tesis.filter((t) => {
-        // Nombre
-        if (fNombre) {
-            const nombre = (t.nombre || t.titulo || "").toLowerCase();
-            if (!nombre.includes(fNombre)) return false;
-        }
+      // Nombre
+      if (fNombre) {
+        const nombre = (t.nombre || t.titulo || "").toLowerCase();
+        if (!nombre.includes(fNombre)) return false;
+      }
 
-        // Autor
-        if (fAutor) {
-            const autoresArr = t.autores || [];
-            const hasAutor = autoresArr.some((a) => Number(a.ci) === Number(fAutor));
-            if (!hasAutor) return false;
-        }
+      // Autor
+      if (fAutor) {
+        const autoresArr = t.autores || [];
+        const hasAutor = autoresArr.some(
+          (a) => Number(a.ci) === Number(fAutor)
+        );
+        if (!hasAutor) return false;
+      }
 
-        // Encargado
-        if (fEncargado) {
-            const thesisEncargadoId = getId(t.id_encargado ?? t.encargado ?? (t.encargado_data || null));
-            if (thesisEncargadoId === null) return false;
-            if (thesisEncargadoId !== Number(fEncargado)) return false;
-        }
+      // Encargado
+      if (fEncargado) {
+        const thesisEncargadoId = getId(
+          t.id_encargado ?? t.encargado ?? (t.encargado_data || null)
+        );
+        if (thesisEncargadoId === null) return false;
+        if (thesisEncargadoId !== Number(fEncargado)) return false;
+      }
 
-        // Tutor
-        if (fTutor) {
-            const thesisTutorId = getId(t.id_tutor ?? t.tutor ?? (t.tutor_data || null));
-            if (thesisTutorId === null) return false;
-            if (thesisTutorId !== Number(fTutor)) return false;
-        }
+      // Tutor
+      if (fTutor) {
+        const thesisTutorId = getId(
+          t.id_tutor ?? t.tutor ?? (t.tutor_data || null)
+        );
+        if (thesisTutorId === null) return false;
+        if (thesisTutorId !== Number(fTutor)) return false;
+      }
 
-        // Sede
-        if (fSede) {
-            if (String(t.id_sede) !== String(fSede)) return false;
-        }
+      // Sede
+      if (fSede) {
+        if (String(t.id_sede) !== String(fSede)) return false;
+      }
 
-        // Estado
-        if (fEstado) {
-            if (String(t.estado) !== String(fEstado)) return false;
-        }
+      // Estado
+      if (fEstado) {
+        if (String(t.estado) !== String(fEstado)) return false;
+      }
 
-        // Fecha range
-        if (fechaDesde || fechaHasta) {
-            if (!t.fecha) return false;
-            const tesisDate = dayjs(t.fecha);
-            if (fechaDesde && tesisDate.isBefore(dayjs(fechaDesde), "day")) {
-                return false;
-            }
-            if (fechaHasta && tesisDate.isAfter(dayjs(fechaHasta), "day")) {
-                return false;
-            }
+      // Fecha range
+      if (fechaDesde || fechaHasta) {
+        if (!t.fecha) return false;
+        const tesisDate = dayjs(t.fecha);
+        if (fechaDesde && tesisDate.isBefore(dayjs(fechaDesde), "day")) {
+          return false;
         }
+        if (fechaHasta && tesisDate.isAfter(dayjs(fechaHasta), "day")) {
+          return false;
+        }
+      }
 
-        return true;
+      return true;
     });
 
     setFilteredTesis(result);
   }, [tesis, data, filters]);
 
   const getFullTesisData = (tesisItem) => {
-    // ... Tu lógica para encontrar autor, tutor y encargado por CI ...
     const autor = data.estudiantes.find(
       (e) => String(e.ci) === String(tesisItem.id_estudiante)
     );
@@ -166,11 +169,10 @@ const CardList = ({ filters }) => {
                 key={tesisItem.id_tesis || tesisItem.id || tesisItem.nombre}
                 className="w-full"
               >
-                {/* VERIFICACIÓN DE SEGURIDAD: Solo renderiza si tesisItem NO es null/undefined */}
                 {tesisItem && (
-                  <Card 
-                    data={getFullTesisData(tesisItem)} 
-                    onTesisDeleted={handleTesisDeleted} 
+                  <Card
+                    data={getFullTesisData(tesisItem)}
+                    onTesisDeleted={handleTesisDeleted}
                   />
                 )}
               </li>
@@ -178,7 +180,10 @@ const CardList = ({ filters }) => {
 
         {error && !isLoading && (
           <li className="col-span-full">
-            <p className="text-center py-8" style={{ color: 'var(--error-main)' }}>
+            <p
+              className="text-center py-8"
+              style={{ color: "var(--error-main)" }}
+            >
               Error al cargar las tesis: {error.message}
             </p>
           </li>
@@ -186,8 +191,11 @@ const CardList = ({ filters }) => {
 
         {!isLoading && !error && filteredTesis.length === 0 && (
           <li className="col-span-full">
-            <p className="text-center py-8" style={{ color: 'var(--text-secondary)' }}>
-              No hay tesis disponibles.
+            <p
+              className="text-center py-8"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              No se encontraron tesis disponibles
             </p>
           </li>
         )}

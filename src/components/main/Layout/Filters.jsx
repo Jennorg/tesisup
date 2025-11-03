@@ -38,7 +38,6 @@ const Filters = ({ onClose, onApply }) => {
     sedes: [],
   });
 
-  // Asegurarse que estos estados coincidan con los valores que guarda el backend
   const estados = ["aprobado", "rechazado", "pendiente", "en revisión"]; // Asumiendo que estos son estáticos
 
   useEffect(() => {
@@ -91,7 +90,6 @@ const Filters = ({ onClose, onApply }) => {
   const handleClearFilters = () => {
     setFilters(initialFilters);
     console.log("Filtros limpiados");
-    // Notify parent that filters were cleared
     onApply?.(initialFilters);
   };
 

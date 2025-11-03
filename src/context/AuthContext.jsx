@@ -14,14 +14,10 @@ export const AuthProvider = ({ children }) => {
           setUser(JSON.parse(storedUser));
         } catch (error) {
           console.error("Failed to parse user from localStorage", error);
-          // Optionally, clear the corrupted user data
           localStorage.removeItem("user");
         }
       }
     } else if (token === "null" || token === "undefined") {
-      // If the token is explicitly the string "null" or "undefined",
-      // it indicates a logout or an invalid state.
-      // We should clear any lingering user data.
       logout();
     }
   }, [token]);

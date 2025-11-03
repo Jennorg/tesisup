@@ -200,9 +200,7 @@ const TesisForm = forwardRef((props, ref) => {
     if (fileInputRef.current) {
       try {
         fileInputRef.current.value = "";
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
   };
 
@@ -310,7 +308,10 @@ const TesisForm = forwardRef((props, ref) => {
               ) || null
             }
             onChange={(event, newValue) => {
-              handleInputChange("id_estudiante", newValue ? String(newValue.ci) : "");
+              handleInputChange(
+                "id_estudiante",
+                newValue ? String(newValue.ci) : ""
+              );
             }}
             renderInput={(params) => (
               <TextField
@@ -333,7 +334,10 @@ const TesisForm = forwardRef((props, ref) => {
               ) || null
             }
             onChange={(event, newValue) => {
-              handleInputChange("id_tutor", newValue ? String(newValue.ci) : "");
+              handleInputChange(
+                "id_tutor",
+                newValue ? String(newValue.ci) : ""
+              );
             }}
             renderInput={(params) => (
               <TextField {...params} label="Tutor" variant="filled" fullWidth />
@@ -351,7 +355,10 @@ const TesisForm = forwardRef((props, ref) => {
               ) || null
             }
             onChange={(event, newValue) => {
-              handleInputChange("id_encargado", newValue ? String(newValue.ci) : "");
+              handleInputChange(
+                "id_encargado",
+                newValue ? String(newValue.ci) : ""
+              );
             }}
             renderInput={(params) => (
               <TextField

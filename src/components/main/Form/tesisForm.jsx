@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import axios from "axios";
 import {
+  Autocomplete,
   TextField,
   Select,
   MenuItem,
@@ -55,10 +56,6 @@ const TesisForm = forwardRef((props, ref) => {
     estado: "",
     archivo_pdf: null,
     modo_envio: "normal",
-    // Campos para crear nuevo tutor
-    nuevo_tutor_cedula: "",
-    nuevo_tutor_nombre: "",
-    nuevo_tutor_apellido: "",
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -77,7 +74,6 @@ const TesisForm = forwardRef((props, ref) => {
   });
 
   const estados = ["Aprobado", "Rechazado", "Pendiente", "en revisión"];
-  const NUEVO_ITEM_VALUE = "new";
 
   const loadFormOptions = useCallback(async () => {
     try {
@@ -110,21 +106,8 @@ const TesisForm = forwardRef((props, ref) => {
     loadFormOptions();
   }, [loadFormOptions]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => {
-      const newState = { ...prev, [name]: value };
-
-      // Limpiar campos si se cambia de "Crear Nuevo" a una selección existente
-      if (name === "id_tutor" && value !== NUEVO_ITEM_VALUE) {
-        newState.nuevo_tutor_cedula = "";
-        newState.nuevo_tutor_nombre = "";
-        newState.nuevo_tutor_apellido = "";
-      }
-
-      return newState;
-    });
+  const handleInputChange = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleDateChange = (date) => {
@@ -169,12 +152,6 @@ const TesisForm = forwardRef((props, ref) => {
     const datos = new FormData();
 
     Object.keys(formData).forEach((key) => {
-      if (
-        key.startsWith("nuevo_tutor_") &&
-        formData.id_tutor !== NUEVO_ITEM_VALUE
-      )
-        return;
-
       if (key === "archivo_pdf") {
         if (formData[key]) datos.append("archivo_pdf", formData[key]);
       } else if (key === "fecha" && formData[key]) {
@@ -196,22 +173,18 @@ const TesisForm = forwardRef((props, ref) => {
       });
 
       console.log(res.data);
-      // On success: show success modal, then clear form and close (handled on modal close)
       setModalState({
         isOpen: true,
         status: "success",
         message: "Tesis subida correctamente",
       });
 
-      if (formData.id_tutor === NUEVO_ITEM_VALUE) {
-        loadFormOptions();
-      }
+      loadFormOptions();
     } catch (err) {
       console.error(
         "Error al enviar:",
         err.response?.data?.error || err.message
       );
-      // Show error modal but keep form as-is so user can edit
       setModalState({
         isOpen: true,
         status: "error",
@@ -224,7 +197,6 @@ const TesisForm = forwardRef((props, ref) => {
 
   const clearForm = () => {
     setFormData(initialFormData);
-    // Clear file input DOM value if present
     if (fileInputRef.current) {
       try {
         fileInputRef.current.value = "";
@@ -235,15 +207,11 @@ const TesisForm = forwardRef((props, ref) => {
   };
 
   const handleModalClose = () => {
-    // Called by LoadingModal after success/error display timeout
     if (modalState.status === "success") {
-      // clear form and request parent to close the form overlay (if provided)
       clearForm();
       props.onSuccess?.();
       props.onClose?.();
     }
-
-    // Always close the modal
     setModalState((s) => ({ ...s, isOpen: false }));
   };
 
@@ -268,7 +236,7 @@ const TesisForm = forwardRef((props, ref) => {
           Formulario de Tesis
         </h1>
 
-        <div className="flex flex-col gap-4 overflow-y-scroll max-h-[80vh] pr-2">
+        <div className="flex flex-col gap-3 overflow-hidden pr-2">
           <FormControl variant="filled" fullWidth>
             <InputLabel id="modo-envio-label">
               ¿Cómo desea subir la tesis?
@@ -278,7 +246,7 @@ const TesisForm = forwardRef((props, ref) => {
               id="modo-envio-select"
               name="modo_envio"
               value={formData.modo_envio}
-              onChange={handleInputChange}
+              onChange={(e) => handleInputChange(e.target.name, e.target.value)}
             >
               <MenuItem value="normal">Subir archivo PDF</MenuItem>
               <MenuItem value="digitalizar">
@@ -329,134 +297,89 @@ const TesisForm = forwardRef((props, ref) => {
             name="nombre"
             variant="filled"
             value={formData.nombre}
-            onChange={handleInputChange}
+            onChange={(e) => handleInputChange(e.target.name, e.target.value)}
           />
 
-          <FormControl variant="filled" fullWidth>
-            <InputLabel id="estudiante-label">Autor/Estudiante</InputLabel>
-            <Select
-              labelId="estudiante-label"
-              id="estudiante-select"
-              name="id_estudiante"
-              value={formData.id_estudiante}
-              onChange={handleInputChange}
-            >
-              {dropdownOptions.estudiantes.length === 0 ? (
-                <MenuItem disabled>No hay estudiantes registrados</MenuItem>
-              ) : (
-                dropdownOptions.estudiantes.map((estudiante) => (
-                  <MenuItem key={estudiante.ci} value={String(estudiante.ci)}>
-                    {estudiante.nombre_completo || estudiante.nombre}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </FormControl>
-
-          <FormControl variant="filled" fullWidth>
-            <InputLabel id="tutor-label">Tutor</InputLabel>
-            <Select
-              labelId="tutor-label"
-              id="tutor-select"
-              name="id_tutor"
-              value={formData.id_tutor}
-              onChange={handleInputChange}
-            >
-              {dropdownOptions.profesores.length === 0 ? (
-                <MenuItem disabled>No hay profesores registrados</MenuItem>
-              ) : (
-                dropdownOptions.profesores.map((profesore) => (
-                  <MenuItem key={profesore.ci} value={String(profesore.ci)}>
-                    {profesore.nombre_completo || profesore.nombre}
-                  </MenuItem>
-                ))
-              )}
-              <MenuItem key="new-tutor" value={NUEVO_ITEM_VALUE}>
-                <span style={{ fontStyle: "italic", color: "grey" }}>
-                  Crear Nuevo Tutor...
-                </span>
-              </MenuItem>
-            </Select>
-          </FormControl>
-          {formData.id_tutor === NUEVO_ITEM_VALUE && (
-            <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 2, mt: -2 }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 2,
-                  flexDirection: { xs: "column", sm: "row" },
-                }}
-              >
-                <TextField
-                  fullWidth
-                  label="Nombre"
-                  name="nuevo_tutor_nombre"
-                  variant="filled"
-                  value={formData.nuevo_tutor_nombre}
-                  onChange={handleInputChange}
-                  required
-                />
-                <TextField
-                  fullWidth
-                  label="Apellido"
-                  name="nuevo_tutor_apellido"
-                  variant="filled"
-                  value={formData.nuevo_tutor_apellido}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Box>
+          <Autocomplete
+            id="estudiante-select"
+            options={dropdownOptions.estudiantes}
+            getOptionLabel={(option) => option.nombre_completo || option.nombre}
+            value={
+              dropdownOptions.estudiantes.find(
+                (e) => String(e.ci) === formData.id_estudiante
+              ) || null
+            }
+            onChange={(event, newValue) => {
+              handleInputChange("id_estudiante", newValue ? String(newValue.ci) : "");
+            }}
+            renderInput={(params) => (
               <TextField
-                fullWidth
-                label="Cédula"
-                name="nuevo_tutor_cedula"
+                {...params}
+                label="Autor/Estudiante"
                 variant="filled"
-                value={formData.nuevo_tutor_cedula}
-                onChange={handleInputChange}
-                required
+                fullWidth
               />
-            </Box>
-          )}
+            )}
+            noOptionsText="No hay estudiantes registrados"
+          />
 
-          <FormControl variant="filled" fullWidth>
-            <InputLabel id="encargado-label">Encargado</InputLabel>
-            <Select
-              labelId="encargado-label"
-              id="encargado-select"
-              name="id_encargado"
-              value={formData.id_encargado}
-              onChange={handleInputChange}
-            >
-              {dropdownOptions.encargados.length === 0 ? (
-                <MenuItem disabled>No hay encargados registrados</MenuItem>
-              ) : (
-                dropdownOptions.encargados.map((encargado) => (
-                  <MenuItem key={encargado.ci} value={String(encargado.ci)}>
-                    {encargado.nombre_completo || encargado.nombre}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            id="tutor-select"
+            options={dropdownOptions.profesores}
+            getOptionLabel={(option) => option.nombre_completo || option.nombre}
+            value={
+              dropdownOptions.profesores.find(
+                (p) => String(p.ci) === formData.id_tutor
+              ) || null
+            }
+            onChange={(event, newValue) => {
+              handleInputChange("id_tutor", newValue ? String(newValue.ci) : "");
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Tutor" variant="filled" fullWidth />
+            )}
+            noOptionsText="No hay profesores registrados"
+          />
 
-          <FormControl variant="filled" fullWidth>
-            <InputLabel id="sede-label">Sede</InputLabel>
-            <Select
-              labelId="sede-label"
-              id="sede-select"
-              name="id_sede"
-              value={formData.id_sede}
-              onChange={handleInputChange}
-            >
-              {dropdownOptions.sedes.map((sede) => (
-                <MenuItem key={sede.id} value={sede.id}>
-                  {sede.nombre}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            id="encargado-select"
+            options={dropdownOptions.encargados}
+            getOptionLabel={(option) => option.nombre_completo || option.nombre}
+            value={
+              dropdownOptions.encargados.find(
+                (e) => String(e.ci) === formData.id_encargado
+              ) || null
+            }
+            onChange={(event, newValue) => {
+              handleInputChange("id_encargado", newValue ? String(newValue.ci) : "");
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Encargado"
+                variant="filled"
+                fullWidth
+              />
+            )}
+            noOptionsText="No hay encargados registrados"
+          />
+
+          <Autocomplete
+            id="sede-select"
+            options={dropdownOptions.sedes}
+            getOptionLabel={(option) => option.nombre}
+            value={
+              dropdownOptions.sedes.find((s) => s.id === formData.id_sede) ||
+              null
+            }
+            onChange={(event, newValue) => {
+              handleInputChange("id_sede", newValue ? newValue.id : "");
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Sede" variant="filled" fullWidth />
+            )}
+            noOptionsText="No hay sedes registradas"
+          />
 
           <DatePicker
             label="Fecha de aprobación"
@@ -478,7 +401,7 @@ const TesisForm = forwardRef((props, ref) => {
               id="estado-select"
               name="estado"
               value={formData.estado}
-              onChange={handleInputChange}
+              onChange={(e) => handleInputChange(e.target.name, e.target.value)}
             >
               {estados.map((estado) => (
                 <MenuItem key={estado} value={estado}>

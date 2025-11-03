@@ -1,4 +1,3 @@
-// LoadingModal.jsx
 import { useEffect } from "react";
 import { FaSpinner, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -28,7 +27,7 @@ export default function LoadingModal({
     if (status === "success" || status === "error") {
       const timeout = setTimeout(() => {
         onClose?.(); // Llama a la función para cerrar el modal
-      }, 1000); // 1 segundo
+      }, 3000); // 3 segundos
 
       return () => clearTimeout(timeout);
     }

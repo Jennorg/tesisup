@@ -7,8 +7,6 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Button from "@mui/material/Button";
-import DeleteIcon from "@mui/icons-material/Delete";
-import DownloadIcon from "@mui/icons-material/Download";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
@@ -111,9 +109,11 @@ const Filters = ({ onClose, onApply }) => {
       <Box
         sx={{
           height: "100%",
-          bgcolor: "rgba(31, 41, 55, 0.95)",
+          bgcolor: "background.paper",
+          color: "text.primary",
           backdropFilter: "blur(10px)",
-          borderRight: "1px solid rgba(75, 85, 99, 0.3)",
+          borderRight: 1,
+          borderColor: "divider",
           display: "flex",
           flexDirection: "column",
         }}
@@ -122,17 +122,22 @@ const Filters = ({ onClose, onApply }) => {
         <Box
           sx={{
             p: 2,
-            borderBottom: "1px solid rgba(75, 85, 99, 0.3)",
+            borderBottom: 1,
+            borderColor: "divider",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
           }}
         >
-          <Typography variant="h6" sx={{ color: "white", fontWeight: "bold" }}>
+          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
             Filtros
           </Typography>
           {onClose && (
-            <IconButton onClick={onClose} sx={{ color: "white" }} size="small">
+            <IconButton
+              onClick={onClose}
+              sx={{ color: "text.primary" }}
+              size="small"
+            >
               <CloseIcon />
             </IconButton>
           )}
@@ -160,65 +165,25 @@ const Filters = ({ onClose, onApply }) => {
             value={filters.nombre}
             onChange={handleInputChange}
             fullWidth
-            sx={{
-              "& .MuiFilledInput-root": {
-                bgcolor: "rgba(55, 65, 81, 0.5)",
-                "&:hover": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "&.Mui-focused": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "rgba(156, 163, 175, 0.8)",
-                "&.Mui-focused": {
-                  color: "#60A5FA",
-                },
-              },
-              "& .MuiFilledInput-input": {
-                color: "white",
-              },
-            }}
           />
 
           <FormControl variant="filled" fullWidth>
-            <InputLabel
-              id="autor-label"
-              sx={{
-                color: "rgba(156, 163, 175, 0.8)",
-                "&.Mui-focused": {
-                  color: "#60A5FA",
-                },
-              }}
-            >
-              Autor
-            </InputLabel>
+            <InputLabel id="autor-label">Autor</InputLabel>
             <Select
               labelId="autor-label"
               id="autor-select"
               name="autor"
               value={filters.autor}
               onChange={handleInputChange}
-              sx={{
-                bgcolor: "rgba(55, 65, 81, 0.5)",
-                color: "white",
-                "&:hover": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "&.Mui-focused": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "& .MuiSvgIcon-root": {
-                  color: "white",
-                },
-              }}
             >
               <MenuItem value="">
                 <em>Ninguno</em>
               </MenuItem>
               {dropdownOptions.autores.map((autor) => (
-                <MenuItem key={autor.ci ?? autor.id} value={autor.ci ?? autor.id}>
+                <MenuItem
+                  key={autor.ci ?? autor.id}
+                  value={autor.ci ?? autor.id}
+                >
                   {autor.nombre_completo || autor.nombre}
                 </MenuItem>
               ))}
@@ -226,42 +191,22 @@ const Filters = ({ onClose, onApply }) => {
           </FormControl>
 
           <FormControl variant="filled" fullWidth>
-            <InputLabel
-              id="encargado-label"
-              sx={{
-                color: "rgba(156, 163, 175, 0.8)",
-                "&.Mui-focused": {
-                  color: "#60A5FA",
-                },
-              }}
-            >
-              Encargado
-            </InputLabel>
+            <InputLabel id="encargado-label">Encargado</InputLabel>
             <Select
               labelId="encargado-label"
               id="encargado-select"
               name="encargado"
               value={filters.encargado}
               onChange={handleInputChange}
-              sx={{
-                bgcolor: "rgba(55, 65, 81, 0.5)",
-                color: "white",
-                "&:hover": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "&.Mui-focused": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "& .MuiSvgIcon-root": {
-                  color: "white",
-                },
-              }}
             >
               <MenuItem value="">
                 <em>Ninguno</em>
               </MenuItem>
               {dropdownOptions.encargados.map((encargado) => (
-                <MenuItem key={encargado.ci ?? encargado.id} value={encargado.ci ?? encargado.id}>
+                <MenuItem
+                  key={encargado.ci ?? encargado.id}
+                  value={encargado.ci ?? encargado.id}
+                >
                   {encargado.nombre_completo || encargado.nombre}
                 </MenuItem>
               ))}
@@ -271,7 +216,7 @@ const Filters = ({ onClose, onApply }) => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
               gap: 2,
               mb: 2,
             }}
@@ -285,26 +230,6 @@ const Filters = ({ onClose, onApply }) => {
                 textField: {
                   variant: "filled",
                   fullWidth: true,
-                  sx: {
-                    "& .MuiFilledInput-root": {
-                      bgcolor: "rgba(55, 65, 81, 0.5)",
-                      "&:hover": {
-                        bgcolor: "rgba(55, 65, 81, 0.7)",
-                      },
-                      "&.Mui-focused": {
-                        bgcolor: "rgba(55, 65, 81, 0.7)",
-                      },
-                    },
-                    "& .MuiInputLabel-root": {
-                      color: "rgba(156, 163, 175, 0.8)",
-                      "&.Mui-focused": {
-                        color: "#60A5FA",
-                      },
-                    },
-                    "& .MuiFilledInput-input": {
-                      color: "white",
-                    },
-                  },
                 },
               }}
             />
@@ -318,68 +243,28 @@ const Filters = ({ onClose, onApply }) => {
                 textField: {
                   variant: "filled",
                   fullWidth: true,
-                  sx: {
-                    "& .MuiFilledInput-root": {
-                      bgcolor: "rgba(55, 65, 81, 0.5)",
-                      "&:hover": {
-                        bgcolor: "rgba(55, 65, 81, 0.7)",
-                      },
-                      "&.Mui-focused": {
-                        bgcolor: "rgba(55, 65, 81, 0.7)",
-                      },
-                    },
-                    "& .MuiInputLabel-root": {
-                      color: "rgba(156, 163, 175, 0.8)",
-                      "&.Mui-focused": {
-                        color: "#60A5FA",
-                      },
-                    },
-                    "& .MuiFilledInput-input": {
-                      color: "white",
-                    },
-                  },
                 },
               }}
             />
           </Box>
 
           <FormControl variant="filled" fullWidth>
-            <InputLabel
-              id="tutor-label"
-              sx={{
-                color: "rgba(156, 163, 175, 0.8)",
-                "&.Mui-focused": {
-                  color: "#60A5FA",
-                },
-              }}
-            >
-              Tutor
-            </InputLabel>
+            <InputLabel id="tutor-label">Tutor</InputLabel>
             <Select
               labelId="tutor-label"
               id="tutor-select"
               name="tutor"
               value={filters.tutor}
               onChange={handleInputChange}
-              sx={{
-                bgcolor: "rgba(55, 65, 81, 0.5)",
-                color: "white",
-                "&:hover": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "&.Mui-focused": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "& .MuiSvgIcon-root": {
-                  color: "white",
-                },
-              }}
             >
               <MenuItem value="">
                 <em>Ninguno</em>
               </MenuItem>
               {dropdownOptions.tutores.map((tutor) => (
-                <MenuItem key={tutor.ci ?? tutor.id} value={tutor.ci ?? tutor.id}>
+                <MenuItem
+                  key={tutor.ci ?? tutor.id}
+                  value={tutor.ci ?? tutor.id}
+                >
                   {tutor.nombre_completo || tutor.nombre}
                 </MenuItem>
               ))}
@@ -387,36 +272,13 @@ const Filters = ({ onClose, onApply }) => {
           </FormControl>
 
           <FormControl variant="filled" fullWidth>
-            <InputLabel
-              id="sede-label"
-              sx={{
-                color: "rgba(156, 163, 175, 0.8)",
-                "&.Mui-focused": {
-                  color: "#60A5FA",
-                },
-              }}
-            >
-              Sede
-            </InputLabel>
+            <InputLabel id="sede-label">Sede</InputLabel>
             <Select
               labelId="sede-label"
               id="sede-select"
               name="sede"
               value={filters.sede}
               onChange={handleInputChange}
-              sx={{
-                bgcolor: "rgba(55, 65, 81, 0.5)",
-                color: "white",
-                "&:hover": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "&.Mui-focused": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "& .MuiSvgIcon-root": {
-                  color: "white",
-                },
-              }}
             >
               <MenuItem value="">
                 <em>Ninguno</em>
@@ -430,36 +292,13 @@ const Filters = ({ onClose, onApply }) => {
           </FormControl>
 
           <FormControl variant="filled" fullWidth>
-            <InputLabel
-              id="estado-label"
-              sx={{
-                color: "rgba(156, 163, 175, 0.8)",
-                "&.Mui-focused": {
-                  color: "#60A5FA",
-                },
-              }}
-            >
-              Estado
-            </InputLabel>
+            <InputLabel id="estado-label">Estado</InputLabel>
             <Select
               labelId="estado-label"
               id="estado-select"
               name="estado"
               value={filters.estado}
               onChange={handleInputChange}
-              sx={{
-                bgcolor: "rgba(55, 65, 81, 0.5)",
-                color: "white",
-                "&:hover": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "&.Mui-focused": {
-                  bgcolor: "rgba(55, 65, 81, 0.7)",
-                },
-                "& .MuiSvgIcon-root": {
-                  color: "white",
-                },
-              }}
             >
               <MenuItem value="">
                 <em>Ninguno</em>
@@ -477,38 +316,17 @@ const Filters = ({ onClose, onApply }) => {
         <Box
           sx={{
             p: 2,
-            borderTop: "1px solid rgba(75, 85, 99, 0.3)",
+            borderTop: 1,
+            borderColor: "divider",
             display: "flex",
             gap: 1,
           }}
         >
-          <Button
-            variant="outlined"
-            onClick={handleClearFilters}
-            fullWidth
-            sx={{
-              color: "rgba(156, 163, 175, 0.8)",
-              borderColor: "rgba(75, 85, 99, 0.5)",
-              "&:hover": {
-                borderColor: "rgba(75, 85, 99, 0.8)",
-                bgcolor: "rgba(75, 85, 99, 0.1)",
-              },
-            }}
-          >
+          <Button variant="outlined" onClick={handleClearFilters} fullWidth>
             Limpiar
           </Button>
 
-          <Button
-            variant="contained"
-            onClick={handleFilter}
-            fullWidth
-            sx={{
-              bgcolor: "#3B82F6",
-              "&:hover": {
-                bgcolor: "#2563EB",
-              },
-            }}
-          >
+          <Button variant="contained" onClick={handleFilter} fullWidth>
             Filtrar
           </Button>
         </Box>

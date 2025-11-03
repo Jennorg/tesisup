@@ -178,7 +178,7 @@ const CardList = ({ filters }) => {
 
         {error && !isLoading && (
           <li className="col-span-full">
-            <p className="text-red-500 text-center py-8">
+            <p className="text-center py-8" style={{ color: 'var(--error-main)' }}>
               Error al cargar las tesis: {error.message}
             </p>
           </li>
@@ -186,7 +186,7 @@ const CardList = ({ filters }) => {
 
         {!isLoading && !error && filteredTesis.length === 0 && (
           <li className="col-span-full">
-            <p className="text-gray-400 text-center py-8">
+            <p className="text-center py-8" style={{ color: 'var(--text-secondary)' }}>
               No hay tesis disponibles.
             </p>
           </li>

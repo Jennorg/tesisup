@@ -144,7 +144,7 @@ const SignUp = () => {
   }, [modalState.status, navigate]);
 
   return (
-    <div className="flex w-dvw h-dvh bg-gray-800 shadow-lg overflow-hidden">
+    <div className="flex w-dvw h-dvh bg-[var(--background-paper)] shadow-lg overflow-hidden">
       <div className="hidden md:flex flex-1">
         <img
           src="/img/fondo1.jpg"

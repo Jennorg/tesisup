@@ -75,7 +75,7 @@ const Login = () => {
   }, [modalState.status, navigate]);
 
   return (
-    <div className="flex w-dvw h-dvh bg-gray-800 shadow-lg overflow-hidden">
+    <div className="flex w-dvw h-dvh bg-[var(--background-paper)] shadow-lg overflow-hidden">
       <div className="hidden md:flex flex-1">
         <img
           src="/img/fondo1.jpg"
@@ -98,7 +98,7 @@ const Login = () => {
           alt="Logo UNEG"
           className="mx-auto w-24 h-24"
         />
-        <h1 className="text-2xl font-bold text-white">Iniciar sesión</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Iniciar sesión</h1>
         <Box
           sx={{
             display: "flex",
@@ -155,9 +155,9 @@ const Login = () => {
           />
         </Box>
 
-        <p className="text-white">
+        <p className="text-[var(--text-primary)]">
           ¿No tienes una cuenta?{" "}
-          <Link to="/signup" className="text-blue-500 hover:underline">
+          <Link to="/signup" className="text-[var(--primary-main)] hover:underline">
             Regístrate
           </Link>
         </p>
@@ -165,14 +165,14 @@ const Login = () => {
         <div className="flex justify-center gap-10 mt-4">
           <button
             type="button"
-            className="px-4 py-2 bg-red-500 text-white rounded"
+            className="px-4 py-2 bg-[var(--error-main)] text-[var(--primary-contrast-text)] rounded"
             onClick={() => navigate(-1)}
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-green-500 text-white rounded"
+            className="px-4 py-2 bg-[var(--success-main)] text-[var(--primary-contrast-text)] rounded"
             disabled={modalState.isOpen && modalState.status === "loading"}
           >
             {modalState.isOpen && modalState.status === "loading"

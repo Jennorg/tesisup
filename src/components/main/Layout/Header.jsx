@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { ThemeContext } from "@/context/ThemeContext";
 import Aside from "@/components/main/Layout/Aside";
 import SearchBar from "@/components/main/Search/SearchBar";
 import LogoContainer from "@/components/main/Ui/LogoContainer";
@@ -19,6 +20,8 @@ import Divider from "@mui/material/Divider";
 import LogoutIcon from "@mui/icons-material/Logout";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import IconButton from "@mui/material/IconButton";
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 const Header = ({
   isAsideVisible,
@@ -33,6 +36,7 @@ const Header = ({
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
+  const { mode, toggleColorMode } = useContext(ThemeContext);
   const open = Boolean(anchorEl);
 
   const avatarLetter = user?.nombre ? user.nombre.charAt(0).toUpperCase() : "U";
@@ -67,10 +71,14 @@ const Header = ({
       />
       <IconButton
         onClick={() => onToggleFilter(!isFilterVisible)}
-        sx={{ color: "white" }}
+        sx={{ color: 'text.primary' }}
         aria-label="toggle filters"
       >
         <FilterListIcon />
+      </IconButton>
+
+      <IconButton sx={{ ml: 1 }} onClick={toggleColorMode} color="inherit">
+        {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
       </IconButton>
 
       <Avatar

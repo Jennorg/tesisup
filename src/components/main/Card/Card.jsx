@@ -199,40 +199,40 @@ const Card = ({ data, isLoading = false, onTesisDeleted }) => {
         onClose={handleCloseModal}
       />
 
-      <div className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full">
+      <div className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full bg-background-paper">
         <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold text-white line-clamp-2">
+          <h2 className="text-lg font-semibold text-text-primary line-clamp-2">
             {data.nombre}
           </h2>
         </div>
 
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="bg-gray-600 px-3 py-1 rounded-full text-white text-sm">
+          <span className="bg-secondary-main px-3 py-1 rounded-full text-text-primary text-sm">
             {data.estado}
           </span>
-          <span className="text-gray-400 text-sm">
+          <span className="text-text-secondary text-sm">
             {formatDate(data.fecha)}
           </span>
-          <span className="text-gray-400 text-sm">{data.sede}</span>
+          <span className="text-text-secondary text-sm">{data.sede}</span>
         </div>
 
         <div className="space-y-1 flex-1">
           <p className="text-sm">
-            <span className="text-gray-400">Autor:</span>
-            <span className="text-white ml-1">
+            <span className="text-text-secondary">Autor:</span>
+            <span className="text-text-primary ml-1">
               {data.autores?.map((autor) => autor.nombre).join(", ") ||
                 "No asignado"}
             </span>
           </p>
           <p className="text-sm">
-            <span className="text-gray-400">Encargado:</span>
-            <span className="text-white ml-1">
+            <span className="text-text-secondary">Encargado:</span>
+            <span className="text-text-primary ml-1">
               {data.encargado?.nombre || "No asignado"}
             </span>
           </p>
           <p className="text-sm">
-            <span className="text-gray-400">Tutor:</span>
-            <span className="text-white ml-1">
+            <span className="text-text-secondary">Tutor:</span>
+            <span className="text-text-primary ml-1">
               {data.tutor?.nombre || "No asignado"}
             </span>
           </p>
@@ -246,10 +246,10 @@ const Card = ({ data, isLoading = false, onTesisDeleted }) => {
             onClick={handleConfirmDelete}
             disabled={isDeleting || modalState.isOpen}
             sx={{
-              color: "#EF4444",
-              borderColor: "#EF4444",
+              color: "var(--error-main)",
+              borderColor: "var(--error-main)",
               "&:hover": {
-                borderColor: "#DC2626",
+                borderColor: "var(--error-dark)",
                 bgcolor: "rgba(239, 68, 68, 0.1)",
               },
             }}
@@ -267,9 +267,9 @@ const Card = ({ data, isLoading = false, onTesisDeleted }) => {
             }}
             disabled={isDownloading || modalState.isOpen}
             sx={{
-              bgcolor: "#3B82F6",
+              bgcolor: "var(--primary-main)",
               "&:hover": {
-                bgcolor: "#2563EB",
+                bgcolor: "var(--primary-dark)",
               },
             }}
           >

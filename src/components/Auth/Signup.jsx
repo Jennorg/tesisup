@@ -3,6 +3,7 @@ import axios from "axios";
 import handleInputChange from "@/hooks/utils/handleInputChange";
 import { useNavigate, Link } from "react-router-dom";
 import LoadingModal from "@/hooks/Modals/LoadingModal";
+import { useAuth } from "@/context/AuthContext";
 
 import {
   TextField,
@@ -47,6 +48,7 @@ const SignUp = () => {
     message: "",
   });
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
 
   const fetchSedes = async () => {
     try {
@@ -119,6 +121,30 @@ const SignUp = () => {
         status: "success",
         message: `${formData.user_type} creado correctamente.`,
       });
+      // Intentar iniciar sesión automáticamente con las credenciales proporcionadas
+      try {
+        const loginRes = await axios.post(`${import.meta.env.VITE_API_URL}/login`, {
+          email: formData.email,
+          password: formData.password,
+        });
+        const { token, user } = loginRes.data;
+        // Guardar token/usuario en el contexto global
+        authLogin(user, token);
+        // Navegar a la main page ya autenticado
+        navigate("/");
+      } catch (loginErr) {
+        // Si el login automático falla, mostrar mensaje y quedar en la página (o llevar al login)
+        console.warn("Auto-login falló después del registro:", loginErr);
+        setModalState({
+          isOpen: true,
+          status: "error",
+          message:
+            loginErr.response?.data?.error ||
+            "Registro exitoso, pero no se pudo iniciar sesión automáticamente. Inicia sesión manualmente.",
+        });
+        // Redirigir al login para que el usuario inicie sesión manualmente
+        navigate("/login");
+      }
     } catch (err) {
       console.error("Error al enviar:", err);
       setModalState({
@@ -138,7 +164,8 @@ const SignUp = () => {
 
   const handleCloseModal = useCallback(() => {
     if (modalState.status === "success") {
-      navigate("/login");
+      // Redirigir al main (vista principal) tras crear el usuario
+      navigate("/");
     }
     setModalState({ isOpen: false, status: "loading", message: "" });
   }, [modalState.status, navigate]);

@@ -226,16 +226,27 @@ const TesisForm = forwardRef((props, ref) => {
           borderRadius: 2,
           boxShadow: 24,
           maxWidth: "600px",
-          width: "90%",
+          width: "95%",
           mx: "auto",
+          // Estilos para móvil (por defecto)
+          maxHeight: "90vh",
+          display: "grid",
+          gridTemplateRows: "auto 1fr",
+          gap: 2,
         }}
       >
         <h1 className="text-2xl font-bold text-center mb-4">
           Formulario de Tesis
         </h1>
 
-        <div className="flex flex-col gap-3 overflow-hidden pr-2">
-          <FormControl variant="filled" fullWidth>
+        <div
+          className="
+            flex flex-col gap-3 overflow-y-auto flex-grow 
+            [&::-webkit-scrollbar]:w-2
+            [&::-webkit-scrollbar-thumb]:rounded-full
+            [&::-webkit-scrollbar-thumb]:bg-gray-400"
+        >
+          {/* <FormControl variant="filled" fullWidth>
             <InputLabel id="modo-envio-label">
               ¿Cómo desea subir la tesis?
             </InputLabel>
@@ -252,7 +263,7 @@ const TesisForm = forwardRef((props, ref) => {
                 Escanear imagen y convertir a PDF
               </MenuItem>
             </Select>
-          </FormControl>
+          </FormControl> */}
 
           <Box
             component="label"

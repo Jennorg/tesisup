@@ -245,6 +245,7 @@ const TesisForm = forwardRef((props, ref) => {
               name="modo_envio"
               value={formData.modo_envio}
               onChange={(e) => handleInputChange(e.target.name, e.target.value)}
+              disablePortal
             >
               <MenuItem value="normal">Subir archivo PDF</MenuItem>
               <MenuItem value="digitalizar">
@@ -313,6 +314,7 @@ const TesisForm = forwardRef((props, ref) => {
                 newValue ? String(newValue.ci) : ""
               );
             }}
+            disablePortal
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -339,6 +341,7 @@ const TesisForm = forwardRef((props, ref) => {
                 newValue ? String(newValue.ci) : ""
               );
             }}
+            disablePortal
             renderInput={(params) => (
               <TextField {...params} label="Tutor" variant="filled" fullWidth />
             )}
@@ -360,6 +363,7 @@ const TesisForm = forwardRef((props, ref) => {
                 newValue ? String(newValue.ci) : ""
               );
             }}
+            disablePortal
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -382,6 +386,7 @@ const TesisForm = forwardRef((props, ref) => {
             onChange={(event, newValue) => {
               handleInputChange("id_sede", newValue ? newValue.id : "");
             }}
+            disablePortal
             renderInput={(params) => (
               <TextField {...params} label="Sede" variant="filled" fullWidth />
             )}
@@ -394,9 +399,7 @@ const TesisForm = forwardRef((props, ref) => {
             value={formData.fecha}
             onChange={handleDateChange}
             slotProps={{
-              popper: {
-                onMouseDown: (e) => e.stopPropagation(),
-              },
+              popper: { disablePortal: true },
               textField: { variant: "filled", fullWidth: true },
             }}
           />
@@ -409,6 +412,7 @@ const TesisForm = forwardRef((props, ref) => {
               name="estado"
               value={formData.estado}
               onChange={(e) => handleInputChange(e.target.name, e.target.value)}
+              disablePortal
             >
               {estados.map((estado) => (
                 <MenuItem key={estado} value={estado}>

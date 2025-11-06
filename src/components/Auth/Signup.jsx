@@ -167,7 +167,7 @@ const SignUp = () => {
           alt="Logo UNEG"
           className="mx-auto w-24 h-24"
         />
-        <h1 className="text-2xl font-bold text-white mt-4">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">
           Registro de Usuario
         </h1>
 

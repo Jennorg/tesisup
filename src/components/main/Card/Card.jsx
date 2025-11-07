@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import formatDate from "@/hooks/utils/formatDate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
 import LoadingModal from "@/hooks/Modals/LoadingModal";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
@@ -124,6 +126,8 @@ const useDownloadTesis = (tesisId, setModalState) => {
 };
 
 const Card = ({ data, isLoading = false, onTesisDeleted }) => {
+  const navigate = useNavigate();
+
   if (!data && !isLoading) {
     return null;
   }
@@ -134,6 +138,23 @@ const Card = ({ data, isLoading = false, onTesisDeleted }) => {
     status: "loading",
     message: "",
   });
+
+  // Función helper para navegar al perfil
+  const navigateToProfile = (ci, userType) => {
+    if (ci && userType) {
+      navigate(`/profile/${userType}/${ci}`);
+    }
+  };
+
+  // Función para obtener el color según el tipo de usuario
+  const getUserTypeColor = (userType) => {
+    const colors = {
+      estudiante: "#1976d2", // Azul
+      profesor: "#2e7d32", // Verde
+      encargado: "#ed6c02", // Naranja
+    };
+    return colors[userType?.toLowerCase()] || "inherit";
+  };
 
   const { handleDelete, isDeleting } = useDeleteTesis(
     data?.id, 
@@ -216,20 +237,120 @@ const Card = ({ data, isLoading = false, onTesisDeleted }) => {
           <p className="text-sm">
             <span className="text-text-secondary">Autor:</span>
             <span className="text-text-primary ml-1">
-              {data.autores?.map((autor) => autor.nombre).join(", ") ||
-                "No asignado"}
+              {data.autores && data.autores.length > 0 ? (
+                data.autores.map((autor, idx) => (
+                  <React.Fragment key={idx}>
+                    {autor.ci ? (
+                      <Link
+                        component="button"
+                        variant="body2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateToProfile(autor.ci, "estudiante");
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          textDecoration: "none",
+                          color: getUserTypeColor("estudiante"),
+                          fontWeight: 500,
+                          "&:hover": {
+                            textDecoration: "underline",
+                            opacity: 0.8,
+                          },
+                        }}
+                      >
+                        {autor.nombre || autor.nombre_completo}
+                      </Link>
+                    ) : (
+                      <span>{autor.nombre || autor.nombre_completo}</span>
+                    )}
+                    {idx < data.autores.length - 1 && ", "}
+                  </React.Fragment>
+                ))
+              ) : data.autor?.ci ? (
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigateToProfile(data.autor.ci, "estudiante");
+                  }}
+                  sx={{
+                    cursor: "pointer",
+                    textDecoration: "none",
+                    color: getUserTypeColor("estudiante"),
+                    fontWeight: 500,
+                    "&:hover": {
+                      textDecoration: "underline",
+                      opacity: 0.8,
+                    },
+                  }}
+                >
+                  {data.autor.nombre || data.autor.nombre_completo}
+                </Link>
+              ) : (
+                "No asignado"
+              )}
             </span>
           </p>
           <p className="text-sm">
             <span className="text-text-secondary">Encargado:</span>
             <span className="text-text-primary ml-1">
-              {data.encargado?.nombre || "No asignado"}
+              {data.encargado?.ci ? (
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigateToProfile(data.encargado.ci, "encargado");
+                  }}
+                  sx={{
+                    cursor: "pointer",
+                    textDecoration: "none",
+                    color: getUserTypeColor("encargado"),
+                    fontWeight: 500,
+                    "&:hover": {
+                      textDecoration: "underline",
+                      opacity: 0.8,
+                    },
+                  }}
+                >
+                  {data.encargado.nombre ||
+                    data.encargado.nombre_completo ||
+                    "No asignado"}
+                </Link>
+              ) : (
+                data.encargado?.nombre || "No asignado"
+              )}
             </span>
           </p>
           <p className="text-sm">
             <span className="text-text-secondary">Tutor:</span>
             <span className="text-text-primary ml-1">
-              {data.tutor?.nombre || "No asignado"}
+              {data.tutor?.ci ? (
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigateToProfile(data.tutor.ci, "profesor");
+                  }}
+                  sx={{
+                    cursor: "pointer",
+                    textDecoration: "none",
+                    color: getUserTypeColor("profesor"),
+                    fontWeight: 500,
+                    "&:hover": {
+                      textDecoration: "underline",
+                      opacity: 0.8,
+                    },
+                  }}
+                >
+                  {data.tutor.nombre || data.tutor.nombre_completo || "No asignado"}
+                </Link>
+              ) : (
+                data.tutor?.nombre || "No asignado"
+              )}
             </span>
           </p>
         </div>

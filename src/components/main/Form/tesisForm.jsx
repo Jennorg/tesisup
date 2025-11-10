@@ -143,6 +143,28 @@ const TesisForm = forwardRef((props, ref) => {
   };
 
   const sendForm = async () => {
+    const requiredFields = [
+      "nombre",
+      "id_estudiante",
+      "id_tutor",
+      "id_encargado",
+      "fecha",
+      "id_sede",
+      "estado",
+      "archivo_pdf",
+    ];
+
+    for (const field of requiredFields) {
+      if (!formData[field]) {
+        setModalState({
+          isOpen: true,
+          status: "error",
+          message: "Por favor, rellene todos los campos",
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
     setModalState({
       isOpen: true,
@@ -293,6 +315,7 @@ const TesisForm = forwardRef((props, ref) => {
                   ? "image/*"
                   : "application/pdf"
               }
+              required
             />
             <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
             <p>
@@ -308,6 +331,7 @@ const TesisForm = forwardRef((props, ref) => {
             variant="filled"
             value={formData.nombre}
             onChange={(e) => handleInputChange(e.target.name, e.target.value)}
+            required
           />
 
           <Autocomplete
@@ -332,6 +356,7 @@ const TesisForm = forwardRef((props, ref) => {
                 label="Autor/Estudiante"
                 variant="filled"
                 fullWidth
+                required
               />
             )}
             noOptionsText="No hay estudiantes registrados"
@@ -354,7 +379,13 @@ const TesisForm = forwardRef((props, ref) => {
             }}
             disablePortal
             renderInput={(params) => (
-              <TextField {...params} label="Tutor" variant="filled" fullWidth />
+              <TextField
+                {...params}
+                label="Tutor"
+                variant="filled"
+                fullWidth
+                required
+              />
             )}
             noOptionsText="No hay profesores registrados"
           />
@@ -381,6 +412,7 @@ const TesisForm = forwardRef((props, ref) => {
                 label="Encargado"
                 variant="filled"
                 fullWidth
+                required
               />
             )}
             noOptionsText="No hay encargados registrados"
@@ -399,7 +431,13 @@ const TesisForm = forwardRef((props, ref) => {
             }}
             disablePortal
             renderInput={(params) => (
-              <TextField {...params} label="Sede" variant="filled" fullWidth />
+              <TextField
+                {...params}
+                label="Sede"
+                variant="filled"
+                fullWidth
+                required
+              />
             )}
             noOptionsText="No hay sedes registradas"
           />
@@ -411,11 +449,11 @@ const TesisForm = forwardRef((props, ref) => {
             onChange={handleDateChange}
             slotProps={{
               popper: { disablePortal: true },
-              textField: { variant: "filled", fullWidth: true },
+              textField: { variant: "filled", fullWidth: true, required: true },
             }}
           />
 
-          <FormControl variant="filled" fullWidth>
+          <FormControl variant="filled" fullWidth required>
             <InputLabel id="estado-label">Estado</InputLabel>
             <Select
               labelId="estado-label"

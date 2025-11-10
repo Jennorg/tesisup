@@ -15,9 +15,12 @@ import {
   FormControl,
   Button,
   Box,
+  IconButton,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -121,6 +124,13 @@ const TesisForm = forwardRef((props, ref) => {
     setFormData((prev) => ({ ...prev, archivo_pdf: e.target.files[0] }));
   };
 
+  const removeFile = () => {
+    setFormData((prev) => ({ ...prev, archivo_pdf: null }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleDragEvents = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -128,7 +138,7 @@ const TesisForm = forwardRef((props, ref) => {
 
   const handleDragEnter = (e) => {
     handleDragEvents(e);
-    setIsDragging(true);
+    if (!formData.archivo_pdf) setIsDragging(true);
   };
 
   const handleDragLeave = (e) => {
@@ -139,7 +149,12 @@ const TesisForm = forwardRef((props, ref) => {
   const handleDrop = (e) => {
     handleDragEvents(e);
     setIsDragging(false);
-    setFormData((prev) => ({ ...prev, archivo_pdf: e.dataTransfer.files[0] }));
+    if (!formData.archivo_pdf) {
+      setFormData((prev) => ({
+        ...prev,
+        archivo_pdf: e.dataTransfer.files[0],
+      }));
+    }
   };
 
   const sendForm = async () => {
@@ -159,7 +174,7 @@ const TesisForm = forwardRef((props, ref) => {
         setModalState({
           isOpen: true,
           status: "error",
-          message: "Por favor, rellene todos los campos",
+          message: "Por favor, rellene todos los campos obligatorios.",
         });
         return;
       }
@@ -250,7 +265,6 @@ const TesisForm = forwardRef((props, ref) => {
           maxWidth: "600px",
           width: "95%",
           mx: "auto",
-          // Estilos para móvil (por defecto)
           maxHeight: "90vh",
           display: "grid",
           gridTemplateRows: "auto 1fr",
@@ -268,41 +282,35 @@ const TesisForm = forwardRef((props, ref) => {
             [&::-webkit-scrollbar-thumb]:rounded-full
             [&::-webkit-scrollbar-thumb]:bg-gray-400"
         >
-          {/* <FormControl variant="filled" fullWidth>
-            <InputLabel id="modo-envio-label">
-              ¿Cómo desea subir la tesis?
-            </InputLabel>
-            <Select
-              labelId="modo-envio-label"
-              id="modo-envio-select"
-              name="modo_envio"
-              value={formData.modo_envio}
-              onChange={(e) => handleInputChange(e.target.name, e.target.value)}
-              disablePortal
-            >
-              <MenuItem value="normal">Subir archivo PDF</MenuItem>
-              <MenuItem value="digitalizar">
-                Escanear imagen y convertir a PDF
-              </MenuItem>
-            </Select>
-          </FormControl> */}
-
           <Box
             component="label"
-            htmlFor="file-upload"
+            htmlFor={
+              !formData.archivo_pdf && !isLoading ? "file-upload" : undefined
+            }
             onDragEnter={handleDragEnter}
             onDragOver={handleDragEvents}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             sx={{
+              position: "relative",
               border: "2px dashed",
-              borderColor: isDragging ? "primary.main" : "grey.400",
+              borderColor: isDragging
+                ? "primary.main"
+                : formData.archivo_pdf
+                ? "primary.light"
+                : "grey.400",
               borderRadius: 1,
               p: 3,
               textAlign: "center",
-              cursor: "pointer",
+              cursor: formData.archivo_pdf || isLoading ? "default" : "pointer",
               transition: "border-color 0.3s, background-color 0.3s",
-              backgroundColor: isDragging ? "action.hover" : "transparent",
+              backgroundColor: isDragging
+                ? "action.hover"
+                : formData.archivo_pdf
+                ? "primary.main"
+                : "transparent",
+              opacity: isLoading ? 0.6 : 1,
+              color: formData.archivo_pdf ? "primary.contrastText" : "inherit",
             }}
           >
             <VisuallyHiddenInput
@@ -316,12 +324,46 @@ const TesisForm = forwardRef((props, ref) => {
                   : "application/pdf"
               }
               required
+              disabled={!!formData.archivo_pdf || isLoading}
             />
-            <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
-            <p>
-              {formData.archivo_pdf?.name ||
-                "Arrastra un archivo o haz clic para subir"}
-            </p>
+
+            {isLoading ? (
+              <>
+                <CloudUploadIcon
+                  sx={{ fontSize: 40, mb: 1, animation: "pulse 1.5s infinite" }}
+                />
+                <p>Subiendo archivo...</p>
+                <p className="text-sm">&nbsp;</p>
+              </>
+            ) : formData.archivo_pdf ? (
+              <>
+                <IconButton
+                  aria-label="remove file"
+                  onClick={removeFile}
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    color: "primary.contrastText",
+                  }}
+                >
+                  <CancelIcon />
+                </IconButton>
+                <CheckCircleOutlineIcon sx={{ fontSize: 40, mb: 1 }} />
+                <p className="truncate max-w-full">
+                  {formData.archivo_pdf.name}
+                </p>
+                <p className="text-sm">
+                  {(formData.archivo_pdf.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </>
+            ) : (
+              <>
+                <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
+                <p>Arrastra un archivo o haz clic para subir</p>
+                <p className="text-sm">&nbsp;</p>
+              </>
+            )}
           </Box>
 
           <TextField

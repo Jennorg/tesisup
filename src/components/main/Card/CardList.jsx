@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
-const CardList = ({ filters }) => {
+const CardList = ({ filters, reloadKey }) => {
   const [tesis, setTesis] = useState([]);
   const [data, setData] = useState({
     profesores: [],
@@ -16,7 +16,6 @@ const CardList = ({ filters }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredTesis, setFilteredTesis] = useState([]);
-
   // ESTADO CLAVE: Contador para forzar la recarga
   const [reloadCounter, setReloadCounter] = useState(0);
 
@@ -25,6 +24,12 @@ const CardList = ({ filters }) => {
     // Incrementar el contador para disparar el useEffect
     setReloadCounter((prev) => prev + 1);
   }, []);
+
+  useEffect(() => {
+    if (reloadKey > 0) {
+      setReloadCounter((prev) => prev + 1);
+    }
+  }, [reloadKey]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);

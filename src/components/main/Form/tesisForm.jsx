@@ -22,11 +22,14 @@ import {
   Chip,
   Typography,
   Alert,
+  IconButton, // <-- Añadido de main
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"; // <-- Añadido de main
+import CancelIcon from "@mui/icons-material/Cancel"; // <-- Añadido de main
 
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -54,6 +57,7 @@ const TesisForm = forwardRef((props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Estado inicial de develop3 (más completo)
   const initialFormData = {
     id_tesis: "",
     nombre: "",
@@ -76,10 +80,10 @@ const TesisForm = forwardRef((props, ref) => {
     message: "",
   });
 
-  // Estados para crear nuevos usuarios
+  // Estados para crear nuevos usuarios (de develop3)
   const [createUserDialog, setCreateUserDialog] = useState({
     open: false,
-    type: null, // "estudiante" o "profesor"
+    type: null,
     inputValue: "",
   });
 
@@ -130,7 +134,7 @@ const TesisForm = forwardRef((props, ref) => {
     loadFormOptions();
   }, [loadFormOptions]);
 
-  // Efecto para limpiar jurados si el tutor cambia y alguno de los jurados es igual al nuevo tutor
+  // Efecto para limpiar jurados (de develop3)
   useEffect(() => {
     if (formData.id_tutor && formData.id_jurados.length > 0) {
       const filteredJurados = formData.id_jurados.filter(
@@ -146,7 +150,7 @@ const TesisForm = forwardRef((props, ref) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Función para crear un nuevo usuario
+  // Función para crear un nuevo usuario (de develop3)
   const handleCreateUser = async () => {
     const { type } = createUserDialog;
     const endpoint = type === "estudiante" ? "estudiantes" : "profesor";
@@ -158,10 +162,10 @@ const TesisForm = forwardRef((props, ref) => {
     });
 
     try {
-      // Generar email y telefono por defecto si no se proporcionan
+      // Generar email y telefono por defecto
       const defaultEmail = `${newUserData.nombre.toLowerCase().replace(/\s+/g, '')}.${newUserData.apellido.toLowerCase().replace(/\s+/g, '')}@uneg.edu.ve`;
       const defaultTelefono = "00000000000";
-      const defaultPassword = `${newUserData.ci_type}${newUserData.ci}`; // CI como contraseña por defecto
+      const defaultPassword = `${newUserData.ci_type}${newUserData.ci}`; 
 
       const payload = {
         ...newUserData,
@@ -176,10 +180,8 @@ const TesisForm = forwardRef((props, ref) => {
 
       const res = await axios.post(`${VITE_API_URL}/${endpoint}`, payload);
       
-      // Recargar opciones
       await loadFormOptions();
       
-      // Agregar el nuevo usuario a la selección
       const newUser = res.data.data || res.data;
       
       if (type === "estudiante") {
@@ -200,7 +202,6 @@ const TesisForm = forwardRef((props, ref) => {
         message: `${type === "estudiante" ? "Estudiante" : "Profesor"} creado correctamente`,
       });
 
-      // Cerrar diálogo y limpiar datos
       setCreateUserDialog({ open: false, type: null, inputValue: "" });
       setNewUserData({
         nombre: "",
@@ -229,14 +230,23 @@ const TesisForm = forwardRef((props, ref) => {
     setFormData((prev) => ({ ...prev, archivo_pdf: e.target.files[0] }));
   };
 
+  // 💡 Función para remover el archivo (de main)
+  const removeFile = () => {
+    setFormData((prev) => ({ ...prev, archivo_pdf: null }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleDragEvents = (e) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
+  // 💡 Lógica de Drag-and-Drop (de main)
   const handleDragEnter = (e) => {
     handleDragEvents(e);
-    setIsDragging(true);
+    if (!formData.archivo_pdf) setIsDragging(true);
   };
 
   const handleDragLeave = (e) => {
@@ -247,10 +257,48 @@ const TesisForm = forwardRef((props, ref) => {
   const handleDrop = (e) => {
     handleDragEvents(e);
     setIsDragging(false);
-    setFormData((prev) => ({ ...prev, archivo_pdf: e.dataTransfer.files[0] }));
+    if (!formData.archivo_pdf) {
+      setFormData((prev) => ({
+        ...prev,
+        archivo_pdf: e.dataTransfer.files[0],
+      }));
+    }
   };
 
   const sendForm = async () => {
+    // 💡 VALIDACIÓN DE CAMPOS (de main, adaptada para develop3)
+    const requiredFields = [
+      "nombre",
+      "id_tutor",
+      "id_encargado",
+      "fecha",
+      "id_sede",
+      "estado",
+      "archivo_pdf",
+    ];
+
+    for (const field of requiredFields) {
+      if (!formData[field]) {
+        setModalState({
+          isOpen: true,
+          status: "error",
+          message: "Por favor, rellene todos los campos obligatorios.",
+        });
+        return;
+      }
+    }
+    
+    // Validación específica para autores (de develop3)
+    if (formData.id_estudiantes.length === 0) {
+      setModalState({
+        isOpen: true,
+        status: "error",
+        message: "Debe seleccionar al menos un Autor/Estudiante.",
+      });
+      return;
+    }
+    // Fin de la validación
+
     setIsLoading(true);
     setModalState({
       isOpen: true,
@@ -259,26 +307,23 @@ const TesisForm = forwardRef((props, ref) => {
     });
     const datos = new FormData();
 
+    // Lógica de FormData (de develop3)
     Object.keys(formData).forEach((key) => {
       if (key === "archivo_pdf") {
         if (formData[key]) datos.append("archivo_pdf", formData[key]);
       } else if (key === "fecha" && formData[key]) {
         datos.append("fecha", dayjs(formData[key]).format("YYYY-MM-DD"));
       } else if (key === "id_estudiantes" && Array.isArray(formData[key])) {
-        // Enviar múltiples estudiantes
         formData[key].forEach((ci, index) => {
           datos.append(`id_estudiantes[${index}]`, ci);
         });
-        // También mantener compatibilidad con id_estudiante (primer estudiante)
         if (formData[key].length > 0) {
           datos.append("id_estudiante", formData[key][0]);
         }
       } else if (key === "id_jurados" && Array.isArray(formData[key])) {
-        // Enviar múltiples jurados
         formData[key].forEach((ci, index) => {
           datos.append(`id_jurados[${index}]`, ci);
         });
-        // También mantener compatibilidad con campos individuales si la API los requiere
         if (formData[key].length > 0) {
           datos.append("id_jurado_1", formData[key][0]);
         }
@@ -360,7 +405,6 @@ const TesisForm = forwardRef((props, ref) => {
           maxWidth: "600px",
           width: "95%",
           mx: "auto",
-          // Estilos para móvil (por defecto)
           maxHeight: "90vh",
           display: "grid",
           gridTemplateRows: "auto 1fr",
@@ -378,41 +422,36 @@ const TesisForm = forwardRef((props, ref) => {
             [&::-webkit-scrollbar-thumb]:rounded-full
             [&::-webkit-scrollbar-thumb]:bg-gray-400"
         >
-          {/* <FormControl variant="filled" fullWidth>
-            <InputLabel id="modo-envio-label">
-              ¿Cómo desea subir la tesis?
-            </InputLabel>
-            <Select
-              labelId="modo-envio-label"
-              id="modo-envio-select"
-              name="modo_envio"
-              value={formData.modo_envio}
-              onChange={(e) => handleInputChange(e.target.name, e.target.value)}
-              disablePortal
-            >
-              <MenuItem value="normal">Subir archivo PDF</MenuItem>
-              <MenuItem value="digitalizar">
-                Escanear imagen y convertir a PDF
-              </MenuItem>
-            </Select>
-          </FormControl> */}
-
+          {/* --- INICIO ZONA FUSIONADA (UI de 'main') --- */}
           <Box
             component="label"
-            htmlFor="file-upload"
+            htmlFor={
+              !formData.archivo_pdf && !isLoading ? "file-upload" : undefined
+            }
             onDragEnter={handleDragEnter}
             onDragOver={handleDragEvents}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             sx={{
+              position: "relative",
               border: "2px dashed",
-              borderColor: isDragging ? "primary.main" : "grey.400",
+              borderColor: isDragging
+                ? "primary.main"
+                : formData.archivo_pdf
+                ? "success.main" // Cambiado de primary.light
+                : "grey.400",
               borderRadius: 1,
               p: 3,
               textAlign: "center",
-              cursor: "pointer",
+              cursor: formData.archivo_pdf || isLoading ? "default" : "pointer",
               transition: "border-color 0.3s, background-color 0.3s",
-              backgroundColor: isDragging ? "action.hover" : "transparent",
+              backgroundColor: isDragging
+                ? "action.hover"
+                : formData.archivo_pdf
+                ? "success.light" // Cambiado de primary.main
+                : "transparent",
+              opacity: isLoading ? 0.6 : 1,
+              color: formData.archivo_pdf ? "success.dark" : "inherit", // Cambiado de primary.contrastText
             }}
           >
             <VisuallyHiddenInput
@@ -425,13 +464,49 @@ const TesisForm = forwardRef((props, ref) => {
                   ? "image/*"
                   : "application/pdf"
               }
+              required
+              disabled={!!formData.archivo_pdf || isLoading}
             />
-            <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
-            <p>
-              {formData.archivo_pdf?.name ||
-                "Arrastra un archivo o haz clic para subir"}
-            </p>
+
+            {isLoading ? (
+              <>
+                <CloudUploadIcon
+                  sx={{ fontSize: 40, mb: 1, animation: "pulse 1.5s infinite" }}
+                />
+                <p>Subiendo archivo...</p>
+                <p className="text-sm">&nbsp;</p>
+              </>
+            ) : formData.archivo_pdf ? (
+              <>
+                <IconButton
+                  aria-label="remove file"
+                  onClick={removeFile}
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    color: "inherit", // Cambiado de primary.contrastText
+                  }}
+                >
+                  <CancelIcon />
+                </IconButton>
+                <CheckCircleOutlineIcon sx={{ fontSize: 40, mb: 1 }} />
+                <p className="truncate max-w-full">
+                  {formData.archivo_pdf.name}
+                </p>
+                <p className="text-sm">
+                  {(formData.archivo_pdf.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </>
+            ) : (
+              <>
+                <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
+                <p>Arrastra un archivo o haz clic para subir</p>
+                <p className="text-sm">Debe ser un archivo .pdf</p>
+              </>
+            )}
           </Box>
+          {/* --- FIN ZONA FUSIONADA --- */}
 
           <TextField
             fullWidth
@@ -440,8 +515,10 @@ const TesisForm = forwardRef((props, ref) => {
             variant="filled"
             value={formData.nombre}
             onChange={(e) => handleInputChange(e.target.name, e.target.value)}
+            required
           />
 
+          {/* Autocompletar Estudiantes/Autores (de develop3) */}
           <Autocomplete
             id="estudiantes-select"
             multiple
@@ -463,7 +540,6 @@ const TesisForm = forwardRef((props, ref) => {
                 );
               });
 
-              // Si no hay resultados y hay texto, agregar opción para crear
               if (params.inputValue && filtered.length === 0) {
                 return [
                   {
@@ -473,7 +549,6 @@ const TesisForm = forwardRef((props, ref) => {
                   },
                 ];
               }
-
               return filtered;
             }}
             getOptionLabel={(option) => {
@@ -484,11 +559,9 @@ const TesisForm = forwardRef((props, ref) => {
               return option.nombre_completo || `${option.nombre} ${option.apellido}` || option.nombre || "";
             }}
             onChange={(event, newValue) => {
-              // Verificar si hay alguna opción "crear nuevo"
               const hasNewOption = newValue.some((v) => v && v.isNew);
               if (hasNewOption) {
                 const newOption = newValue.find((v) => v && v.isNew);
-                // Abrir diálogo para crear
                 const nameParts = newOption.nombre.trim().split(" ");
                 setNewUserData({
                   nombre: nameParts[0] || "",
@@ -501,7 +574,6 @@ const TesisForm = forwardRef((props, ref) => {
                   type: "estudiante",
                   inputValue: newOption.nombre,
                 });
-                // Mantener los otros estudiantes seleccionados
                 const existingCis = newValue
                   .filter((v) => v && typeof v === "object" && v.ci && !v.isNew)
                   .map((v) => String(v.ci));
@@ -520,7 +592,7 @@ const TesisForm = forwardRef((props, ref) => {
                 label="Autores/Estudiantes"
                 variant="filled"
                 fullWidth
-                helperText="Puedes agregar múltiples estudiantes. Si no existe, se creará uno nuevo."
+                required
               />
             )}
             renderTags={(value, getTagProps) =>
@@ -538,6 +610,7 @@ const TesisForm = forwardRef((props, ref) => {
             noOptionsText="Escribe para buscar o crear un estudiante"
           />
 
+          {/* Autocompletar Tutor (de develop3) */}
           <Autocomplete
             id="tutor-select"
             freeSolo
@@ -557,7 +630,6 @@ const TesisForm = forwardRef((props, ref) => {
                 );
               });
 
-              // Si no hay resultados y hay texto, agregar opción para crear
               if (params.inputValue && filtered.length === 0) {
                 return [
                   {
@@ -567,7 +639,6 @@ const TesisForm = forwardRef((props, ref) => {
                   },
                 ];
               }
-
               return filtered;
             }}
             getOptionLabel={(option) => {
@@ -579,7 +650,6 @@ const TesisForm = forwardRef((props, ref) => {
             }}
             onChange={(event, newValue) => {
               if (newValue && typeof newValue === "object" && newValue.isNew) {
-                // Abrir diálogo para crear
                 const nameParts = newValue.nombre.trim().split(" ");
                 setNewUserData({
                   nombre: nameParts[0] || "",
@@ -607,7 +677,7 @@ const TesisForm = forwardRef((props, ref) => {
                 label="Tutor"
                 variant="filled"
                 fullWidth
-                helperText="Si no existe, se creará un nuevo profesor"
+                required
               />
             )}
             noOptionsText="Escribe para buscar o crear un profesor"
@@ -635,6 +705,7 @@ const TesisForm = forwardRef((props, ref) => {
                 label="Encargado"
                 variant="filled"
                 fullWidth
+                required
               />
             )}
             noOptionsText="No hay encargados registrados"
@@ -653,7 +724,13 @@ const TesisForm = forwardRef((props, ref) => {
             }}
             disablePortal
             renderInput={(params) => (
-              <TextField {...params} label="Sede" variant="filled" fullWidth />
+              <TextField 
+                {...params} 
+                label="Sede" 
+                variant="filled" 
+                fullWidth 
+                required 
+              />
             )}
             noOptionsText="No hay sedes registradas"
           />
@@ -665,10 +742,11 @@ const TesisForm = forwardRef((props, ref) => {
             onChange={handleDateChange}
             slotProps={{
               popper: { disablePortal: true },
-              textField: { variant: "filled", fullWidth: true },
+              textField: { variant: "filled", fullWidth: true, required: true },
             }}
           />
 
+          {/* Autocompletar Jurados (de develop3) */}
           <Autocomplete
             id="jurados-select"
             multiple
@@ -687,7 +765,6 @@ const TesisForm = forwardRef((props, ref) => {
               })
               .filter(Boolean)}
             onChange={(event, newValue) => {
-              // Limitar a 3 jurados
               const limitedValue = newValue.slice(0, 3);
               const selectedCis = limitedValue
                 .filter((v) => v && v.ci)
@@ -720,7 +797,7 @@ const TesisForm = forwardRef((props, ref) => {
             disabled={!formData.id_tutor}
           />
 
-          <FormControl variant="filled" fullWidth>
+          <FormControl variant="filled" fullWidth required>
             <InputLabel id="estado-label">Estado</InputLabel>
             <Select
               labelId="estado-label"
@@ -764,11 +841,10 @@ const TesisForm = forwardRef((props, ref) => {
         onClose={handleModalClose}
       />
 
-      {/* Diálogo para crear nuevo usuario */}
+      {/* Diálogo para crear nuevo usuario (de develop3) */}
       <Dialog
         open={createUserDialog.open}
         onClose={(event, reason) => {
-          // Solo cerrar si se hace clic fuera del diálogo o se presiona ESC
           if (reason === "backdropClick" || reason === "escapeKeyDown") {
             setCreateUserDialog({ open: false, type: null, inputValue: "" });
             setNewUserData({

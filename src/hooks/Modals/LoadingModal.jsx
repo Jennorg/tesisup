@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom"; // 💡 1. Importar createPortal
 import { FaSpinner, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { motion } from "framer-motion";
 
@@ -10,7 +11,7 @@ export default function LoadingModal({
 }) {
   if (!isOpen) return null;
 
-  // Icono dinámico según el estado
+  // Icono dinámico
   let IconComponent = FaSpinner;
   let iconClass = "animate-spin text-blue-500";
 
@@ -22,19 +23,20 @@ export default function LoadingModal({
     iconClass = "text-red-500";
   }
 
-  // Efecto: cerrar modal automáticamente si es success o error
+  // Efecto de cierre automático
   useEffect(() => {
     if (status === "success" || status === "error") {
       const timeout = setTimeout(() => {
-        onClose?.(); // Llama a la función para cerrar el modal
-      }, 3000); // 3 segundos
+        onClose?.();
+      }, 3000); 
 
       return () => clearTimeout(timeout);
     }
   }, [status, onClose]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  // 💡 2. Definir el contenido del Modal
+  const modalContent = (
+    <div className="fixed inset-0 z-[1400] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -47,4 +49,7 @@ export default function LoadingModal({
       </motion.div>
     </div>
   );
+
+  // 💡 3. Renderizar el contenido usando el Portal en document.body
+  return createPortal(modalContent, document.body);
 }

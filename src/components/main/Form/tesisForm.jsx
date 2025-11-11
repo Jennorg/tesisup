@@ -22,14 +22,14 @@ import {
   Chip,
   Typography,
   Alert,
-  IconButton, // <-- Añadido de main
+  IconButton,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"; // <-- Añadido de main
-import CancelIcon from "@mui/icons-material/Cancel"; // <-- Añadido de main
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -52,19 +52,42 @@ const VisuallyHiddenInput = styled("input")({
   width: 1,
 });
 
+// 💡 FUNCIÓN AUXILIAR para crear las etiquetas de Persona (Nombre + CI)
+const getPersonaLabel = (option) => {
+  if (typeof option === "string") return option;
+  
+  // Manejar la opción "Crear nuevo..."
+  if (option.isNew) {
+    return `Crear nuevo: "${option.nombre}"`;
+  }
+
+  // Formatear el nombre
+  const nombre = option.nombre_completo || `${option.nombre || ''} ${option.apellido || ''}`.trim() || option.nombre || "";
+  
+  // Formatear la Cédula
+  const ciType = option.ci_type || "V"; // Asumir "V" si no se provee
+  const ci = option.ci || "";
+
+  if (!ci) {
+    return nombre; // Retornar solo nombre si no hay CI (ej. opción 'Crear nuevo')
+  }
+
+  return `${nombre} (CI: ${ciType}-${ci})`;
+};
+
+
 const TesisForm = forwardRef((props, ref) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Estado inicial de develop3 (más completo)
   const initialFormData = {
     id_tesis: "",
     nombre: "",
-    id_estudiantes: [], // Array de estudiantes
+    id_estudiantes: [], 
     id_tutor: "",
     id_encargado: "",
-    id_jurados: [], // Array de jurados (máximo 3)
+    id_jurados: [], 
     fecha: null,
     id_sede: "",
     estado: "",
@@ -80,7 +103,8 @@ const TesisForm = forwardRef((props, ref) => {
     message: "",
   });
 
-  // Estados para crear nuevos usuarios (de develop3)
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
   const [createUserDialog, setCreateUserDialog] = useState({
     open: false,
     type: null,
@@ -134,7 +158,6 @@ const TesisForm = forwardRef((props, ref) => {
     loadFormOptions();
   }, [loadFormOptions]);
 
-  // Efecto para limpiar jurados (de develop3)
   useEffect(() => {
     if (formData.id_tutor && formData.id_jurados.length > 0) {
       const filteredJurados = formData.id_jurados.filter(
@@ -150,7 +173,6 @@ const TesisForm = forwardRef((props, ref) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Función para crear un nuevo usuario (de develop3)
   const handleCreateUser = async () => {
     const { type } = createUserDialog;
     const endpoint = type === "estudiante" ? "estudiantes" : "profesor";
@@ -162,7 +184,6 @@ const TesisForm = forwardRef((props, ref) => {
     });
 
     try {
-      // Generar email y telefono por defecto
       const defaultEmail = `${newUserData.nombre.toLowerCase().replace(/\s+/g, '')}.${newUserData.apellido.toLowerCase().replace(/\s+/g, '')}@uneg.edu.ve`;
       const defaultTelefono = "00000000000";
       const defaultPassword = `${newUserData.ci_type}${newUserData.ci}`; 
@@ -196,6 +217,7 @@ const TesisForm = forwardRef((props, ref) => {
         }));
       }
 
+      setFormSubmitted(false); 
       setModalState({
         isOpen: true,
         status: "success",
@@ -211,6 +233,7 @@ const TesisForm = forwardRef((props, ref) => {
       });
     } catch (err) {
       console.error("Error al crear usuario:", err);
+      setFormSubmitted(false);
       setModalState({
         isOpen: true,
         status: "error",
@@ -230,7 +253,6 @@ const TesisForm = forwardRef((props, ref) => {
     setFormData((prev) => ({ ...prev, archivo_pdf: e.target.files[0] }));
   };
 
-  // 💡 Función para remover el archivo (de main)
   const removeFile = () => {
     setFormData((prev) => ({ ...prev, archivo_pdf: null }));
     if (fileInputRef.current) {
@@ -243,7 +265,6 @@ const TesisForm = forwardRef((props, ref) => {
     e.stopPropagation();
   };
 
-  // 💡 Lógica de Drag-and-Drop (de main)
   const handleDragEnter = (e) => {
     handleDragEvents(e);
     if (!formData.archivo_pdf) setIsDragging(true);
@@ -266,7 +287,6 @@ const TesisForm = forwardRef((props, ref) => {
   };
 
   const sendForm = async () => {
-    // 💡 VALIDACIÓN DE CAMPOS (de main, adaptada para develop3)
     const requiredFields = [
       "nombre",
       "id_tutor",
@@ -288,7 +308,6 @@ const TesisForm = forwardRef((props, ref) => {
       }
     }
     
-    // Validación específica para autores (de develop3)
     if (formData.id_estudiantes.length === 0) {
       setModalState({
         isOpen: true,
@@ -297,7 +316,6 @@ const TesisForm = forwardRef((props, ref) => {
       });
       return;
     }
-    // Fin de la validación
 
     setIsLoading(true);
     setModalState({
@@ -307,7 +325,6 @@ const TesisForm = forwardRef((props, ref) => {
     });
     const datos = new FormData();
 
-    // Lógica de FormData (de develop3)
     Object.keys(formData).forEach((key) => {
       if (key === "archivo_pdf") {
         if (formData[key]) datos.append("archivo_pdf", formData[key]);
@@ -318,21 +335,15 @@ const TesisForm = forwardRef((props, ref) => {
           datos.append(`id_estudiantes[${index}]`, ci);
         });
         if (formData[key].length > 0) {
-          datos.append("id_estudiante", formData[key][0]);
+          datos.append("id_estudiante", formData[key][0]); 
         }
       } else if (key === "id_jurados" && Array.isArray(formData[key])) {
         formData[key].forEach((ci, index) => {
           datos.append(`id_jurados[${index}]`, ci);
         });
-        if (formData[key].length > 0) {
-          datos.append("id_jurado_1", formData[key][0]);
-        }
-        if (formData[key].length > 1) {
-          datos.append("id_jurado_2", formData[key][1]);
-        }
-        if (formData[key].length > 2) {
-          datos.append("id_jurado_3", formData[key][2]);
-        }
+        if (formData[key].length > 0) { datos.append("id_jurado_1", formData[key][0]); }
+        if (formData[key].length > 1) { datos.append("id_jurado_2", formData[key][1]); }
+        if (formData[key].length > 2) { datos.append("id_jurado_3", formData[key][2]); }
       } else if (formData[key] !== null && formData[key] !== "" && !Array.isArray(formData[key])) {
         datos.append(key, formData[key]);
       }
@@ -350,6 +361,8 @@ const TesisForm = forwardRef((props, ref) => {
       });
 
       console.log(res.data);
+      
+      setFormSubmitted(true);
       setModalState({
         isOpen: true,
         status: "success",
@@ -362,6 +375,7 @@ const TesisForm = forwardRef((props, ref) => {
         "Error al enviar:",
         err.response?.data?.error || err.message
       );
+      setFormSubmitted(false);
       setModalState({
         isOpen: true,
         status: "error",
@@ -382,12 +396,14 @@ const TesisForm = forwardRef((props, ref) => {
   };
 
   const handleModalClose = () => {
-    if (modalState.status === "success") {
+    if (modalState.status === "success" && formSubmitted) {
       clearForm();
       props.onSuccess?.();
       props.onClose?.();
     }
+    
     setModalState((s) => ({ ...s, isOpen: false }));
+    setFormSubmitted(false);
   };
 
   return (
@@ -422,7 +438,6 @@ const TesisForm = forwardRef((props, ref) => {
             [&::-webkit-scrollbar-thumb]:rounded-full
             [&::-webkit-scrollbar-thumb]:bg-gray-400"
         >
-          {/* --- INICIO ZONA FUSIONADA (UI de 'main') --- */}
           <Box
             component="label"
             htmlFor={
@@ -438,7 +453,7 @@ const TesisForm = forwardRef((props, ref) => {
               borderColor: isDragging
                 ? "primary.main"
                 : formData.archivo_pdf
-                ? "success.main" // Cambiado de primary.light
+                ? "success.main"
                 : "grey.400",
               borderRadius: 1,
               p: 3,
@@ -448,10 +463,10 @@ const TesisForm = forwardRef((props, ref) => {
               backgroundColor: isDragging
                 ? "action.hover"
                 : formData.archivo_pdf
-                ? "success.light" // Cambiado de primary.main
+                ? "success.light"
                 : "transparent",
               opacity: isLoading ? 0.6 : 1,
-              color: formData.archivo_pdf ? "success.dark" : "inherit", // Cambiado de primary.contrastText
+              color: formData.archivo_pdf ? "success.dark" : "inherit",
             }}
           >
             <VisuallyHiddenInput
@@ -485,7 +500,7 @@ const TesisForm = forwardRef((props, ref) => {
                     position: "absolute",
                     top: 8,
                     right: 8,
-                    color: "inherit", // Cambiado de primary.contrastText
+                    color: "inherit",
                   }}
                 >
                   <CancelIcon />
@@ -506,7 +521,6 @@ const TesisForm = forwardRef((props, ref) => {
               </>
             )}
           </Box>
-          {/* --- FIN ZONA FUSIONADA --- */}
 
           <TextField
             fullWidth
@@ -518,7 +532,7 @@ const TesisForm = forwardRef((props, ref) => {
             required
           />
 
-          {/* Autocompletar Estudiantes/Autores (de develop3) */}
+          {/* Autocompletar Estudiantes/Autores */}
           <Autocomplete
             id="estudiantes-select"
             multiple
@@ -532,10 +546,11 @@ const TesisForm = forwardRef((props, ref) => {
             }).filter(Boolean)}
             filterOptions={(options, params) => {
               const filtered = options.filter((option) => {
-                const label = option.nombre_completo || `${option.nombre} ${option.apellido}` || option.nombre || "";
+                // 💡 MODIFICADO: Usar getPersonaLabel para la búsqueda
+                const label = getPersonaLabel(option).toLowerCase();
                 const searchLower = params.inputValue.toLowerCase();
                 return (
-                  label.toLowerCase().includes(searchLower) ||
+                  label.includes(searchLower) ||
                   String(option.ci).includes(searchLower)
                 );
               });
@@ -551,13 +566,8 @@ const TesisForm = forwardRef((props, ref) => {
               }
               return filtered;
             }}
-            getOptionLabel={(option) => {
-              if (typeof option === "string") return option;
-              if (option.isNew) {
-                return `Crear nuevo: "${option.nombre}"`;
-              }
-              return option.nombre_completo || `${option.nombre} ${option.apellido}` || option.nombre || "";
-            }}
+            // 💡 MODIFICADO: Usar getPersonaLabel
+            getOptionLabel={getPersonaLabel}
             onChange={(event, newValue) => {
               const hasNewOption = newValue.some((v) => v && v.isNew);
               if (hasNewOption) {
@@ -601,7 +611,8 @@ const TesisForm = forwardRef((props, ref) => {
                 return (
                   <Chip
                     key={option.ci || index}
-                    label={option.nombre_completo || `${option.nombre} ${option.apellido}` || option.nombre}
+                    // 💡 MODIFICADO: Usar getPersonaLabel para el chip
+                    label={getPersonaLabel(option)}
                     {...chipProps}
                   />
                 );
@@ -610,7 +621,7 @@ const TesisForm = forwardRef((props, ref) => {
             noOptionsText="Escribe para buscar o crear un estudiante"
           />
 
-          {/* Autocompletar Tutor (de develop3) */}
+          {/* Autocompletar Tutor */}
           <Autocomplete
             id="tutor-select"
             freeSolo
@@ -622,10 +633,11 @@ const TesisForm = forwardRef((props, ref) => {
             }
             filterOptions={(options, params) => {
               const filtered = options.filter((option) => {
-                const label = option.nombre_completo || `${option.nombre} ${option.apellido}` || option.nombre || "";
+                // 💡 MODIFICADO: Usar getPersonaLabel para la búsqueda
+                const label = getPersonaLabel(option).toLowerCase();
                 const searchLower = params.inputValue.toLowerCase();
                 return (
-                  label.toLowerCase().includes(searchLower) ||
+                  label.includes(searchLower) ||
                   String(option.ci).includes(searchLower)
                 );
               });
@@ -641,13 +653,8 @@ const TesisForm = forwardRef((props, ref) => {
               }
               return filtered;
             }}
-            getOptionLabel={(option) => {
-              if (typeof option === "string") return option;
-              if (option.isNew) {
-                return `Crear nuevo: "${option.nombre}"`;
-              }
-              return option.nombre_completo || `${option.nombre} ${option.apellido}` || option.nombre || "";
-            }}
+            // 💡 MODIFICADO: Usar getPersonaLabel
+            getOptionLabel={getPersonaLabel}
             onChange={(event, newValue) => {
               if (newValue && typeof newValue === "object" && newValue.isNew) {
                 const nameParts = newValue.nombre.trim().split(" ");
@@ -683,10 +690,12 @@ const TesisForm = forwardRef((props, ref) => {
             noOptionsText="Escribe para buscar o crear un profesor"
           />
 
+          {/* Autocompletar Encargado */}
           <Autocomplete
             id="encargado-select"
             options={dropdownOptions.encargados}
-            getOptionLabel={(option) => option.nombre_completo || option.nombre}
+            // 💡 MODIFICADO: Usar getPersonaLabel
+            getOptionLabel={getPersonaLabel}
             value={
               dropdownOptions.encargados.find(
                 (e) => String(e.ci) === formData.id_encargado
@@ -746,16 +755,15 @@ const TesisForm = forwardRef((props, ref) => {
             }}
           />
 
-          {/* Autocompletar Jurados (de develop3) */}
+          {/* Autocompletar Jurados */}
           <Autocomplete
             id="jurados-select"
             multiple
             options={dropdownOptions.profesores.filter(
               (p) => String(p.ci) !== formData.id_tutor
             )}
-            getOptionLabel={(option) =>
-              option.nombre_completo || `${option.nombre} ${option.apellido}` || option.nombre || ""
-            }
+            // 💡 MODIFICADO: Usar getPersonaLabel
+            getOptionLabel={getPersonaLabel}
             value={formData.id_jurados
               .map((ci) => {
                 const profesor = dropdownOptions.profesores.find(
@@ -787,7 +795,8 @@ const TesisForm = forwardRef((props, ref) => {
                 return (
                   <Chip
                     key={option.ci || index}
-                    label={option.nombre_completo || `${option.nombre} ${option.apellido}` || option.nombre}
+                    // 💡 MODIFICADO: Usar getPersonaLabel para el chip
+                    label={getPersonaLabel(option)}
                     {...chipProps}
                   />
                 );
@@ -841,7 +850,6 @@ const TesisForm = forwardRef((props, ref) => {
         onClose={handleModalClose}
       />
 
-      {/* Diálogo para crear nuevo usuario (de develop3) */}
       <Dialog
         open={createUserDialog.open}
         onClose={(event, reason) => {

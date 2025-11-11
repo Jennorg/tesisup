@@ -23,12 +23,16 @@ const MainPage = () => {
       const isClickOnDatePicker = event.target.closest(
         ".MuiPickersPopper-root"
       );
+      const isClickOnDialog = event.target.closest(".MuiDialog-root");
+      const isClickOnDialogBackdrop = event.target.closest(".MuiBackdrop-root");
 
       if (
         isTesisFormVisible &&
         !isClickInsideForm &&
         !isClickOnDropdown &&
-        !isClickOnDatePicker
+        !isClickOnDatePicker &&
+        !isClickOnDialog &&
+        !isClickOnDialogBackdrop
       ) {
         setIsTesisFormVisible(false);
       }

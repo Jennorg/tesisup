@@ -15,10 +15,19 @@ import {
   FormControl,
   Button,
   Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Chip,
+  Typography,
+  Alert,
   IconButton,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import AddIcon from "@mui/icons-material/Add";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelIcon from "@mui/icons-material/Cancel";
 
@@ -43,6 +52,30 @@ const VisuallyHiddenInput = styled("input")({
   width: 1,
 });
 
+// 💡 FUNCIÓN AUXILIAR para crear las etiquetas de Persona (Nombre + CI)
+const getPersonaLabel = (option) => {
+  if (typeof option === "string") return option;
+  
+  // Manejar la opción "Crear nuevo..."
+  if (option.isNew) {
+    return `Crear nuevo: "${option.nombre}"`;
+  }
+
+  // Formatear el nombre
+  const nombre = option.nombre_completo || `${option.nombre || ''} ${option.apellido || ''}`.trim() || option.nombre || "";
+  
+  // Formatear la Cédula
+  const ciType = option.ci_type || "V"; // Asumir "V" si no se provee
+  const ci = option.ci || "";
+
+  if (!ci) {
+    return nombre; // Retornar solo nombre si no hay CI (ej. opción 'Crear nuevo')
+  }
+
+  return `${nombre} (CI: ${ciType}-${ci})`;
+};
+
+
 const TesisForm = forwardRef((props, ref) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,9 +84,10 @@ const TesisForm = forwardRef((props, ref) => {
   const initialFormData = {
     id_tesis: "",
     nombre: "",
-    id_estudiante: "",
+    id_estudiantes: [], 
     id_tutor: "",
     id_encargado: "",
+    id_jurados: [], 
     fecha: null,
     id_sede: "",
     estado: "",
@@ -67,6 +101,21 @@ const TesisForm = forwardRef((props, ref) => {
     isOpen: false,
     status: "loading",
     message: "",
+  });
+
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
+  const [createUserDialog, setCreateUserDialog] = useState({
+    open: false,
+    type: null,
+    inputValue: "",
+  });
+
+  const [newUserData, setNewUserData] = useState({
+    nombre: "",
+    apellido: "",
+    ci: "",
+    ci_type: "V",
   });
 
   const [dropdownOptions, setDropdownOptions] = useState({
@@ -109,8 +158,88 @@ const TesisForm = forwardRef((props, ref) => {
     loadFormOptions();
   }, [loadFormOptions]);
 
+  useEffect(() => {
+    if (formData.id_tutor && formData.id_jurados.length > 0) {
+      const filteredJurados = formData.id_jurados.filter(
+        (ci) => String(ci) !== String(formData.id_tutor)
+      );
+      if (filteredJurados.length !== formData.id_jurados.length) {
+        handleInputChange("id_jurados", filteredJurados);
+      }
+    }
+  }, [formData.id_tutor]);
+
   const handleInputChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateUser = async () => {
+    const { type } = createUserDialog;
+    const endpoint = type === "estudiante" ? "estudiantes" : "profesor";
+    
+    setModalState({
+      isOpen: true,
+      status: "loading",
+      message: `Creando ${type === "estudiante" ? "estudiante" : "profesor"}...`,
+    });
+
+    try {
+      const defaultEmail = `${newUserData.nombre.toLowerCase().replace(/\s+/g, '')}.${newUserData.apellido.toLowerCase().replace(/\s+/g, '')}@uneg.edu.ve`;
+      const defaultTelefono = "00000000000";
+      const defaultPassword = `${newUserData.ci_type}${newUserData.ci}`; 
+
+      const payload = {
+        ...newUserData,
+        ci: parseInt(newUserData.ci),
+        ci_type: String(newUserData.ci_type || "V"),
+        nombre: String(newUserData.nombre),
+        apellido: String(newUserData.apellido),
+        email: String(defaultEmail),
+        telefono: String(defaultTelefono),
+        password: String(defaultPassword),
+      };
+
+      const res = await axios.post(`${VITE_API_URL}/${endpoint}`, payload);
+      
+      await loadFormOptions();
+      
+      const newUser = res.data.data || res.data;
+      
+      if (type === "estudiante") {
+        setFormData((prev) => ({
+          ...prev,
+          id_estudiantes: [...prev.id_estudiantes, String(newUser.ci)],
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          id_tutor: String(newUser.ci),
+        }));
+      }
+
+      setFormSubmitted(false); 
+      setModalState({
+        isOpen: true,
+        status: "success",
+        message: `${type === "estudiante" ? "Estudiante" : "Profesor"} creado correctamente`,
+      });
+
+      setCreateUserDialog({ open: false, type: null, inputValue: "" });
+      setNewUserData({
+        nombre: "",
+        apellido: "",
+        ci: "",
+        ci_type: "V",
+      });
+    } catch (err) {
+      console.error("Error al crear usuario:", err);
+      setFormSubmitted(false);
+      setModalState({
+        isOpen: true,
+        status: "error",
+        message: err.response?.data?.error || `Error al crear ${type}`,
+      });
+    }
   };
 
   const handleDateChange = (date) => {
@@ -160,7 +289,6 @@ const TesisForm = forwardRef((props, ref) => {
   const sendForm = async () => {
     const requiredFields = [
       "nombre",
-      "id_estudiante",
       "id_tutor",
       "id_encargado",
       "fecha",
@@ -179,6 +307,15 @@ const TesisForm = forwardRef((props, ref) => {
         return;
       }
     }
+    
+    if (formData.id_estudiantes.length === 0) {
+      setModalState({
+        isOpen: true,
+        status: "error",
+        message: "Debe seleccionar al menos un Autor/Estudiante.",
+      });
+      return;
+    }
 
     setIsLoading(true);
     setModalState({
@@ -193,7 +330,21 @@ const TesisForm = forwardRef((props, ref) => {
         if (formData[key]) datos.append("archivo_pdf", formData[key]);
       } else if (key === "fecha" && formData[key]) {
         datos.append("fecha", dayjs(formData[key]).format("YYYY-MM-DD"));
-      } else if (formData[key] !== null && formData[key] !== "") {
+      } else if (key === "id_estudiantes" && Array.isArray(formData[key])) {
+        formData[key].forEach((ci, index) => {
+          datos.append(`id_estudiantes[${index}]`, ci);
+        });
+        if (formData[key].length > 0) {
+          datos.append("id_estudiante", formData[key][0]); 
+        }
+      } else if (key === "id_jurados" && Array.isArray(formData[key])) {
+        formData[key].forEach((ci, index) => {
+          datos.append(`id_jurados[${index}]`, ci);
+        });
+        if (formData[key].length > 0) { datos.append("id_jurado_1", formData[key][0]); }
+        if (formData[key].length > 1) { datos.append("id_jurado_2", formData[key][1]); }
+        if (formData[key].length > 2) { datos.append("id_jurado_3", formData[key][2]); }
+      } else if (formData[key] !== null && formData[key] !== "" && !Array.isArray(formData[key])) {
         datos.append(key, formData[key]);
       }
     });
@@ -210,6 +361,8 @@ const TesisForm = forwardRef((props, ref) => {
       });
 
       console.log(res.data);
+      
+      setFormSubmitted(true);
       setModalState({
         isOpen: true,
         status: "success",
@@ -222,6 +375,7 @@ const TesisForm = forwardRef((props, ref) => {
         "Error al enviar:",
         err.response?.data?.error || err.message
       );
+      setFormSubmitted(false);
       setModalState({
         isOpen: true,
         status: "error",
@@ -242,12 +396,14 @@ const TesisForm = forwardRef((props, ref) => {
   };
 
   const handleModalClose = () => {
-    if (modalState.status === "success") {
+    if (modalState.status === "success" && formSubmitted) {
       clearForm();
       props.onSuccess?.();
       props.onClose?.();
     }
+    
     setModalState((s) => ({ ...s, isOpen: false }));
+    setFormSubmitted(false);
   };
 
   return (
@@ -297,7 +453,7 @@ const TesisForm = forwardRef((props, ref) => {
               borderColor: isDragging
                 ? "primary.main"
                 : formData.archivo_pdf
-                ? "primary.light"
+                ? "success.main"
                 : "grey.400",
               borderRadius: 1,
               p: 3,
@@ -307,10 +463,10 @@ const TesisForm = forwardRef((props, ref) => {
               backgroundColor: isDragging
                 ? "action.hover"
                 : formData.archivo_pdf
-                ? "primary.main"
+                ? "success.light"
                 : "transparent",
               opacity: isLoading ? 0.6 : 1,
-              color: formData.archivo_pdf ? "primary.contrastText" : "inherit",
+              color: formData.archivo_pdf ? "success.dark" : "inherit",
             }}
           >
             <VisuallyHiddenInput
@@ -344,7 +500,7 @@ const TesisForm = forwardRef((props, ref) => {
                     position: "absolute",
                     top: 8,
                     right: 8,
-                    color: "primary.contrastText",
+                    color: "inherit",
                   }}
                 >
                   <CancelIcon />
@@ -361,7 +517,7 @@ const TesisForm = forwardRef((props, ref) => {
               <>
                 <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
                 <p>Arrastra un archivo o haz clic para subir</p>
-                <p className="text-sm">&nbsp;</p>
+                <p className="text-sm">Debe ser un archivo .pdf</p>
               </>
             )}
           </Box>
@@ -376,48 +532,150 @@ const TesisForm = forwardRef((props, ref) => {
             required
           />
 
+          {/* Autocompletar Estudiantes/Autores */}
           <Autocomplete
-            id="estudiante-select"
+            id="estudiantes-select"
+            multiple
+            freeSolo
             options={dropdownOptions.estudiantes}
-            getOptionLabel={(option) => option.nombre_completo || option.nombre}
-            value={
-              dropdownOptions.estudiantes.find(
-                (e) => String(e.ci) === formData.id_estudiante
-              ) || null
-            }
-            onChange={(event, newValue) => {
-              handleInputChange(
-                "id_estudiante",
-                newValue ? String(newValue.ci) : ""
+            value={formData.id_estudiantes.map((ci) => {
+              const estudiante = dropdownOptions.estudiantes.find(
+                (e) => String(e.ci) === String(ci)
               );
+              return estudiante || null;
+            }).filter(Boolean)}
+            filterOptions={(options, params) => {
+              const filtered = options.filter((option) => {
+                // 💡 MODIFICADO: Usar getPersonaLabel para la búsqueda
+                const label = getPersonaLabel(option).toLowerCase();
+                const searchLower = params.inputValue.toLowerCase();
+                return (
+                  label.includes(searchLower) ||
+                  String(option.ci).includes(searchLower)
+                );
+              });
+
+              if (params.inputValue && filtered.length === 0) {
+                return [
+                  {
+                    isNew: true,
+                    nombre: params.inputValue,
+                    ci: null,
+                  },
+                ];
+              }
+              return filtered;
+            }}
+            // 💡 MODIFICADO: Usar getPersonaLabel
+            getOptionLabel={getPersonaLabel}
+            onChange={(event, newValue) => {
+              const hasNewOption = newValue.some((v) => v && v.isNew);
+              if (hasNewOption) {
+                const newOption = newValue.find((v) => v && v.isNew);
+                const nameParts = newOption.nombre.trim().split(" ");
+                setNewUserData({
+                  nombre: nameParts[0] || "",
+                  apellido: nameParts.slice(1).join(" ") || "",
+                  ci: "",
+                  ci_type: "V",
+                });
+                setCreateUserDialog({
+                  open: true,
+                  type: "estudiante",
+                  inputValue: newOption.nombre,
+                });
+                const existingCis = newValue
+                  .filter((v) => v && typeof v === "object" && v.ci && !v.isNew)
+                  .map((v) => String(v.ci));
+                handleInputChange("id_estudiantes", existingCis);
+                return;
+              }
+              const selectedCis = newValue
+                .filter((v) => v && typeof v === "object" && v.ci && !v.isNew)
+                .map((v) => String(v.ci));
+              handleInputChange("id_estudiantes", selectedCis);
             }}
             disablePortal
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Autor/Estudiante"
+                label="Autores/Estudiantes"
                 variant="filled"
                 fullWidth
                 required
               />
             )}
-            noOptionsText="No hay estudiantes registrados"
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => {
+                const { key, ...chipProps } = getTagProps({ index });
+                return (
+                  <Chip
+                    key={option.ci || index}
+                    // 💡 MODIFICADO: Usar getPersonaLabel para el chip
+                    label={getPersonaLabel(option)}
+                    {...chipProps}
+                  />
+                );
+              })
+            }
+            noOptionsText="Escribe para buscar o crear un estudiante"
           />
 
+          {/* Autocompletar Tutor */}
           <Autocomplete
             id="tutor-select"
+            freeSolo
             options={dropdownOptions.profesores}
-            getOptionLabel={(option) => option.nombre_completo || option.nombre}
             value={
               dropdownOptions.profesores.find(
                 (p) => String(p.ci) === formData.id_tutor
               ) || null
             }
+            filterOptions={(options, params) => {
+              const filtered = options.filter((option) => {
+                // 💡 MODIFICADO: Usar getPersonaLabel para la búsqueda
+                const label = getPersonaLabel(option).toLowerCase();
+                const searchLower = params.inputValue.toLowerCase();
+                return (
+                  label.includes(searchLower) ||
+                  String(option.ci).includes(searchLower)
+                );
+              });
+
+              if (params.inputValue && filtered.length === 0) {
+                return [
+                  {
+                    isNew: true,
+                    nombre: params.inputValue,
+                    ci: null,
+                  },
+                ];
+              }
+              return filtered;
+            }}
+            // 💡 MODIFICADO: Usar getPersonaLabel
+            getOptionLabel={getPersonaLabel}
             onChange={(event, newValue) => {
-              handleInputChange(
-                "id_tutor",
-                newValue ? String(newValue.ci) : ""
-              );
+              if (newValue && typeof newValue === "object" && newValue.isNew) {
+                const nameParts = newValue.nombre.trim().split(" ");
+                setNewUserData({
+                  nombre: nameParts[0] || "",
+                  apellido: nameParts.slice(1).join(" ") || "",
+                  ci: "",
+                  ci_type: "V",
+                });
+                setCreateUserDialog({
+                  open: true,
+                  type: "profesor",
+                  inputValue: newValue.nombre,
+                });
+                return;
+              }
+              if (newValue && typeof newValue === "object" && newValue.ci) {
+                handleInputChange("id_tutor", String(newValue.ci));
+              } else {
+                handleInputChange("id_tutor", "");
+              }
             }}
             disablePortal
             renderInput={(params) => (
@@ -429,13 +687,15 @@ const TesisForm = forwardRef((props, ref) => {
                 required
               />
             )}
-            noOptionsText="No hay profesores registrados"
+            noOptionsText="Escribe para buscar o crear un profesor"
           />
 
+          {/* Autocompletar Encargado */}
           <Autocomplete
             id="encargado-select"
             options={dropdownOptions.encargados}
-            getOptionLabel={(option) => option.nombre_completo || option.nombre}
+            // 💡 MODIFICADO: Usar getPersonaLabel
+            getOptionLabel={getPersonaLabel}
             value={
               dropdownOptions.encargados.find(
                 (e) => String(e.ci) === formData.id_encargado
@@ -473,12 +733,12 @@ const TesisForm = forwardRef((props, ref) => {
             }}
             disablePortal
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Sede"
-                variant="filled"
-                fullWidth
-                required
+              <TextField 
+                {...params} 
+                label="Sede" 
+                variant="filled" 
+                fullWidth 
+                required 
               />
             )}
             noOptionsText="No hay sedes registradas"
@@ -493,6 +753,57 @@ const TesisForm = forwardRef((props, ref) => {
               popper: { disablePortal: true },
               textField: { variant: "filled", fullWidth: true, required: true },
             }}
+          />
+
+          {/* Autocompletar Jurados */}
+          <Autocomplete
+            id="jurados-select"
+            multiple
+            options={dropdownOptions.profesores.filter(
+              (p) => String(p.ci) !== formData.id_tutor
+            )}
+            // 💡 MODIFICADO: Usar getPersonaLabel
+            getOptionLabel={getPersonaLabel}
+            value={formData.id_jurados
+              .map((ci) => {
+                const profesor = dropdownOptions.profesores.find(
+                  (p) => String(p.ci) === String(ci)
+                );
+                return profesor || null;
+              })
+              .filter(Boolean)}
+            onChange={(event, newValue) => {
+              const limitedValue = newValue.slice(0, 3);
+              const selectedCis = limitedValue
+                .filter((v) => v && v.ci)
+                .map((v) => String(v.ci));
+              handleInputChange("id_jurados", selectedCis);
+            }}
+            disablePortal
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Jurados (máximo 3)"
+                variant="filled"
+                fullWidth
+                helperText={`${formData.id_jurados.length}/3 jurados seleccionados. No pueden ser iguales al tutor.`}
+              />
+            )}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => {
+                const { key, ...chipProps } = getTagProps({ index });
+                return (
+                  <Chip
+                    key={option.ci || index}
+                    // 💡 MODIFICADO: Usar getPersonaLabel para el chip
+                    label={getPersonaLabel(option)}
+                    {...chipProps}
+                  />
+                );
+              })
+            }
+            noOptionsText="No hay profesores disponibles (excluyendo al tutor)"
+            disabled={!formData.id_tutor}
           />
 
           <FormControl variant="filled" fullWidth required>
@@ -538,6 +849,136 @@ const TesisForm = forwardRef((props, ref) => {
         message={modalState.message}
         onClose={handleModalClose}
       />
+
+      <Dialog
+        open={createUserDialog.open}
+        onClose={(event, reason) => {
+          if (reason === "backdropClick" || reason === "escapeKeyDown") {
+            setCreateUserDialog({ open: false, type: null, inputValue: "" });
+            setNewUserData({
+              nombre: "",
+              apellido: "",
+              ci: "",
+              ci_type: "V",
+            });
+          }
+        }}
+        maxWidth="sm"
+        fullWidth
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DialogTitle>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <PersonAddIcon />
+            Crear nuevo {createUserDialog.type === "estudiante" ? "Estudiante" : "Profesor"}
+          </Box>
+        </DialogTitle>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
+          <Box 
+            sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Alert severity="info">
+              Completa los datos para crear un nuevo{" "}
+              {createUserDialog.type === "estudiante" ? "estudiante" : "profesor"}
+            </Alert>
+
+            <Box 
+              sx={{ display: "flex", gap: 1 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <FormControl 
+                variant="filled" 
+                sx={{ minWidth: 80 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <InputLabel>Tipo CI</InputLabel>
+                <Select
+                  value={newUserData.ci_type}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setNewUserData((prev) => ({ ...prev, ci_type: e.target.value }));
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MenuItem value="V">V</MenuItem>
+                  <MenuItem value="E">E</MenuItem>
+                  <MenuItem value="J">J</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Cédula"
+                variant="filled"
+                value={newUserData.ci}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setNewUserData((prev) => ({ ...prev, ci: e.target.value }));
+                }}
+                onClick={(e) => e.stopPropagation()}
+                required
+              />
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Nombre"
+              variant="filled"
+              value={newUserData.nombre}
+              onChange={(e) => {
+                e.stopPropagation();
+                setNewUserData((prev) => ({ ...prev, nombre: e.target.value }));
+              }}
+              onClick={(e) => e.stopPropagation()}
+              required
+            />
+
+            <TextField
+              fullWidth
+              label="Apellido"
+              variant="filled"
+              value={newUserData.apellido}
+              onChange={(e) => {
+                e.stopPropagation();
+                setNewUserData((prev) => ({ ...prev, apellido: e.target.value }));
+              }}
+              onClick={(e) => e.stopPropagation()}
+              required
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions onClick={(e) => e.stopPropagation()}>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              setCreateUserDialog({ open: false, type: null, inputValue: "" });
+              setNewUserData({
+                nombre: "",
+                apellido: "",
+                ci: "",
+                ci_type: "V",
+              });
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCreateUser();
+            }}
+            variant="contained"
+            disabled={
+              !newUserData.nombre ||
+              !newUserData.apellido ||
+              !newUserData.ci
+            }
+            startIcon={<AddIcon />}
+          >
+            Crear
+          </Button>
+        </DialogActions>
+      </Dialog>
     </LocalizationProvider>
   );
 });

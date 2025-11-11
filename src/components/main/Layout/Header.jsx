@@ -22,6 +22,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import IconButton from "@mui/material/IconButton";
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const Header = ({
   isAsideVisible,
@@ -54,6 +55,11 @@ const Header = ({
     localStorage.removeItem("user");
     logout();
     navigate("/");
+    handleClose();
+  };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
     handleClose();
   };
 
@@ -152,6 +158,12 @@ const Header = ({
           </Typography>
         </Box>
         <Divider />
+        <MenuItem onClick={handleProfileClick}>
+          <ListItemIcon>
+            <AccountCircleIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Ver Perfil</ListItemText>
+        </MenuItem>
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />

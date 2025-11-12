@@ -1,0 +1,178 @@
+import React, { useState, useEffect, useCallback, forwardRef } from "react";
+import axios from "axios";
+import {
+  Box,
+  Tabs,
+  Tab,
+} from "@mui/material";
+import {
+  Description as TesisIcon,
+  Person as EstudianteIcon,
+  School as ProfesorIcon,
+  SupervisorAccount as EncargadoIcon
+} from "@mui/icons-material";
+
+// Importa los formularios separados
+import TesisForm from "./tesisForm.jsx";
+import PersonaForm from "./PersonaForm.jsx";
+
+const API_URL = import.meta.env.VITE_API_URL;
+const VITE_API_URL = API_URL || "http://localhost:8080/api";
+
+// 💡 1. INICIO DE LA CORRECCIÓN
+// Contenedor del Tab (Modificado para NO desmontar los hijos)
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index} // <-- Esto ya oculta el panel
+      id={`form-tabpanel-${index}`}
+      aria-labelledby={`form-tab-${index}`}
+      {...other}
+    >
+      {/* 💡 Se eliminó la condición 'value === index &&' 
+          para que los componentes hijos (tus formularios) 
+          permanezcan montados y conserven su estado. */}
+      <Box sx={{ pt: 3, pb: 3, px: 1 }}>
+        {children}
+      </Box>
+    </div>
+  );
+}
+// 💡 1. FIN DE LA CORRECCIÓN
+
+const ManagementForm = forwardRef((props, ref) => {
+  const [activeTab, setActiveTab] = useState(0); 
+  
+  const [dropdownOptions, setDropdownOptions] = useState({
+    profesores: [],
+    encargados: [],
+    sedes: [],
+    estudiantes: [],
+  });
+  
+  const [prefillData, setPrefillData] = useState(null);
+
+  const loadFormOptions = useCallback(async () => {
+    try {
+      const [profesoresRes, encargadosRes, sedesRes, estudiantesRes] =
+        await Promise.all([
+          axios.get(`${VITE_API_URL}/profesor`),
+          axios.get(`${VITE_API_URL}/encargado`),
+          axios.get(`${VITE_API_URL}/sede`),
+          axios.get(`${VITE_API_URL}/estudiantes`),
+        ]);
+
+      setDropdownOptions({
+        profesores: profesoresRes.data.data || [],
+        encargados: encargadosRes.data.data || [],
+        sedes: sedesRes.data.data || [],
+        estudiantes: estudiantesRes.data.data || [],
+      });
+    } catch (error) {
+      console.error("Error al cargar opciones:", error);
+      setDropdownOptions({
+        profesores: [],
+        encargados: [],
+        sedes: [],
+        estudiantes: [],
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFormOptions();
+  }, [loadFormOptions]);
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+    setPrefillData(null); 
+  };
+
+  const handleRequestCreateUser = (type, name) => {
+    console.log("Solicitud para crear:", type, "con nombre:", name);
+    setPrefillData({ type, name }); 
+    
+    if (type === 'estudiante') {
+      setActiveTab(1);
+    } else if (type === 'profesor') {
+      setActiveTab(2);
+    } else if (type === 'encargado') {
+      setActiveTab(3);
+    }
+  };
+
+  return (
+    <Box
+      ref={ref}
+      sx={{
+        bgcolor: "background.paper",
+        color: "text.primary",
+        p: 3,
+        borderRadius: 2,
+        boxShadow: 24,
+        maxWidth: "600px",
+        width: "95%",
+        mx: "auto",
+        maxHeight: "90vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          aria-label="Formularios de gestión"
+          variant="scrollable"
+          scrollButtons="auto"
+        >
+          <Tab icon={<TesisIcon />} label="Tesis" id="form-tab-0" />
+          <Tab icon={<EstudianteIcon />} label="Estudiante" id="form-tab-1" />
+          <Tab icon={<ProfesorIcon />} label="Profesor" id="form-tab-2" />
+          <Tab icon={<EncargadoIcon />} label="Encargado" id="form-tab-3" />
+        </Tabs>
+      </Box>
+
+      <TabPanel value={activeTab} index={0}>
+        <TesisForm
+          dropdownOptions={dropdownOptions}
+          onSuccess={props.onSuccess} 
+          onClose={props.onClose}     
+          onRequestCreateUser={handleRequestCreateUser} 
+        />
+      </TabPanel>
+
+      <TabPanel value={activeTab} index={1}>
+        <PersonaForm
+          role="estudiante"
+          onUserCreated={loadFormOptions} 
+          prefillData={prefillData} 
+          onPrefillConsumed={() => setPrefillData(null)} 
+        />
+      </TabPanel>
+
+      <TabPanel value={activeTab} index={2}>
+        <PersonaForm
+          role="profesor"
+          onUserCreated={loadFormOptions} 
+          prefillData={prefillData} 
+          onPrefillConsumed={() => setPrefillData(null)}
+        />
+      </TabPanel>
+
+      <TabPanel value={activeTab} index={3}>
+        <PersonaForm
+          role="encargado"
+          onUserCreated={loadFormOptions} 
+          sedes={dropdownOptions.sedes} 
+          prefillData={prefillData} 
+          onPrefillConsumed={() => setPrefillData(null)}
+        />
+      </TabPanel>
+    </Box>
+  );
+});
+
+export default ManagementForm;

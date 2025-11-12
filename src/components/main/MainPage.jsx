@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Content from "@/components/main/Layout/Content";
-import TesisForm from "@/components/main/Form/tesisForm";
+import TesisForm from "@/components/main/Form/ManagementForm.jsx";
 import Header from "@/components/main/Layout/Header";
 import Filters from "@/components/main/Layout/Filters";
 

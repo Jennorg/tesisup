@@ -4,6 +4,7 @@ import axios from "axios";
 import formatDate from "@/hooks/utils/formatDate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
+import EditIcon from "@mui/icons-material/Edit"; // 💡 Importado
 import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
@@ -12,14 +13,13 @@ import LoadingModal from "@/hooks/Modals/LoadingModal";
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 // ----------------------------------------------------------------------
-// HOOK DE ELIMINACIÓN: Conecta la UI con la API y gestiona el estado del modal
+// HOOK DE ELIMINACIÓN
 // ----------------------------------------------------------------------
 const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    // Mostrar modal de CARGA
     setModalState({
       isOpen: true,
       status: "loading",
@@ -29,21 +29,18 @@ const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
     try {
       await axios.delete(`${VITE_API_URL}/tesis/${tesisId}`);
 
-      // Mostrar modal de ÉXITO
       setModalState({
         isOpen: true,
         status: "success",
         message: "Tesis eliminada con éxito.",
       });
 
-      // Llama al callback del padre para recargar/actualizar la lista después del timeout del modal
       onDeletedSuccess();
     } catch (err) {
       console.error(
         "Error al eliminar la tesis:",
         err.response?.data.error || err.message
       );
-      // Mostrar modal de ERROR
       setModalState({
         isOpen: true,
         status: "error",
@@ -59,7 +56,7 @@ const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
 };
 
 // ----------------------------------------------------------------------
-// HOOK DE DESCARGA: Conecta la UI con la API para descargar archivos
+// HOOK DE DESCARGA
 // ----------------------------------------------------------------------
 const useDownloadTesis = (tesisId, setModalState) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -80,9 +77,8 @@ const useDownloadTesis = (tesisId, setModalState) => {
         }
       );
 
-      // Extraer el nombre del archivo de los headers
       const contentDisposition = response.headers["content-disposition"];
-      let filename = `tesis_${tesisId}.pdf`; // Nombre por defecto
+      let filename = `tesis_${tesisId}.pdf`; 
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
         if (filenameMatch.length > 1) {
@@ -90,7 +86,6 @@ const useDownloadTesis = (tesisId, setModalState) => {
         }
       }
 
-      // Crear una URL para el blob y simular un clic para descargar
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -98,7 +93,7 @@ const useDownloadTesis = (tesisId, setModalState) => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url); // Limpiar
+      window.URL.revokeObjectURL(url); 
 
       setModalState({
         isOpen: true,
@@ -125,28 +120,26 @@ const useDownloadTesis = (tesisId, setModalState) => {
   return { handleDownload, isDownloading };
 };
 
-const Card = ({ data, isLoading = false, onTesisDeleted }) => {
+// 💡 Acepta la nueva prop 'onEdit'
+const Card = ({ data, isLoading = false, onTesisDeleted, onEdit }) => {
   const navigate = useNavigate();
 
   if (!data && !isLoading) {
     return null;
   }
 
-  // Estado del modal de carga/éxito/error
   const [modalState, setModalState] = useState({
     isOpen: false,
     status: "loading",
     message: "",
   });
 
-  // Función helper para navegar al perfil
   const navigateToProfile = (ci, userType) => {
     if (ci && userType) {
       navigate(`/profile/${userType}/${ci}`);
     }
   };
 
-  // Función para obtener el color según el tipo de usuario
   const getUserTypeColor = (userType) => {
     const colors = {
       estudiante: "#1976d2", // Azul
@@ -168,7 +161,6 @@ const Card = ({ data, isLoading = false, onTesisDeleted }) => {
   );
 
   if (isLoading) {
-    // ... (código de Skeleton) ...
     return (
       <div className="flex flex-col w-full gap-2 animate-pulse border-gray-800 border-2 p-4 rounded-lg h-full">
         <Skeleton variant="text" width="60%" height={32} />
@@ -188,27 +180,23 @@ const Card = ({ data, isLoading = false, onTesisDeleted }) => {
     );
   }
 
-  // Función que maneja la confirmación
   const handleConfirmDelete = (e) => {
     e.stopPropagation();
-    // Usamos el ID para mayor claridad
     if (
       window.confirm(
         `¿Estás seguro de que quieres eliminar la tesis "${data.nombre}" (ID: ${data.id})? Esta acción es irreversible.`
       )
     ) {
-      handleDelete(); // Llama a la lógica de DELETE
+      handleDelete();
     }
   };
 
-  // Función para cerrar el modal manualmente (si es necesario)
   const handleCloseModal = () => {
     setModalState((s) => ({ ...s, isOpen: false }));
   };
 
   return (
     <React.Fragment>
-      {/* Modal de Carga, Éxito o Error */}
       <LoadingModal
         isOpen={modalState.isOpen}
         status={modalState.status}
@@ -356,6 +344,28 @@ const Card = ({ data, isLoading = false, onTesisDeleted }) => {
         </div>
 
         <div className="flex gap-2 mt-auto">
+          {/* 💡 Botón de Editar (Añadido) */}
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<EditIcon />}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(); // 💡 Llamar a la prop onEdit
+            }}
+            disabled={isDeleting || isDownloading || modalState.isOpen}
+            sx={{
+              color: "var(--primary-main)",
+              borderColor: "var(--primary-main)",
+              "&:hover": {
+                borderColor: "var(--primary-dark)",
+                bgcolor: "rgba(59, 130, 246, 0.1)",
+              },
+            }}
+          >
+            Editar
+          </Button>
+
           <Button
             variant="outlined"
             size="small"

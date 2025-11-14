@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
-const CardList = ({ filters, reloadKey }) => {
+const CardList = ({ filters, reloadKey, onEditTesis }) => {
   const [tesis, setTesis] = useState([]);
   const [data, setData] = useState({
     profesores: [],
@@ -178,6 +178,7 @@ const CardList = ({ filters, reloadKey }) => {
                   <Card
                     data={getFullTesisData(tesisItem)}
                     onTesisDeleted={handleTesisDeleted}
+                    onEdit={() => onEditTesis(tesisItem)} 
                   />
                 )}
               </li>

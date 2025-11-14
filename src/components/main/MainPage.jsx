@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Content from "@/components/main/Layout/Content";
-import TesisForm from "@/components/main/Form/ManagementForm.jsx";
+import TesisForm from "@/components/main/Form/ManagementForm.jsx"; // Tu alias para ManagementForm
 import Header from "@/components/main/Layout/Header";
 import Filters from "@/components/main/Layout/Filters";
 
@@ -14,6 +14,9 @@ const MainPage = () => {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [haBuscado, setHaBuscado] = useState(false);
   const tesisFormRef = useRef(null);
+
+  // Estado para guardar la tesis que se va a editar
+  const [tesisToEdit, setTesisToEdit] = useState(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -35,12 +38,31 @@ const MainPage = () => {
         !isClickOnDialogBackdrop
       ) {
         setIsTesisFormVisible(false);
+        setTesisToEdit(null); // Limpiar estado al cerrar
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isTesisFormVisible]);
+
+  // Función para manejar el clic de "Editar"
+  const handleEditTesis = (tesisData) => {
+    setTesisToEdit(tesisData);
+    setIsTesisFormVisible(true);
+  };
+
+  // Funciones de cierre y éxito actualizadas
+  const handleCloseModal = () => {
+    setIsTesisFormVisible(false);
+    setTesisToEdit(null); // Limpiar estado
+  };
+  
+  const handleSuccessModal = () => {
+    setReloadTesisKey((k) => k + 1); // Recargar la lista
+    setIsTesisFormVisible(false);
+    setTesisToEdit(null); // Limpiar estado
+  };
 
   return (
     <div className="flex flex-col h-dvh">
@@ -62,12 +84,13 @@ const MainPage = () => {
         <Content
           isAsideVisible={isAsideVisible}
           isTesisFormVisible={isTesisFormVisible}
-          setIsTesisFormVisible={setIsTesisFormVisible}
+          setIsTesisFormVisible={setIsTesisFormVisible} 
           isLoading={isLoading}
           tesisEncontradas={tesisEncontradas}
           haBuscado={haBuscado}
           reloadKey={reloadTesisKey}
           filters={activeFilters}
+          onEditTesis={handleEditTesis} // Pasar el handler a Content
         />
       </main>
       {/* Panel de Filtros Absoluto */}
@@ -83,12 +106,14 @@ const MainPage = () => {
           />
       </div>
 
+      {/* Modal de Tesis (Crear o Editar) */}
       {isTesisFormVisible ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background bg-opacity-50 backdrop-blur-sm">
           <TesisForm
             ref={tesisFormRef}
-            onClose={() => setIsTesisFormVisible(false)}
-            onSuccess={() => setReloadTesisKey((k) => k + 1)}
+            onClose={handleCloseModal} // Usar handler actualizado
+            onSuccess={handleSuccessModal} // Usar handler actualizado
+            tesisToEdit={tesisToEdit} // Pasar los datos de la tesis a editar
           />
         </div>
       ) : null}

@@ -19,7 +19,6 @@ import PersonaForm from "./PersonaForm.jsx";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
-// 💡 1. INICIO DE LA CORRECCIÓN
 // Contenedor del Tab (Modificado para NO desmontar los hijos)
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -31,16 +30,13 @@ function TabPanel(props) {
       aria-labelledby={`form-tab-${index}`}
       {...other}
     >
-      {/* 💡 Se eliminó la condición 'value === index &&' 
-          para que los componentes hijos (tus formularios) 
-          permanezcan montados y conserven su estado. */}
+      {/* Se eliminó la condición 'value === index &&' para conservar el estado */}
       <Box sx={{ pt: 3, pb: 3, px: 1 }}>
         {children}
       </Box>
     </div>
   );
 }
-// 💡 1. FIN DE LA CORRECCIÓN
 
 const ManagementForm = forwardRef((props, ref) => {
   const [activeTab, setActiveTab] = useState(0); 
@@ -52,7 +48,15 @@ const ManagementForm = forwardRef((props, ref) => {
     estudiantes: [],
   });
   
+  // Estado para guardar la tesis a editar
   const [prefillData, setPrefillData] = useState(null);
+
+  // Nuevo useEffect para forzar la pestaña de Tesis si estamos editando
+  useEffect(() => {
+    if (props.tesisToEdit) {
+      setActiveTab(0); // Forzar la pestaña 0 (Tesis)
+    }
+  }, [props.tesisToEdit]);
 
   const loadFormOptions = useCallback(async () => {
     try {
@@ -87,13 +91,15 @@ const ManagementForm = forwardRef((props, ref) => {
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
-    setPrefillData(null); 
+    setPrefillData(null); // Limpiar el pre-llenado si el usuario cambia de pestaña manualmente
   };
 
+  // Función que maneja la solicitud de TesisForm para cambiar de pestaña
   const handleRequestCreateUser = (type, name) => {
     console.log("Solicitud para crear:", type, "con nombre:", name);
-    setPrefillData({ type, name }); 
+    setPrefillData({ type, name }); // Guarda el nombre y tipo
     
+    // Cambia a la pestaña correspondiente
     if (type === 'estudiante') {
       setActiveTab(1);
     } else if (type === 'profesor') {
@@ -135,24 +141,28 @@ const ManagementForm = forwardRef((props, ref) => {
         </Tabs>
       </Box>
 
+      {/* Panel de Tesis */}
       <TabPanel value={activeTab} index={0}>
         <TesisForm
           dropdownOptions={dropdownOptions}
           onSuccess={props.onSuccess} 
           onClose={props.onClose}     
           onRequestCreateUser={handleRequestCreateUser} 
+          tesisToEdit={props.tesisToEdit} // Pasar 'tesisToEdit' al TesisForm
         />
       </TabPanel>
 
+      {/* Panel de Estudiante */}
       <TabPanel value={activeTab} index={1}>
         <PersonaForm
           role="estudiante"
           onUserCreated={loadFormOptions} 
-          prefillData={prefillData} 
-          onPrefillConsumed={() => setPrefillData(null)} 
+          prefillData={prefillData} // Pasar los datos de pre-llenado
+          onPrefillConsumed={() => setPrefillData(null)} // Función para limpiar
         />
       </TabPanel>
 
+      {/* Panel de Profesor */}
       <TabPanel value={activeTab} index={2}>
         <PersonaForm
           role="profesor"
@@ -162,6 +172,7 @@ const ManagementForm = forwardRef((props, ref) => {
         />
       </TabPanel>
 
+      {/* Panel de Encargado */}
       <TabPanel value={activeTab} index={3}>
         <PersonaForm
           role="encargado"

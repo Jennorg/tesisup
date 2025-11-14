@@ -47,7 +47,6 @@ const VisuallyHiddenInput = styled("input")({
 const getPersonaLabel = (option) => {
   if (typeof option === "string") return option;
   
-  // 💡 MODIFICADO: Añadida la opción 'isNew'
   if (option.isNew) {
     return `Crear nuevo: "${option.nombre}"`;
   }
@@ -59,11 +58,12 @@ const getPersonaLabel = (option) => {
   return `${nombre} (CI: ${ciType}-${ci})`;
 };
 
-// 💡 1. PROPS ACTUALIZADAS: Recibe 'onRequestCreateUser'
-const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCreateUser }, ref) => {
+const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCreateUser, tesisToEdit }, ref) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
+
+  const isEditing = !!tesisToEdit; 
 
   const initialFormData = {
     id_tesis: "",
@@ -87,11 +87,31 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
     message: "",
   });
 
-  // 💡 2. LÓGICA ELIMINADA: 
-  // Se eliminaron 'formSubmitted', 'createUserDialog' y 'newUserData'
-  // Se eliminó 'handleCreateUser'
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const estados = ["Aprobado", "Rechazado", "Pendiente", "en revisión"];
+  
+  // 💡 1. CORRECCIÓN: Valores en minúscula para coincidir con la BD
+  const estados = ["aprobado", "rechazado", "pendiente", "en revisión"];
+
+  useEffect(() => {
+    if (tesisToEdit) {
+      console.log("Editando tesis:", tesisToEdit);
+      setFormData({
+        id_tesis: tesisToEdit.id || "",
+        nombre: tesisToEdit.nombre || "",
+        id_estudiantes: (tesisToEdit.autores || []).map(a => String(a.ci)),
+        id_tutor: String(tesisToEdit.id_tutor || ""),
+        id_encargado: String(tesisToEdit.id_encargado || ""),
+        id_jurados: (tesisToEdit.jurados || []).map(j => String(j.ci)), 
+        fecha: tesisToEdit.fecha ? dayjs(tesisToEdit.fecha) : null,
+        id_sede: tesisToEdit.id_sede || "",
+        estado: tesisToEdit.estado || "", // Esto (ej: "aprobado") ahora coincidirá con el array 'estados'
+        archivo_pdf: null,
+        modo_envio: "normal",
+      });
+    } else {
+      setFormData(initialFormData); 
+    }
+  }, [tesisToEdit]);
 
   useEffect(() => {
     if (formData.id_tutor && formData.id_jurados.length > 0) {
@@ -160,8 +180,11 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
       "fecha",
       "id_sede",
       "estado",
-      "archivo_pdf",
     ];
+    
+    if (!isEditing && !formData.archivo_pdf) {
+         requiredFields.push("archivo_pdf");
+    }
 
     for (const field of requiredFields) {
       if (!formData[field]) {
@@ -187,7 +210,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
     setModalState({
       isOpen: true,
       status: "loading",
-      message: "Enviando tesis...",
+      message: isEditing ? "Actualizando tesis..." : "Enviando tesis...",
     });
     const datos = new FormData();
 
@@ -207,22 +230,20 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
         formData[key].forEach((ci, index) => {
           datos.append(`id_jurados[${index}]`, ci);
         });
-        if (formData[key].length > 0) { datos.append("id_jurado_1", formData[key][0]); }
-        if (formData[key].length > 1) { datos.append("id_jurado_2", formData[key][1]); }
-        if (formData[key].length > 2) { datos.append("id_jurado_3", formData[key][2]); }
       } else if (formData[key] !== null && formData[key] !== "" && !Array.isArray(formData[key])) {
         datos.append(key, formData[key]);
       }
     });
 
-    const endpoint =
-      formData.modo_envio === "digitalizar"
-        ? `${VITE_API_URL}/tesis/digital`
-        : `${VITE_API_URL}/tesis`;
+    const endpoint = isEditing
+      ? `${VITE_API_URL}/tesis/${formData.id_tesis}` 
+      : `${VITE_API_URL}/tesis`; 
+    
+    const httpMethod = isEditing ? axios.put : axios.post;
 
     try {
       console.log("Datos a enviar:", Object.fromEntries(datos.entries()));
-      const res = await axios.post(endpoint, datos, {
+      const res = await httpMethod(endpoint, datos, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -232,7 +253,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
       setModalState({
         isOpen: true,
         status: "success",
-        message: "Tesis subida correctamente",
+        message: isEditing ? "Tesis actualizada correctamente" : "Tesis subida correctamente",
       });
     } catch (err) {
       console.error(
@@ -243,7 +264,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
       setModalState({
         isOpen: true,
         status: "error",
-        message: err.response?.data?.error || "Error al subir la tesis",
+        message: err.response?.data?.error || (isEditing ? "Error al actualizar la tesis" : "Error al subir la tesis"),
       });
     }
 
@@ -270,7 +291,6 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
     setFormSubmitted(false);
   };
 
-  // 💡 3. FUNCIÓN DE FILTRADO REUTILIZABLE
   const filterOptions = (options, params) => {
     const filtered = options.filter((option) => {
       const label = getPersonaLabel(option).toLowerCase();
@@ -281,11 +301,10 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
       );
     });
 
-    // Añadir la opción de "Crear nuevo" si no hay coincidencias
     if (params.inputValue && filtered.length === 0) {
       filtered.push({
         isNew: true,
-        nombre: params.inputValue, // El texto que el usuario escribió
+        nombre: params.inputValue,
         ci: null, 
       });
     }
@@ -356,7 +375,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
                 ? "image/*"
                 : "application/pdf"
             }
-            required
+            required={!isEditing} 
             disabled={!!formData.archivo_pdf || isLoading}
           />
 
@@ -394,7 +413,9 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
             <>
               <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
               <p>Arrastra un archivo o haz clic para subir</p>
-              <p className="text-sm">Debe ser un archivo .pdf</p>
+              <p className="text-sm">
+                {isEditing ? "Dejar vacío para conservar el archivo actual" : "Debe ser un archivo .pdf"}
+              </p>
             </>
           )}
         </Box>
@@ -409,7 +430,6 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
           required
         />
 
-        {/* 💡 4. AUTOCOMPLETE DE ESTUDIANTES (ACTUALIZADO) */}
         <Autocomplete
           id="estudiantes-select"
           multiple
@@ -421,7 +441,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
             );
             return estudiante || null;
           }).filter(Boolean)}
-          filterOptions={filterOptions} // Usa la función de filtro
+          filterOptions={filterOptions} 
           getOptionLabel={getPersonaLabel}
           onChange={(event, newValue) => {
             const newOption = newValue.find((v) => v && v.isNew);
@@ -463,7 +483,6 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
           noOptionsText="Escribe para buscar o crear un estudiante"
         />
 
-        {/* 💡 5. AUTOCOMPLETE DE TUTOR (ACTUALIZADO) */}
         <Autocomplete
           id="tutor-select"
           freeSolo
@@ -500,10 +519,9 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
           noOptionsText="Escribe para buscar o crear un profesor"
         />
 
-        {/* 💡 6. AUTOCOMPLETE DE ENCARGADO (ACTUALIZADO) */}
         <Autocomplete
           id="encargado-select"
-          freeSolo // <-- Añadido
+          freeSolo 
           options={dropdownOptions.encargados}
           getOptionLabel={getPersonaLabel}
           value={
@@ -511,7 +529,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
               (e) => String(e.ci) === formData.id_encargado
             ) || null
           }
-          filterOptions={filterOptions} // <-- Añadido
+          filterOptions={filterOptions} 
           onChange={(event, newValue) => {
             if (newValue && typeof newValue === "object" && newValue.isNew) {
               onRequestCreateUser('encargado', newValue.nombre);
@@ -629,9 +647,11 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
             onChange={(e) => handleInputChange(e.target.name, e.target.value)}
             disablePortal
           >
-            {estados.map((estado) => (
-              <MenuItem key={estado} value={estado}>
-                {estado}
+            {/* 💡 5. MODIFICADO: Mapear 'estados' y capitalizar el texto para el usuario */}
+            {estados.map((estadoValue) => (
+              <MenuItem key={estadoValue} value={estadoValue}>
+                {/* Capitalizar la primera letra para mostrarla bonita en el dropdown */}
+                {estadoValue.charAt(0).toUpperCase() + estadoValue.slice(1)}
               </MenuItem>
             ))}
           </Select>
@@ -647,12 +667,9 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
           sx={{ py: 2, mt: 1 }}
         >
           {isLoading
-            ? formData.modo_envio === "digitalizar"
-              ? "Digitalizando..."
-              : "Enviando..."
-            : formData.modo_envio === "digitalizar"
-            ? "Digitalizar Tesis"
-            : "Subir PDF"}
+            ? isEditing ? "Actualizando..." : "Enviando..."
+            : isEditing ? "Actualizar Tesis" : "Subir PDF"
+          }
         </Button>
       </Box>
 
@@ -663,7 +680,6 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
         onClose={handleModalClose}
       />
       
-      {/* 💡 7. ELIMINADO: Todo el JSX de <Dialog> se ha ido */}
     </LocalizationProvider>
   );
 });

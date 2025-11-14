@@ -15,6 +15,7 @@ const Content = ({
   haBuscado,
   reloadKey,
   filters,
+  onEditTesis, // <-- 1. Aceptar la nueva prop
 }) => {
   const marginLeftClass = isAsideVisible ? "ml-16" : "ml-0";
 
@@ -22,7 +23,13 @@ const Content = ({
     <div
       className={`flex-grow w-full p-4 overflow-ellipsis transition-margin-left duration-300 ease-in-out ${marginLeftClass}`}
     >
-  <CardList reloadKey={reloadKey} tesisEncontradas={tesisEncontradas} haBuscado={haBuscado} filters={filters} />
+      <CardList 
+        reloadKey={reloadKey} 
+        tesisEncontradas={tesisEncontradas} 
+        haBuscado={haBuscado} 
+        filters={filters} 
+        onEditTesis={onEditTesis} // <-- 2. Pasar la prop a CardList
+      />
 
       <div className="absolute bottom-20 right-10 z-10">
         <Fab

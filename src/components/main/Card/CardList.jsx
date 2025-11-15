@@ -6,7 +6,13 @@ import dayjs from "dayjs";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
-const CardList = ({ filters, reloadKey, onEditTesis }) => {
+const CardList = ({
+  filters,
+  reloadKey,
+  onEditTesis,
+  tesisEncontradas,
+  haBuscado,
+}) => {
   const [tesis, setTesis] = useState([]);
   const [data, setData] = useState({
     profesores: [],
@@ -16,12 +22,9 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredTesis, setFilteredTesis] = useState([]);
-  // ESTADO CLAVE: Contador para forzar la recarga
   const [reloadCounter, setReloadCounter] = useState(0);
 
-  // FUNCIÓN CLAVE: Llama a esta función después de una eliminación exitosa
   const handleTesisDeleted = useCallback(() => {
-    // Incrementar el contador para disparar el useEffect
     setReloadCounter((prev) => prev + 1);
   }, []);
 
@@ -49,7 +52,6 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
         encargados: encargadosRes.data.data || [],
         estudiantes: estudiantesRes.data.data || [],
       });
-      console.log("Datos de tesis cargados.");
     } catch (error) {
       setError(error);
     } finally {
@@ -83,13 +85,11 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
     };
 
     const result = tesis.filter((t) => {
-      // Nombre
       if (fNombre) {
         const nombre = (t.nombre || t.titulo || "").toLowerCase();
         if (!nombre.includes(fNombre)) return false;
       }
 
-      // Autor
       if (fAutor) {
         const autoresArr = t.autores || [];
         const hasAutor = autoresArr.some(
@@ -98,7 +98,6 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
         if (!hasAutor) return false;
       }
 
-      // Encargado
       if (fEncargado) {
         const thesisEncargadoId = getId(
           t.id_encargado ?? t.encargado ?? (t.encargado_data || null)
@@ -107,7 +106,6 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
         if (thesisEncargadoId !== Number(fEncargado)) return false;
       }
 
-      // Tutor
       if (fTutor) {
         const thesisTutorId = getId(
           t.id_tutor ?? t.tutor ?? (t.tutor_data || null)
@@ -116,17 +114,14 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
         if (thesisTutorId !== Number(fTutor)) return false;
       }
 
-      // Sede
       if (fSede) {
         if (String(t.id_sede) !== String(fSede)) return false;
       }
 
-      // Estado
       if (fEstado) {
         if (String(t.estado) !== String(fEstado)) return false;
       }
 
-      // Fecha range
       if (fechaDesde || fechaHasta) {
         if (!t.fecha) return false;
         const tesisDate = dayjs(t.fecha);
@@ -158,6 +153,9 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
     return { ...tesisItem, autor, tutor, encargado };
   };
 
+  // 🔍 Integración con búsqueda por lupa
+  const tesisParaMostrar = haBuscado ? tesisEncontradas : filteredTesis;
+
   return (
     <div className="w-full">
       <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
@@ -168,8 +166,8 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
               </li>
             ))
           : !error &&
-            filteredTesis.length > 0 &&
-            filteredTesis.map((tesisItem) => (
+            tesisParaMostrar.length > 0 &&
+            tesisParaMostrar.map((tesisItem) => (
               <li
                 key={tesisItem.id_tesis || tesisItem.id || tesisItem.nombre}
                 className="w-full"
@@ -178,7 +176,7 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
                   <Card
                     data={getFullTesisData(tesisItem)}
                     onTesisDeleted={handleTesisDeleted}
-                    onEdit={() => onEditTesis(tesisItem)} 
+                    onEdit={() => onEditTesis(tesisItem)}
                   />
                 )}
               </li>
@@ -195,7 +193,7 @@ const CardList = ({ filters, reloadKey, onEditTesis }) => {
           </li>
         )}
 
-        {!isLoading && !error && filteredTesis.length === 0 && (
+        {!isLoading && !error && tesisParaMostrar.length === 0 && (
           <li className="col-span-full">
             <p
               className="text-center py-8"

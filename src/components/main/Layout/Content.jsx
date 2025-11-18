@@ -1,21 +1,17 @@
-import { React, useState } from "react";
+import React from "react";
 import CardList from "@/components/main/Card/CardList";
-
-import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
 
 const Content = ({
   isAsideVisible,
-  isTesisFormVisible,
   setIsTesisFormVisible,
   isLoading,
   tesisEncontradas,
   haBuscado,
-  reloadKey,
-  filters,
-  onEditTesis, // <-- 1. Aceptar la nueva prop
+  onEditTesis,
+  onTesisDeleted, // <-- Aceptar la nueva prop
+  error, // Pasar el error si existe
 }) => {
   const marginLeftClass = isAsideVisible ? "ml-16" : "ml-0";
 
@@ -23,12 +19,13 @@ const Content = ({
     <div
       className={`flex-grow w-full p-4 overflow-ellipsis transition-margin-left duration-300 ease-in-out ${marginLeftClass}`}
     >
-      <CardList 
-        reloadKey={reloadKey} 
-        tesisEncontradas={tesisEncontradas} 
-        haBuscado={haBuscado} 
-        filters={filters} 
-        onEditTesis={onEditTesis} // <-- 2. Pasar la prop a CardList
+      <CardList
+        isLoading={isLoading}
+        tesisEncontradas={tesisEncontradas}
+        haBuscado={haBuscado}
+        onEditTesis={onEditTesis}
+        onTesisDeleted={onTesisDeleted} // <-- Pasar la prop a CardList
+        error={error}
       />
 
       <div className="absolute bottom-20 right-10 z-10">

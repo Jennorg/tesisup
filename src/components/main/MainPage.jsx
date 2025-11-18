@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import Content from "@/components/main/Layout/Content";
 import axios from "axios";
-import TesisForm from "@/components/main/Form/ManagementForm.jsx"; // Tu alias para ManagementForm
+import TesisForm from "@/components/main/Form/ManagementForm.jsx";
 import Header from "@/components/main/Layout/Header";
 import Filters from "@/components/main/Layout/Filters";
+import CustomPagination from "@/components/Ui/Pagination";
 
 const MainPage = () => {
   const [isAsideVisible, setIsAsideVisible] = useState(false);
@@ -14,9 +15,16 @@ const MainPage = () => {
   const [tesisEncontradas, setTesisEncontradas] = useState([]);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [haBuscado, setHaBuscado] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState(null); // Nuevo estado para el error
   const tesisFormRef = useRef(null);
 
-  // Estado para guardar la tesis que se va a editar
+  const [paginationData, setPaginationData] = useState({
+    page: 1,
+    limit: 9,
+    total: 0,
+  });
+
   const [tesisToEdit, setTesisToEdit] = useState(null);
 
   useEffect(() => {
@@ -39,7 +47,7 @@ const MainPage = () => {
         !isClickOnDialogBackdrop
       ) {
         setIsTesisFormVisible(false);
-        setTesisToEdit(null); // Limpiar estado al cerrar
+        setTesisToEdit(null);
       }
     };
 
@@ -47,80 +55,118 @@ const MainPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isTesisFormVisible]);
 
-  // Función para manejar el clic de "Editar"
+  useEffect(() => {
+    const fetchTesis = async () => {
+      console.log("=== INICIANDO FETCH TESIS ===");
+      console.log("Estado actual - activeFilters:", activeFilters);
+      console.log("Estado actual - searchQuery:", searchQuery);
+      console.log("Estado actual - paginationData:", paginationData);
+      
+      setIsLoading(true);
+      setHaBuscado(true);
+      setError(null); // Limpiar error anterior
+
+      try {
+        const params = new URLSearchParams({
+          page: paginationData.page,
+          limit: paginationData.limit,
+        });
+
+        if (activeFilters && typeof activeFilters === 'object') {
+          Object.entries(activeFilters).forEach(([key, value]) => {
+            // Solo agregar valores válidos (no null, undefined, ni string vacío)
+            if (value !== null && value !== undefined && value !== "") {
+              // Convertir a string para URLSearchParams
+              const stringValue = String(value);
+              params.append(key, stringValue);
+              console.log(`Agregando filtro: ${key} = ${stringValue} (original: ${value}, tipo: ${typeof value})`);
+            } else {
+              console.log(`Omitiendo filtro: ${key} = ${value} (valor vacío/null/undefined)`);
+            }
+          });
+        } else {
+          console.log("No hay filtros activos o activeFilters no es un objeto válido");
+        }
+
+        if (searchQuery) {
+          params.append("cadena", searchQuery);
+          console.log(`Agregando búsqueda: cadena = ${searchQuery}`);
+        }
+
+        const apiUrl = `${import.meta.env.VITE_API_URL}/tesis`;
+
+        console.log("=== SOLICITUD AL BACKEND ===");
+        console.log("URL:", apiUrl);
+        console.log("Parámetros completos:", params.toString());
+        console.log("Filtros activos (objeto):", JSON.stringify(activeFilters, null, 2));
+        console.log("Búsqueda:", searchQuery || "(vacía)");
+        console.log("============================");
+
+        const response = await axios.get(apiUrl, {
+          params,
+          withCredentials: true,
+        });
+
+        console.log("Respuesta del backend:", response.data);
+
+        if (response.data && Array.isArray(response.data.data)) {
+          setTesisEncontradas(response.data.data);
+          setPaginationData((prev) => ({
+            ...prev,
+            total: response.data.total,
+          }));
+        } else {
+          console.warn("Respuesta inesperada de la API:", response.data);
+          setTesisEncontradas([]);
+          setPaginationData((prev) => ({ ...prev, total: 0 }));
+        }
+      } catch (err) {
+        console.error("Error al buscar tesis:", err);
+        setError(err); // Guardar el error en el estado
+        setTesisEncontradas([]);
+        setPaginationData((prev) => ({ ...prev, total: 0 }));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTesis();
+  }, [
+    paginationData.page,
+    paginationData.limit,
+    searchQuery,
+    activeFilters,
+    reloadTesisKey,
+  ]);
+
+  // Debug: Log cuando cambian las dependencias
+  useEffect(() => {
+    console.log("🔄 DEPENDENCIAS CAMBIARON:");
+    console.log("  - paginationData.page:", paginationData.page);
+    console.log("  - paginationData.limit:", paginationData.limit);
+    console.log("  - searchQuery:", searchQuery);
+    console.log("  - activeFilters:", activeFilters);
+    console.log("  - reloadTesisKey:", reloadTesisKey);
+  }, [paginationData.page, paginationData.limit, searchQuery, activeFilters, reloadTesisKey]);
+
   const handleEditTesis = (tesisData) => {
     setTesisToEdit(tesisData);
     setIsTesisFormVisible(true);
   };
 
-  // Funciones de cierre y éxito actualizadas
   const handleCloseModal = () => {
     setIsTesisFormVisible(false);
-    setTesisToEdit(null); // Limpiar estado
+    setTesisToEdit(null);
   };
 
   const handleSuccessModal = () => {
-    setReloadTesisKey((k) => k + 1); // Recargar la lista
+    setReloadTesisKey((k) => k + 1);
     setIsTesisFormVisible(false);
-    setTesisToEdit(null); // Limpiar estado
+    setTesisToEdit(null);
   };
 
-  // Función para descargar todas las tesis
-  const handleDownloadAll = async () => {
-    try {
-      const apiUrl = `${import.meta.env.VITE_API_URL}/tesis/download/all`;
-
-      const response = await axios.get(apiUrl, {
-        responseType: "blob",
-        withCredentials: true,
-      });
-
-      const blob = response.data;
-      const contentType = response.headers["content-type"];
-
-      const isZip = contentType && contentType.includes("application/zip");
-      const firstBytes = await blob.slice(0, 2).text();
-
-      if (!isZip || firstBytes !== "PK") {
-        const text = await blob.text();
-        console.error("Error: La respuesta no es un archivo ZIP válido.", text);
-        try {
-          const errorData = JSON.parse(text);
-          throw new Error(errorData.message || "Error al descargar las tesis");
-        } catch (parseError) {
-          throw new Error(
-            "Respuesta inesperada del servidor: " + text.substring(0, 200)
-          );
-        }
-      }
-
-      // Crear una URL para el blob y un enlace para la descarga
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-
-      // Extraer el nombre del archivo de las cabeceras si está disponible
-      const contentDisposition = response.headers["content-disposition"];
-      let filename = "todas_las_tesis.zip"; // Nombre por defecto
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-        if (filenameMatch && filenameMatch.length > 1) {
-          filename = filenameMatch[1];
-        }
-      }
-      link.setAttribute("download", filename);
-
-      // Simular clic para iniciar la descarga y luego limpiar
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      console.log("Descarga completada exitosamente");
-    } catch (error) {
-      console.error("Error al descargar las tesis:", error);
-      alert(error.message || "Error al descargar las tesis");
-    }
+  const handlePageChange = (newPage) => {
+    setPaginationData((prev) => ({ ...prev, page: newPage }));
   };
 
   return (
@@ -129,41 +175,38 @@ const MainPage = () => {
         isAsideVisible={isAsideVisible}
         onToggleMenu={setIsAsideVisible}
         setIsLoading={setIsLoading}
-        tesisEncontradas={tesisEncontradas}
-        setTesisEncontradas={setTesisEncontradas}
         setHaBuscado={setHaBuscado}
         isFilterVisible={isFilterVisible}
         onToggleFilter={setIsFilterVisible}
+        setPaginationData={setPaginationData}
+        setSearchQuery={setSearchQuery}
       />
       <main
         className={`relative z-10 flex-grow pr-4 pt-4 overflow-y-auto transition-all duration-300 ${
           isAsideVisible ? "pl-32" : "pl-4"
         }`}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-text-primary">
-            Gestión de Tesis
-          </h1>
-          <button
-            onClick={handleDownloadAll}
-            className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-300"
-          >
-            Descargar tesis
-          </button>
-        </div>
         <Content
           isAsideVisible={isAsideVisible}
-          isTesisFormVisible={isTesisFormVisible}
           setIsTesisFormVisible={setIsTesisFormVisible}
           isLoading={isLoading}
           tesisEncontradas={tesisEncontradas}
           haBuscado={haBuscado}
-          reloadKey={reloadTesisKey}
-          filters={activeFilters}
-          onEditTesis={handleEditTesis} // Pasar el handler a Content
+          onEditTesis={handleEditTesis}
+          onTesisDeleted={handleSuccessModal} // Pasar la función de recarga
+          error={error} // Pasar el estado de error
         />
+
+        {paginationData.total > paginationData.limit && (
+          <CustomPagination
+            page={paginationData.page}
+            limit={paginationData.limit}
+            total={paginationData.total}
+            onPageChange={handlePageChange}
+          />
+        )}
       </main>
-      {/* Panel de Filtros Absoluto */}
+
       <div
         className={`absolute top-0 left-0 h-full z-30 transition-transform duration-300 ease-in-out ${
           isFilterVisible ? "translate-x-0" : "-translate-x-full"
@@ -172,18 +215,28 @@ const MainPage = () => {
       >
         <Filters
           onClose={() => setIsFilterVisible(false)}
-          onApply={(f) => setActiveFilters(f)}
+          onApply={(f) => {
+            console.log("=== APLICANDO FILTROS ===");
+            console.log("Filtros recibidos:", f);
+            console.log("Filtros anteriores:", activeFilters);
+            // Asegurar que siempre sea un objeto o null, nunca undefined
+            const filtersToSet = f === null || f === undefined ? null : f;
+            setActiveFilters(filtersToSet);
+            // Resetear a página 1 cuando se aplican filtros
+            setPaginationData((prev) => ({ ...prev, page: 1 }));
+            console.log("Filtros aplicados correctamente:", filtersToSet);
+            console.log("========================");
+          }}
         />
       </div>
 
-      {/* Modal de Tesis (Crear o Editar) */}
       {isTesisFormVisible ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background bg-opacity-50 backdrop-blur-sm">
           <TesisForm
             ref={tesisFormRef}
-            onClose={handleCloseModal} // Usar handler actualizado
-            onSuccess={handleSuccessModal} // Usar handler actualizado
-            tesisToEdit={tesisToEdit} // Pasar los datos de la tesis a editar
+            onClose={handleCloseModal}
+            onSuccess={handleSuccessModal}
+            tesisToEdit={tesisToEdit}
           />
         </div>
       ) : null}

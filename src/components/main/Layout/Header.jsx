@@ -28,11 +28,11 @@ const Header = ({
   isAsideVisible,
   onToggleMenu,
   setIsLoading,
-  tesisEncontradas,
-  setTesisEncontradas,
   setHaBuscado,
   onToggleFilter,
   isFilterVisible,
+  setPaginationData,
+  setSearchQuery,
 }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -70,10 +70,8 @@ const Header = ({
       <LogoContainer />
 
       <SearchBar
-        setIsLoading={setIsLoading}
-        setTesisEncontradas={setTesisEncontradas}
-        tesisEncontradas={tesisEncontradas}
-        setHaBuscado={setHaBuscado}
+        setSearchQuery={setSearchQuery}
+        setPaginationData={setPaginationData}
       />
       <IconButton
         onClick={() => onToggleFilter(!isFilterVisible)}

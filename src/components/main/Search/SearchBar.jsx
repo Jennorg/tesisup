@@ -1,72 +1,44 @@
-import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import React, { useState, useRef, useEffect } from "react";
 import { GoSearch } from "react-icons/go";
-import SearchOptions from "@/components/main/Search/SearchOptions";
 
 const SearchBar = ({
-  setIsLoading,
-  tesisEncontradas,
-  setTesisEncontradas,
-  setHaBuscado,
+  setSearchQuery,
+  setPaginationData,
 }) => {
-  const [tesisABuscar, setTesisABuscar] = useState("");
+  const [searchValue, setSearchValue] = useState("");
+  const timeoutRef = useRef(null);
 
-  const debounce = (func, delay) => {
-    let timeoutId;
-    return (...args) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func(...args), delay);
+  useEffect(() => {
+    // Limpiar timeout al desmontar
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
-  };
-
-  const fetchtesisEncontradas = useCallback(async (query) => {
-    if (!query.trim()) {
-      setTesisEncontradas([]);
-      setHaBuscado(false);
-      return;
-    }
-    try {
-      setIsLoading(true);
-
-      const res = await axios.get(
-        `http://localhost:8080/api/tesis/cadena/${query}`
-      );
-
-      let dataToArray = res.data;
-      setTesisEncontradas(dataToArray);
-      setHaBuscado(true); // Marca que se ha buscado algo
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error al obtener las tesis:", error);
-      setTesisEncontradas([]);
-    }
   }, []);
-
-  const debouncedFetch = useCallback(debounce(fetchtesisEncontradas, 300), [
-    fetchtesisEncontradas,
-  ]);
 
   const handleInput = (e) => {
     const value = e.target.value;
-    if (value.length > 0) {
-      setTesisABuscar(value);
-      setHaBuscado(true);
-    } else {
-      setTesisABuscar([]);
-      setHaBuscado(false);
-    }
-    debouncedFetch(value);
-    setShowOptions(value.trim() !== "" && tesisEncontradas.length > 0);
-  };
+    setSearchValue(value);
 
-  const handleBlur = () => {
-    setTimeout(() => setShowOptions(false), 100);
-  };
-
-  const handleFocus = () => {
-    if (tesisABuscar.trim() !== "" && tesisEncontradas.length > 0) {
-      setShowOptions(true);
+    // Limpiar timeout anterior
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
+
+    // Si el valor está vacío, limpiar la búsqueda inmediatamente
+    if (value.trim() === "") {
+      setSearchQuery("");
+      setPaginationData((prev) => ({ ...prev, page: 1 }));
+      return;
+    }
+
+    // Crear nuevo timeout para debounce
+    timeoutRef.current = setTimeout(() => {
+      setSearchQuery(value.trim());
+      // Resetear a la primera página cuando se busca
+      setPaginationData((prev) => ({ ...prev, page: 1 }));
+    }, 300);
   };
 
   return (
@@ -75,9 +47,8 @@ const SearchBar = ({
         type="text"
         className="w-full pr-8"
         placeholder="Buscar tesis"
+        value={searchValue}
         onChange={handleInput}
-        onBlur={handleBlur}
-        onFocus={handleFocus}
       />
       <GoSearch className="pointer-events-none" />
     </div>

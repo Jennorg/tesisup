@@ -20,12 +20,12 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const initialFilters = {
   nombre: "",
-  autor: null,
-  encargado: null,
+  autor: "",
+  encargado: "",
   fechaDesde: null,
   fechaHasta: null,
-  tutor: null,
-  sede: null,
+  tutor: "",
+  sede: "",
   estado: "",
 };
 
@@ -66,17 +66,11 @@ const Filters = ({ onClose, onApply }) => {
   }, []);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Normalizar ids numéricos para autor/encargado/tutor/sede
-    const numericFields = ["autor", "encargado", "tutor", "sede"];
-    const newValue = numericFields.includes(name)
-      ? value === "" || value === null
-        ? null
-        : Number(value)
-      : value;
-
+    // Mantener como string para que coincida con los MenuItems
+    // Se convertirá a número solo al aplicar el filtro
     setFilters({
       ...filters,
-      [name]: newValue,
+      [name]: value,
     });
   };
 
@@ -89,16 +83,53 @@ const Filters = ({ onClose, onApply }) => {
 
   const handleClearFilters = () => {
     setFilters(initialFilters);
-    console.log("Filtros limpiados");
-    onApply?.(initialFilters);
+    onApply?.(null); // Limpiar los filtros en el componente padre
   };
 
   const handleFilter = () => {
-    // Llama al callback proporcionado por el padre con los filtros actuales
-    console.log("Filtrando con:", filters);
-    onApply?.(filters);
+    // Mapear nombres de filtros a nombres que espera el backend
+    const filterMapping = {
+      autor: "id_estudiante", // El backend probablemente espera id_estudiante
+      encargado: "id_encargado",
+      tutor: "id_tutor",
+      sede: "id_sede",
+    };
+
+    const filtersToApply = {
+      nombre: filters.nombre || undefined,
+      fecha_desde: filters.fechaDesde
+        ? dayjs(filters.fechaDesde).format("YYYY-MM-DD")
+        : undefined,
+      fecha_hasta: filters.fechaHasta
+        ? dayjs(filters.fechaHasta).format("YYYY-MM-DD")
+        : undefined,
+      estado: filters.estado || undefined,
+    };
+
+    // Mapear y convertir campos numéricos
+    Object.entries(filterMapping).forEach(([frontendKey, backendKey]) => {
+      const value = filters[frontendKey];
+      if (value && value !== "") {
+        const numValue = Number(value);
+        if (!isNaN(numValue)) {
+          filtersToApply[backendKey] = numValue;
+        }
+      }
+    });
+
+    // Eliminar valores undefined para no enviar queries innecesarias
+    Object.keys(filtersToApply).forEach((key) => {
+      if (filtersToApply[key] === undefined || filtersToApply[key] === null || filtersToApply[key] === "") {
+        delete filtersToApply[key];
+      }
+    });
+
+    // Si no hay filtros aplicados, pasar null para limpiar
+    const hasFilters = Object.keys(filtersToApply).length > 0;
+    console.log("Filtrando con:", filtersToApply);
+    onApply?.(hasFilters ? filtersToApply : null);
     if (onClose) {
-      onClose(); // Cerrar drawer en móvil después de filtrar
+      onClose();
     }
   };
 
@@ -180,7 +211,7 @@ const Filters = ({ onClose, onApply }) => {
               {dropdownOptions.autores.map((autor) => (
                 <MenuItem
                   key={autor.ci ?? autor.id}
-                  value={autor.ci ?? autor.id}
+                  value={String(autor.ci ?? autor.id)}
                 >
                   {autor.nombre_completo || autor.nombre}
                 </MenuItem>
@@ -203,7 +234,7 @@ const Filters = ({ onClose, onApply }) => {
               {dropdownOptions.encargados.map((encargado) => (
                 <MenuItem
                   key={encargado.ci ?? encargado.id}
-                  value={encargado.ci ?? encargado.id}
+                  value={String(encargado.ci ?? encargado.id)}
                 >
                   {encargado.nombre_completo || encargado.nombre}
                 </MenuItem>
@@ -261,7 +292,7 @@ const Filters = ({ onClose, onApply }) => {
               {dropdownOptions.tutores.map((tutor) => (
                 <MenuItem
                   key={tutor.ci ?? tutor.id}
-                  value={tutor.ci ?? tutor.id}
+                  value={String(tutor.ci ?? tutor.id)}
                 >
                   {tutor.nombre_completo || tutor.nombre}
                 </MenuItem>
@@ -282,7 +313,7 @@ const Filters = ({ onClose, onApply }) => {
                 <em>Ninguno</em>
               </MenuItem>
               {dropdownOptions.sedes.map((sede) => (
-                <MenuItem key={sede.id} value={sede.id}>
+                <MenuItem key={sede.id} value={String(sede.id)}>
                   {sede.nombre}
                 </MenuItem>
               ))}

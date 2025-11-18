@@ -20,8 +20,8 @@ import Divider from "@mui/material/Divider";
 import LogoutIcon from "@mui/icons-material/Logout";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import IconButton from "@mui/material/IconButton";
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const Header = ({
@@ -63,8 +63,6 @@ const Header = ({
     handleClose();
   };
 
-  console.log("User in Header:", user);
-
   return (
     <div className="flex gap-3 justify-between items-center w-full p-3">
       <LogoContainer />
@@ -75,14 +73,14 @@ const Header = ({
       />
       <IconButton
         onClick={() => onToggleFilter(!isFilterVisible)}
-        sx={{ color: 'text.primary' }}
+        sx={{ color: "text.primary" }}
         aria-label="toggle filters"
       >
         <FilterListIcon />
       </IconButton>
 
       <IconButton sx={{ ml: 1 }} onClick={toggleColorMode} color="inherit">
-        {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+        {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
       </IconButton>
 
       <Avatar

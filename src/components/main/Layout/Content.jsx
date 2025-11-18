@@ -28,7 +28,7 @@ const Content = ({
         error={error}
       />
 
-      <div className="absolute bottom-20 right-10 z-10">
+      <div className="fixed bottom-10 right-10 z-10">
         <Fab
           color="primary"
           aria-label="add"

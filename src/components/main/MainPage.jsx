@@ -5,6 +5,7 @@ import TesisForm from "@/components/main/Form/ManagementForm.jsx"; // Tu alias p
 import Header from "@/components/main/Layout/Header";
 import Filters from "@/components/main/Layout/Filters";
 import CustomPagination from "@/components/Ui/Pagination"; // Importado para la paginación
+import LoadingModal from "@/hooks/Modals/LoadingModal";
 
 const MainPage = () => {
   const [isAsideVisible, setIsAsideVisible] = useState(false);
@@ -27,6 +28,13 @@ const MainPage = () => {
 
   // Estado para guardar la tesis que se va a editar
   const [tesisToEdit, setTesisToEdit] = useState(null);
+  
+  // Estado para el modal de descarga
+  const [downloadModal, setDownloadModal] = useState({
+    isOpen: false,
+    status: "loading",
+    message: "",
+  });
 
   // useEffect para cerrar el modal al hacer clic fuera
   useEffect(() => {
@@ -136,62 +144,263 @@ const MainPage = () => {
   };
 
   // --- FUNCIÓN DE DESCARGA AÑADIDA ---
-  // Esta es la función de tu código "viejo"
   const handleDownloadAll = async () => {
-    try {
-      const apiUrl = `${import.meta.env.VITE_API_URL}/tesis/download/all`;
+    // Mostrar modal de carga
+    setDownloadModal({
+      isOpen: true,
+      status: "loading",
+      message: "Iniciando descarga de todas las tesis...",
+    });
 
-      const response = await axios.get(apiUrl, {
-        responseType: "blob",
+    let eventSource = null;
+    let isDownloading = false; // Flag para evitar múltiples descargas
+
+    // Función auxiliar para descargar el archivo
+    const downloadFile = async (downloadPath) => {
+      if (isDownloading) {
+        console.log("La descarga ya está en progreso, ignorando llamada duplicada");
+        return;
+      }
+      isDownloading = true;
+
+      try {
+        setDownloadModal({
+          isOpen: true,
+          status: "loading",
+          message: "Descargando archivo...",
+        });
+
+        const downloadApiUrl = `${import.meta.env.VITE_API_URL}${downloadPath}`;
+        console.log("Descargando archivo desde:", downloadApiUrl);
+
+        // Para la descarga del archivo, no usar withCredentials si causa problemas de CORS
+        const response = await axios.get(downloadApiUrl, {
+          responseType: "blob",
+          withCredentials: true,
+          timeout: 300000, // 5 minutos
+          onDownloadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              setDownloadModal({
+                isOpen: true,
+                status: "loading",
+                message: `Descargando archivo... ${percentCompleted}% completado`,
+              });
+            }
+          },
+        });
+
+        const blob = response.data;
+        const contentType = response.headers["content-type"];
+
+        // Verificar que sea un ZIP
+        const isZip = contentType && contentType.includes("application/zip");
+        const firstBytes = await blob.slice(0, 2).text();
+
+        if (!isZip || firstBytes !== "PK") {
+          const text = await blob.text();
+          try {
+            const errorData = JSON.parse(text);
+            throw new Error(errorData.message || "Error: La respuesta no es un archivo ZIP válido");
+          } catch (parseError) {
+            throw new Error("Error: La respuesta no es un archivo ZIP válido");
+          }
+        }
+
+        // Crear una URL para el blob y un enlace para la descarga
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+
+        // Extraer el nombre del archivo de las cabeceras si está disponible
+        const contentDisposition = response.headers["content-disposition"];
+        let filename = "todas_las_tesis.zip"; // Nombre por defecto
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          if (filenameMatch && filenameMatch.length > 1) {
+            filename = filenameMatch[1];
+          }
+        }
+        link.setAttribute("download", filename);
+
+        // Simular clic para iniciar la descarga y luego limpiar
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        // Mostrar modal de éxito
+        setDownloadModal({
+          isOpen: true,
+          status: "success",
+          message: "¡Descarga completada exitosamente!",
+        });
+      } catch (error) {
+        console.error("Error al descargar el archivo:", error);
+        isDownloading = false;
+        throw error;
+      }
+    };
+
+    try {
+      // Paso 1: Iniciar el proceso de descarga y obtener el jobId
+      const apiUrl = `${import.meta.env.VITE_API_URL}/tesis/download/all`;
+      const initResponse = await axios.get(apiUrl, {
         withCredentials: true,
       });
 
-      const blob = response.data;
-      const contentType = response.headers["content-type"];
+      // El backend devuelve un JSON con jobId y URLs
+      const { jobId, progressUrl, streamUrl } = initResponse.data;
 
-      const isZip = contentType && contentType.includes("application/zip");
-      const firstBytes = await blob.slice(0, 2).text();
+      console.log("Job iniciado:", { jobId, progressUrl, streamUrl });
 
-      if (!isZip || firstBytes !== "PK") {
-        const text = await blob.text();
-        console.error("Error: La respuesta no es un archivo ZIP válido.", text);
+      if (!jobId) {
+        throw new Error("No se recibió un jobId del servidor");
+      }
+
+      setDownloadModal({
+        isOpen: true,
+        status: "loading",
+        message: "Procesando tesis... Por favor espera.",
+      });
+
+      // Paso 2: Usar Server-Sent Events (SSE) para recibir actualizaciones de progreso
+      const sseUrl = `${import.meta.env.VITE_API_URL}${streamUrl || progressUrl || `/tesis/download/progress/${jobId}/stream`}`;
+      console.log("Conectando a SSE:", sseUrl);
+
+      eventSource = new EventSource(sseUrl);
+
+      eventSource.onmessage = (event) => {
         try {
-          const errorData = JSON.parse(text);
-          throw new Error(errorData.message || "Error al descargar las tesis");
-        } catch (parseError) {
-          throw new Error(
-            "Respuesta inesperada del servidor: " + text.substring(0, 200)
-          );
+          const data = JSON.parse(event.data);
+          console.log("Evento SSE recibido:", data);
+
+          const { total, processed, current, status, percentage, downloadUrl } = data;
+
+          if (status === "completed" || status === "done" || status === "finished") {
+            // El proceso está completo
+            console.log("Proceso completado, iniciando descarga...");
+            if (eventSource) {
+              eventSource.close();
+              eventSource = null;
+            }
+
+            // Descargar el archivo usando el downloadUrl proporcionado
+            const finalDownloadUrl = downloadUrl || `/tesis/download/result/${jobId}`;
+            downloadFile(finalDownloadUrl).catch((error) => {
+              console.error("Error al descargar:", error);
+              setDownloadModal({
+                isOpen: true,
+                status: "error",
+                message: error.message || "Error al descargar el archivo",
+              });
+            });
+          } else if (status === "error" || status === "failed") {
+            // Hubo un error
+            console.error("Error en el proceso:", data);
+            if (eventSource) {
+              eventSource.close();
+              eventSource = null;
+            }
+            setDownloadModal({
+              isOpen: true,
+              status: "error",
+              message: data.message || "Error al procesar las tesis",
+            });
+          } else if (total && processed !== undefined) {
+            // Mostrar progreso numérico
+            const percent = percentage !== undefined ? percentage : Math.round((processed / total) * 100);
+            setDownloadModal({
+              isOpen: true,
+              status: "loading",
+              message: `Procesando tesis... ${processed} de ${total} (${percent}%)${current ? ` - ${current}` : ""}`,
+            });
+          } else if (current) {
+            // Mostrar tesis actual
+            setDownloadModal({
+              isOpen: true,
+              status: "loading",
+              message: `Procesando tesis: ${current}...`,
+            });
+          } else if (percentage !== undefined) {
+            // Mostrar solo porcentaje
+            setDownloadModal({
+              isOpen: true,
+              status: "loading",
+              message: `Procesando tesis... ${percentage}% completado`,
+            });
+          } else {
+            // Si no hay información específica, mostrar mensaje genérico
+            setDownloadModal({
+              isOpen: true,
+              status: "loading",
+              message: "Procesando tesis... Por favor espera.",
+            });
+          }
+        } catch (error) {
+          console.error("Error al parsear evento SSE:", error);
         }
-      }
+      };
 
-      // Crear una URL para el blob y un enlace para la descarga
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-
-      // Extraer el nombre del archivo de las cabeceras si está disponible
-      const contentDisposition = response.headers["content-disposition"];
-      let filename = "todas_las_tesis.zip"; // Nombre por defecto
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-        if (filenameMatch && filenameMatch.length > 1) {
-          filename = filenameMatch[1];
+      eventSource.onerror = (error) => {
+        console.error("Error en SSE:", error);
+        // Si el evento se cierra normalmente (readyState === 2), no es un error
+        if (eventSource && eventSource.readyState === EventSource.CLOSED) {
+          console.log("Conexión SSE cerrada normalmente");
+        } else {
+          // Solo mostrar error si no estamos descargando
+          if (!isDownloading) {
+            setDownloadModal({
+              isOpen: true,
+              status: "error",
+              message: "Error en la conexión con el servidor. Intenta de nuevo.",
+            });
+          }
         }
-      }
-      link.setAttribute("download", filename);
+      };
 
-      // Simular clic para iniciar la descarga y luego limpiar
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      console.log("Descarga completada exitosamente");
     } catch (error) {
+      // Cerrar SSE si está abierto
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
       console.error("Error al descargar las tesis:", error);
-      alert(error.message || "Error al descargar las tesis");
+      
+      // Intentar parsear el error si viene como JSON
+      let errorMessage = "Error al descargar las tesis. Intenta de nuevo.";
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          try {
+            const errorData = JSON.parse(error.response.data);
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            errorMessage = error.response.data;
+          }
+        } else {
+          errorMessage = error.response.data.message || errorMessage;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Mostrar modal de error
+      setDownloadModal({
+        isOpen: true,
+        status: "error",
+        message: errorMessage,
+      });
     }
+  };
+
+  const handleCloseDownloadModal = () => {
+    setDownloadModal({
+      isOpen: false,
+      status: "loading",
+      message: "",
+    });
   };
 
   // Handler para la paginación
@@ -277,6 +486,14 @@ const MainPage = () => {
           />
         </div>
       ) : null}
+
+      {/* Modal de Descarga */}
+      <LoadingModal
+        isOpen={downloadModal.isOpen}
+        status={downloadModal.status}
+        message={downloadModal.message}
+        onClose={handleCloseDownloadModal}
+      />
     </div>
   );
 };

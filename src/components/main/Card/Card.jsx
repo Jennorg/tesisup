@@ -341,6 +341,44 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit }) => {
               )}
             </span>
           </p>
+          <p className="text-sm">
+            <span className="text-text-secondary">Jurado:</span>
+            <span className="text-text-primary ml-1">
+              {data.jurados && data.jurados.length > 0 ? (
+                data.jurados.map((jurado, idx) => (
+                  <React.Fragment key={idx}>
+                    {jurado.ci ? (
+                      <Link
+                        component="button"
+                        variant="body2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateToProfile(jurado.ci, "profesor");
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          textDecoration: "none",
+                          color: getUserTypeColor("profesor"),
+                          fontWeight: 500,
+                          "&:hover": {
+                            textDecoration: "underline",
+                            opacity: 0.8,
+                          },
+                        }}
+                      >
+                        {jurado.nombre || jurado.nombre_completo}
+                      </Link>
+                    ) : (
+                      <span>{jurado.nombre || jurado.nombre_completo}</span>
+                    )}
+                    {idx < data.jurados.length - 1 && ", "}
+                  </React.Fragment>
+                ))
+              ) : (
+                "No asignado"
+              )}
+            </span>
+          </p>
         </div>
 
         <div className="flex gap-2 mt-auto">

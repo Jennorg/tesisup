@@ -9,6 +9,7 @@ import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import LoadingModal from "@/hooks/Modals/LoadingModal";
+import StatusSelect from "./StatusSelect";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
@@ -120,8 +121,8 @@ const useDownloadTesis = (tesisId, setModalState) => {
   return { handleDownload, isDownloading };
 };
 
-// 💡 Acepta la nueva prop 'onEdit'
-const Card = ({ data, isLoading = false, onTesisDeleted, onEdit }) => {
+// 💡 Acepta la nueva prop 'onEdit' y 'onStatusChange'
+const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange }) => {
   const navigate = useNavigate();
 
   if (!data && !isLoading) {
@@ -212,9 +213,11 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit }) => {
         </div>
 
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="bg-secondary-main px-3 py-1 rounded-full text-text-primary text-sm">
-            {data.estado}
-          </span>
+          <StatusSelect
+            tesisId={data.id || data.id_tesis}
+            currentStatus={data.estado}
+            onStatusChange={onStatusChange}
+          />
           <span className="text-text-secondary text-sm">
             {formatDate(data.fecha)}
           </span>

@@ -11,6 +11,7 @@ const Content = ({
   haBuscado,
   onEditTesis,
   onTesisDeleted, // <-- Aceptar la nueva prop
+  onStatusChange, // <-- Aceptar la prop para actualizar estado
   error, // Pasar el error si existe
 }) => {
   const marginLeftClass = isAsideVisible ? "ml-16" : "ml-0";
@@ -25,6 +26,7 @@ const Content = ({
         haBuscado={haBuscado}
         onEditTesis={onEditTesis}
         onTesisDeleted={onTesisDeleted} // <-- Pasar la prop a CardList
+        onStatusChange={onStatusChange} // <-- Pasar la prop a CardList
         error={error}
       />
 

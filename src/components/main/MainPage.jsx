@@ -143,6 +143,19 @@ const MainPage = () => {
     setTesisToEdit(null);
   };
 
+  // Función para actualizar el estado de una tesis
+  const handleStatusChange = (tesisId, newStatus) => {
+    setTesisEncontradas((prevTesis) =>
+      prevTesis.map((tesis) => {
+        const id = tesis.id || tesis.id_tesis;
+        if (id === tesisId) {
+          return { ...tesis, estado: newStatus };
+        }
+        return tesis;
+      })
+    );
+  };
+
   // --- FUNCIÓN DE DESCARGA AÑADIDA ---
   const handleDownloadAll = async () => {
     // Mostrar modal de carga
@@ -446,6 +459,8 @@ const MainPage = () => {
           tesisEncontradas={tesisEncontradas}
           haBuscado={haBuscado}
           onEditTesis={handleEditTesis}
+          onTesisDeleted={handleSuccessModal}
+          onStatusChange={handleStatusChange}
         />
 
         {/* Lógica de paginación */}

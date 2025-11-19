@@ -8,6 +8,7 @@ const CardList = ({
   haBuscado, // Se mantiene para saber si mostrar el mensaje de "no encontrados"
   error, // Opcional: para manejar errores desde MainPage
   onTesisDeleted, // Para refrescar la lista
+  onStatusChange, // Para actualizar el estado de una tesis
 }) => {
   // El componente ahora es mucho más simple. Solo se encarga de renderizar.
 
@@ -57,6 +58,7 @@ const CardList = ({
               data={tesisItem} // Asumimos que la data ya viene completa
               onTesisDeleted={onTesisDeleted}
               onEdit={() => onEditTesis(tesisItem)}
+              onStatusChange={onStatusChange}
             />
           </li>
         ))}

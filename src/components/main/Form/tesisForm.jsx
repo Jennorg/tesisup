@@ -90,7 +90,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
   const [formSubmitted, setFormSubmitted] = useState(false);
   
   // 💡 1. CORRECCIÓN: Valores en minúscula para coincidir con la BD
-  const estados = ["aprobado", "rechazado", "pendiente", "en revisión"];
+  const estados = ["aprobado", "rechazado", "pendiente"];
 
   useEffect(() => {
     if (tesisToEdit) {

@@ -38,7 +38,7 @@ const Filters = ({ onClose, onApply }) => {
     sedes: [],
   });
 
-  const estados = ["aprobado", "rechazado", "pendiente", "en revisión"]; // Asumiendo que estos son estáticos
+  const estados = ["aprobado", "rechazado", "pendiente"];
 
   useEffect(() => {
     const fetchDropdownOptions = async () => {
@@ -119,7 +119,11 @@ const Filters = ({ onClose, onApply }) => {
 
     // Eliminar valores undefined para no enviar queries innecesarias
     Object.keys(filtersToApply).forEach((key) => {
-      if (filtersToApply[key] === undefined || filtersToApply[key] === null || filtersToApply[key] === "") {
+      if (
+        filtersToApply[key] === undefined ||
+        filtersToApply[key] === null ||
+        filtersToApply[key] === ""
+      ) {
         delete filtersToApply[key];
       }
     });

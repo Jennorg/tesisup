@@ -136,6 +136,7 @@ const MainPage = () => {
     searchQuery,
     activeFilters,
     reloadTesisKey,
+    sortConfig,
   ]);
 
   // Función para manejar el clic de "Editar"
@@ -590,7 +591,7 @@ const MainPage = () => {
           isTesisFormVisible={isTesisFormVisible}
           setIsTesisFormVisible={setIsTesisFormVisible} // Para el botón "Añadir"
           isLoading={isLoading}
-          tesisEncontradas={sortedTesis}
+          tesisEncontradas={tesisEncontradas}
           haBuscado={haBuscado}
           onEditTesis={handleEditTesis}
           onTesisDeleted={handleSuccessModal}

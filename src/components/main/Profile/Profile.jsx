@@ -928,27 +928,27 @@ const Profile = () => {
                       Tesis como Tutor ({tesisAsTutor.length})
                     </Typography>
                     <Divider sx={{ mb: 2 }} />
-                    {tesisAsTutor.length > 0 ? (
-                      <TableContainer>
-                        <Table size="medium" sx={{ tableLayout: "fixed" }}>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={{ width: "40%" }}>
-                                <strong>Título</strong>
-                              </TableCell>
-                              <TableCell sx={{ width: "15%" }}>
-                                <strong>Estado</strong>
-                              </TableCell>
-                              <TableCell sx={{ width: "15%" }}>
-                                <strong>Fecha</strong>
-                              </TableCell>
-                              <TableCell sx={{ width: "30%" }}>
-                                <strong>Autores</strong>
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {tesisAsTutor.map((tesis) => (
+                    <TableContainer sx={{ maxHeight: 300, minHeight: 140 }}>
+                      <Table size="medium" sx={{ tableLayout: "fixed" }}>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ width: "40%" }}>
+                              <strong>Título</strong>
+                            </TableCell>
+                            <TableCell sx={{ width: "15%" }}>
+                              <strong>Estado</strong>
+                            </TableCell>
+                            <TableCell sx={{ width: "15%" }}>
+                              <strong>Fecha</strong>
+                            </TableCell>
+                            <TableCell sx={{ width: "30%" }}>
+                              <strong>Autores</strong>
+                            </TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {tesisAsTutor.length > 0 ? (
+                            tesisAsTutor.map((tesis) => (
                               <TableRow key={tesis.id_tesis || tesis.id} hover>
                                 <TableCell
                                   sx={{
@@ -1029,15 +1029,17 @@ const Profile = () => {
                                   )}
                                 </TableCell>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        No hay tesis registradas como tutor
-                      </Typography>
-                    )}
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={4} sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+                                No hay tesis registradas como tutor
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
                   </Paper>
                 </Grid>
 
@@ -1064,27 +1066,27 @@ const Profile = () => {
                       Tesis como Jurado ({tesisAsJurado.length})
                     </Typography>
                     <Divider sx={{ mb: 2 }} />
-                    {tesisAsJurado.length > 0 ? (
-                      <TableContainer>
-                        <Table size="medium" sx={{ tableLayout: "fixed" }}>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={{ width: "40%" }}>
-                                <strong>Título</strong>
-                              </TableCell>
-                              <TableCell sx={{ width: "15%" }}>
-                                <strong>Estado</strong>
-                              </TableCell>
-                              <TableCell sx={{ width: "15%" }}>
-                                <strong>Fecha</strong>
-                              </TableCell>
-                              <TableCell sx={{ width: "30%" }}>
-                                <strong>Autores</strong>
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {tesisAsJurado.map((tesis) => (
+                    <TableContainer sx={{ maxHeight: 300, minHeight: 140 }}>
+                      <Table size="medium" sx={{ tableLayout: "fixed" }}>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ width: "40%" }}>
+                              <strong>Título</strong>
+                            </TableCell>
+                            <TableCell sx={{ width: "15%" }}>
+                              <strong>Estado</strong>
+                            </TableCell>
+                            <TableCell sx={{ width: "15%" }}>
+                              <strong>Fecha</strong>
+                            </TableCell>
+                            <TableCell sx={{ width: "30%" }}>
+                              <strong>Autores</strong>
+                            </TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {tesisAsJurado.length > 0 ? (
+                            tesisAsJurado.map((tesis) => (
                               <TableRow key={tesis.id_tesis || tesis.id} hover>
                                 <TableCell
                                   sx={{
@@ -1165,15 +1167,17 @@ const Profile = () => {
                                   )}
                                 </TableCell>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        No hay tesis registradas como jurado
-                      </Typography>
-                    )}
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={4} sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+                                No hay tesis registradas como jurado
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
                   </Paper>
                 </Grid>
               </>

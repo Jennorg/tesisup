@@ -27,7 +27,11 @@ import BusinessIcon from "@mui/icons-material/Business";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import GavelIcon from "@mui/icons-material/Gavel";
 import DownloadIcon from "@mui/icons-material/Download";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
 import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -53,6 +57,14 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewingUserType, setViewingUserType] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    nombre: "",
+    apellido: "",
+    email: "",
+    telefono: "",
+  });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -149,30 +161,67 @@ const Profile = () => {
         // Si es profesor, obtener todas las tesis y datos relacionados
         if (userType === "profesor") {
           try {
-            const [tesisResponse, profesoresRes, encargadosRes, estudiantesRes, sedesRes] =
+            // Obtener todas las tesis con paginación (obtener todas las páginas)
+            let allTesis = [];
+            let page = 1;
+            let hasMore = true;
+            const limit = 100; // Obtener 100 por página para minimizar requests
+
+            while (hasMore) {
+              const tesisResponse = await axios.get(`${VITE_API_URL}/tesis`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+                params: {
+                  page,
+                  limit,
+                },
+              });
+
+              const responseData = tesisResponse.data;
+              const tesisPage = responseData.data || [];
+              allTesis = [...allTesis, ...tesisPage];
+
+              // Verificar si hay más páginas
+              const total = responseData.total || 0;
+              hasMore = page * limit < total;
+              page++;
+            }
+
+            // Obtener datos relacionados
+            const [profesoresRes, encargadosRes, estudiantesRes, sedesRes] =
               await Promise.all([
-                axios.get(`${VITE_API_URL}/tesis`, {
+                axios.get(`${VITE_API_URL}/profesor`, {
                   headers: {
                     Authorization: `Bearer ${token}`,
                   },
                 }),
-                axios.get(`${VITE_API_URL}/profesor`),
-                axios.get(`${VITE_API_URL}/encargado`),
-                axios.get(`${VITE_API_URL}/estudiantes`),
-                axios.get(`${VITE_API_URL}/sede`),
+                axios.get(`${VITE_API_URL}/encargado`, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }),
+                axios.get(`${VITE_API_URL}/estudiantes`, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }),
+                axios.get(`${VITE_API_URL}/sede`, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }),
               ]);
 
-            const allTesis = tesisResponse.data || [];
-            const profesores = profesoresRes.data.data || [];
-            const encargados = encargadosRes.data.data || [];
-            const estudiantes = estudiantesRes.data.data || [];
-            const sedes = sedesRes.data.data || [];
+            const profesores = profesoresRes.data.data || profesoresRes.data || [];
+            const encargados = encargadosRes.data.data || encargadosRes.data || [];
+            const estudiantes = estudiantesRes.data.data || estudiantesRes.data || [];
+            const sedes = sedesRes.data.data || sedesRes.data || [];
 
             // Enriquecer datos de tesis con información relacionada
             const enrichedTesis = allTesis.map((tesis) => {
-              const autor = estudiantes.find(
-                (e) => String(e.ci) === String(tesis.id_estudiante)
-              );
+              // Las tesis ya vienen con autores y jurados desde el backend
+              // Solo necesitamos enriquecer con datos adicionales si es necesario
               const tutor = profesores.find(
                 (p) => String(p.ci) === String(tesis.id_tutor)
               );
@@ -183,7 +232,6 @@ const Profile = () => {
 
               return {
                 ...tesis,
-                autor,
                 tutor,
                 encargado,
                 sede_nombre: sede?.nombre || "",
@@ -199,28 +247,19 @@ const Profile = () => {
             setTesisAsTutor(tutorTesis);
 
             // Filtrar tesis donde el profesor es jurado
-            // Asumimos que puede haber un campo jurados (array) o id_jurado
+            // El backend devuelve un array 'jurados' con objetos { ci, nombre, apellido, ci_type }
             const juradoTesis = enrichedTesis.filter((t) => {
-              // Verificar si hay un array de jurados
               if (t.jurados && Array.isArray(t.jurados)) {
                 return t.jurados.some(
-                  (jurado) => String(jurado.ci || jurado) === String(targetCi)
+                  (jurado) => String(jurado.ci) === String(targetCi)
                 );
               }
-              // Verificar si hay un campo id_jurado único
-              if (t.id_jurado) {
-                return String(t.id_jurado) === String(targetCi);
-              }
-              // Verificar si hay múltiples campos id_jurado_1, id_jurado_2, etc.
-              return (
-                String(t.id_jurado_1) === String(targetCi) ||
-                String(t.id_jurado_2) === String(targetCi) ||
-                String(t.id_jurado_3) === String(targetCi)
-              );
+              return false;
             });
             setTesisAsJurado(juradoTesis);
           } catch (tesisError) {
             console.error("Error al obtener tesis del profesor:", tesisError);
+            setError("Error al cargar las tesis del profesor");
           }
         }
       } catch (err) {
@@ -263,6 +302,91 @@ const Profile = () => {
     }
   };
 
+  // Función para iniciar edición
+  const handleStartEdit = () => {
+    if (profileData) {
+      setEditData({
+        nombre: profileData.nombre || "",
+        apellido: profileData.apellido || "",
+        email: profileData.email || "",
+        telefono: profileData.telefono || "",
+      });
+      setIsEditing(true);
+    }
+  };
+
+  // Función para cancelar edición
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditData({
+      nombre: "",
+      apellido: "",
+      email: "",
+      telefono: "",
+    });
+  };
+
+  // Función para guardar cambios
+  const handleSaveEdit = async () => {
+    if (!profileData || !token) return;
+
+    setSaving(true);
+    try {
+      const targetCi = urlCi || profileData.ci;
+      const userType = viewingUserType || profileData.user_type?.toLowerCase();
+
+      if (userType === "profesor") {
+        // Preparar payload con todos los campos necesarios
+        const payload = {
+          ci: parseInt(targetCi),
+          ci_type: profileData.ci_type || "V",
+          nombre: String(editData.nombre),
+          apellido: String(editData.apellido),
+          email: String(editData.email || ""),
+          telefono: String(editData.telefono || ""),
+        };
+
+        console.log("Enviando datos de actualización:", payload);
+
+        const response = await axios.put(
+          `${VITE_API_URL}/profesor/${targetCi}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("Respuesta del servidor:", response.data);
+
+        // Actualizar los datos del perfil
+        setProfileData({
+          ...profileData,
+          nombre: editData.nombre,
+          apellido: editData.apellido,
+          email: editData.email,
+          telefono: editData.telefono,
+        });
+
+        setIsEditing(false);
+        setError(null);
+      }
+    } catch (err) {
+      console.error("Error al guardar cambios:", err);
+      console.error("Detalles del error:", err.response?.data);
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.response?.data ||
+          "Error al guardar los cambios"
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDownloadExcel = () => {
     const displayData = profileData || user;
     
@@ -272,25 +396,69 @@ const Profile = () => {
       ...tesisAsJurado.map((t) => ({ ...t, rol: "Jurado" })),
     ];
 
-    // Preparar datos para Excel
-    const excelData = allTesisWithRole.map((tesis) => ({
-      "ID Tesis": tesis.id_tesis || tesis.id || "",
-      "Título": tesis.nombre || tesis.titulo || "",
-      "Rol": tesis.rol || "",
-      "Estado": tesis.estado || "",
-      "Fecha": tesis.fecha
-        ? dayjs(tesis.fecha).format("DD/MM/YYYY")
-        : "",
-      "Autor/Estudiante": tesis.autor
-        ? tesis.autor.nombre_completo || `${tesis.autor.nombre} ${tesis.autor.apellido}` || tesis.autor.nombre
-        : tesis.autores
-        ? tesis.autores.map((a) => a.nombre || a.nombre_completo).join(", ")
-        : "",
-      "Encargado": tesis.encargado
-        ? tesis.encargado.nombre_completo || `${tesis.encargado.nombre} ${tesis.encargado.apellido}` || tesis.encargado.nombre
-        : "",
-      "Sede": tesis.sede_nombre || tesis.sede || "",
-    }));
+    // Preparar datos para Excel con los campos solicitados
+    const excelData = allTesisWithRole.map((tesis) => {
+      // Obtener cédulas de autores
+      const cedulasAutores = tesis.autores && Array.isArray(tesis.autores)
+        ? tesis.autores
+            .map((a) => {
+              const ciType = a.ci_type || "V";
+              return a.ci ? `${ciType}-${a.ci}` : "";
+            })
+            .filter(Boolean)
+            .join(", ")
+        : "";
+
+      // Obtener nombres de autores
+      const nombresAutores = tesis.autores && Array.isArray(tesis.autores)
+        ? tesis.autores
+            .map((a) =>
+              a.nombre && a.apellido
+                ? `${a.nombre} ${a.apellido}`
+                : a.nombre || a.nombre_completo || "N/A"
+            )
+            .join(", ")
+        : "";
+
+      // Obtener cédulas de jurados
+      const cedulasJurados = tesis.jurados && Array.isArray(tesis.jurados)
+        ? tesis.jurados
+            .map((j) => {
+              const ciType = j.ci_type || "V";
+              return j.ci ? `${ciType}-${j.ci}` : "";
+            })
+            .filter(Boolean)
+            .join(", ")
+        : "";
+
+      // Obtener nombres de jurados
+      const nombresJurados = tesis.jurados && Array.isArray(tesis.jurados)
+        ? tesis.jurados
+            .map((j) =>
+              j.nombre && j.apellido
+                ? `${j.nombre} ${j.apellido}`
+                : j.nombre || j.nombre_completo || "N/A"
+            )
+            .join(", ")
+        : "";
+
+      return {
+        "ID Tesis": tesis.id_tesis || tesis.id || "",
+        "Título": tesis.nombre || tesis.titulo || "",
+        "Cedula de autores": cedulasAutores,
+        "nombre de Autores": nombresAutores,
+        "Estado": tesis.estado
+          ? tesis.estado.charAt(0).toUpperCase() + tesis.estado.slice(1).toLowerCase()
+          : "",
+        "Rol": tesis.rol || "",
+        "Fecha": tesis.fecha
+          ? dayjs(tesis.fecha).format("DD/MM/YYYY")
+          : "",
+        "Cedula de jurados": cedulasJurados,
+        "nombre de Jurados": nombresJurados,
+        "Sede": tesis.sede_nombre || tesis.sede || "",
+      };
+    });
 
     // Crear workbook y worksheet
     const ws = XLSX.utils.json_to_sheet(excelData);
@@ -303,6 +471,7 @@ const Profile = () => {
     // Descargar archivo
     XLSX.writeFile(wb, fileName);
   };
+
 
   if (loading && !profileData) {
     return (
@@ -425,19 +594,68 @@ const Profile = () => {
                   borderRadius: 2,
                 }}
               >
-                <Typography
-                  variant="h6"
-                  sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                  }}
                 >
-                  <PersonIcon color="primary" />
-                  Información Personal
-                </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <PersonIcon color="primary" />
+                    Información Personal
+                  </Typography>
+                  {/* Botón de editar solo para encargados viendo perfil de profesor */}
+                  {user?.user_type?.toLowerCase() === "encargado" &&
+                    (viewingUserType || profileData?.user_type?.toLowerCase()) ===
+                      "profesor" && (
+                      <Box sx={{ display: "flex", gap: 1 }}>
+                        {!isEditing ? (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<EditIcon />}
+                            onClick={handleStartEdit}
+                          >
+                            Editar
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              startIcon={<SaveIcon />}
+                              onClick={handleSaveEdit}
+                              disabled={saving}
+                            >
+                              {saving ? "Guardando..." : "Guardar"}
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              color="secondary"
+                              startIcon={<CancelIcon />}
+                              onClick={handleCancelEdit}
+                              disabled={saving}
+                            >
+                              Cancelar
+                            </Button>
+                          </>
+                        )}
+                      </Box>
+                    )}
+                </Box>
                 <Divider sx={{ mb: 2 }} />
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6} md={4}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <BadgeIcon sx={{ color: "text.secondary" }} />
-                      <Box>
+                      <Box sx={{ flex: 1 }}>
                         <Typography variant="caption" color="text.secondary">
                           Cédula de Identidad
                         </Typography>
@@ -449,32 +667,95 @@ const Profile = () => {
                   </Grid>
 
                   <Grid item xs={12} sm={6} md={4}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <EmailIcon sx={{ color: "text.secondary" }} />
-                      <Box>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                      <EmailIcon sx={{ color: "text.secondary", mt: 1 }} />
+                      <Box sx={{ flex: 1 }}>
                         <Typography variant="caption" color="text.secondary">
                           Correo Electrónico
                         </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {displayData?.email}
-                        </Typography>
+                        {isEditing &&
+                        user?.user_type?.toLowerCase() === "encargado" &&
+                        (viewingUserType || profileData?.user_type?.toLowerCase()) ===
+                          "profesor" ? (
+                          <TextField
+                            fullWidth
+                            size="small"
+                            variant="outlined"
+                            value={editData.email}
+                            onChange={(e) =>
+                              setEditData({ ...editData, email: e.target.value })
+                            }
+                            sx={{ mt: 0.5 }}
+                          />
+                        ) : (
+                          <Typography variant="body1" fontWeight="medium">
+                            {displayData?.email}
+                          </Typography>
+                        )}
                       </Box>
                     </Box>
                   </Grid>
 
                   <Grid item xs={12} sm={6} md={4}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <PhoneIcon sx={{ color: "text.secondary" }} />
-                      <Box>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                      <PhoneIcon sx={{ color: "text.secondary", mt: 1 }} />
+                      <Box sx={{ flex: 1 }}>
                         <Typography variant="caption" color="text.secondary">
                           Teléfono
                         </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {displayData?.telefono}
-                        </Typography>
+                        {isEditing &&
+                        user?.user_type?.toLowerCase() === "encargado" &&
+                        (viewingUserType || profileData?.user_type?.toLowerCase()) ===
+                          "profesor" ? (
+                          <TextField
+                            fullWidth
+                            size="small"
+                            variant="outlined"
+                            value={editData.telefono}
+                            onChange={(e) =>
+                              setEditData({ ...editData, telefono: e.target.value })
+                            }
+                            sx={{ mt: 0.5 }}
+                          />
+                        ) : (
+                          <Typography variant="body1" fontWeight="medium">
+                            {displayData?.telefono}
+                          </Typography>
+                        )}
                       </Box>
                     </Box>
                   </Grid>
+
+                  {/* Campos de nombre y apellido editables */}
+                  {isEditing &&
+                    user?.user_type?.toLowerCase() === "encargado" &&
+                    (viewingUserType || profileData?.user_type?.toLowerCase()) ===
+                      "profesor" && (
+                      <>
+                        <Grid item xs={12} sm={6} md={4}>
+                          <TextField
+                            fullWidth
+                            label="Nombre"
+                            variant="outlined"
+                            value={editData.nombre}
+                            onChange={(e) =>
+                              setEditData({ ...editData, nombre: e.target.value })
+                            }
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4}>
+                          <TextField
+                            fullWidth
+                            label="Apellido"
+                            variant="outlined"
+                            value={editData.apellido}
+                            onChange={(e) =>
+                              setEditData({ ...editData, apellido: e.target.value })
+                            }
+                          />
+                        </Grid>
+                      </>
+                    )}
                 </Grid>
               </Paper>
             </Grid>
@@ -562,6 +843,8 @@ const Profile = () => {
                       justifyContent: "space-between",
                       alignItems: "center",
                       mb: 2,
+                      flexWrap: "wrap",
+                      gap: 2,
                     }}
                   >
                     <Typography variant="h5" sx={{ fontWeight: "bold" }}>
@@ -569,6 +852,7 @@ const Profile = () => {
                     </Typography>
                     <Button
                       variant="contained"
+                      color="primary"
                       startIcon={<DownloadIcon />}
                       onClick={handleDownloadExcel}
                       disabled={
@@ -605,37 +889,50 @@ const Profile = () => {
                     <Divider sx={{ mb: 2 }} />
                     {tesisAsTutor.length > 0 ? (
                       <TableContainer>
-                        <Table size="small">
+                        <Table size="medium" sx={{ tableLayout: "fixed" }}>
                           <TableHead>
                             <TableRow>
-                              <TableCell>
+                              <TableCell sx={{ width: "40%" }}>
                                 <strong>Título</strong>
                               </TableCell>
-                              <TableCell>
+                              <TableCell sx={{ width: "15%" }}>
                                 <strong>Estado</strong>
                               </TableCell>
-                              <TableCell>
+                              <TableCell sx={{ width: "15%" }}>
                                 <strong>Fecha</strong>
                               </TableCell>
-                              <TableCell>
-                                <strong>Autor</strong>
+                              <TableCell sx={{ width: "30%" }}>
+                                <strong>Autores</strong>
                               </TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
                             {tesisAsTutor.map((tesis) => (
-                              <TableRow key={tesis.id_tesis || tesis.id}>
-                                <TableCell>
+                              <TableRow key={tesis.id_tesis || tesis.id} hover>
+                                <TableCell
+                                  sx={{
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
                                   {tesis.nombre || tesis.titulo || "Sin título"}
                                 </TableCell>
                                 <TableCell>
                                   <Chip
-                                    label={tesis.estado || "N/A"}
+                                    label={
+                                      tesis.estado
+                                        ? tesis.estado.charAt(0).toUpperCase() +
+                                          tesis.estado.slice(1).toLowerCase()
+                                        : "N/A"
+                                    }
                                     size="small"
                                     color={
-                                      tesis.estado === "Aprobado"
+                                      tesis.estado?.toLowerCase() === "aprobado" ||
+                                      tesis.estado?.toLowerCase() === "aprobada"
                                         ? "success"
-                                        : tesis.estado === "Rechazado"
+                                        : tesis.estado?.toLowerCase() === "rechazado" ||
+                                          tesis.estado?.toLowerCase() === "rechazada"
                                         ? "error"
                                         : "default"
                                     }
@@ -646,27 +943,13 @@ const Profile = () => {
                                     ? dayjs(tesis.fecha).format("DD/MM/YYYY")
                                     : "N/A"}
                                 </TableCell>
-                                <TableCell>
-                                  {tesis.autor && tesis.autor.ci ? (
-                                    <Link
-                                      component="button"
-                                      variant="body2"
-                                      onClick={() =>
-                                        navigateToProfile(tesis.autor.ci, "estudiante")
-                                      }
-                                      sx={{
-                                        cursor: "pointer",
-                                        textDecoration: "none",
-                                        "&:hover": {
-                                          textDecoration: "underline",
-                                        },
-                                      }}
-                                    >
-                                      {tesis.autor.nombre_completo ||
-                                        `${tesis.autor.nombre} ${tesis.autor.apellido}` ||
-                                        tesis.autor.nombre}
-                                    </Link>
-                                  ) : tesis.autores ? (
+                                <TableCell
+                                  sx={{
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
+                                >
+                                  {tesis.autores && Array.isArray(tesis.autores) && tesis.autores.length > 0 ? (
                                     <>
                                       {tesis.autores.map((a, idx) => (
                                         <React.Fragment key={idx}>
@@ -685,10 +968,16 @@ const Profile = () => {
                                                 },
                                               }}
                                             >
-                                              {a.nombre || a.nombre_completo}
+                                              {a.nombre && a.apellido
+                                                ? `${a.nombre} ${a.apellido}`
+                                                : a.nombre || a.nombre_completo || "N/A"}
                                             </Link>
                                           ) : (
-                                            <span>{a.nombre || a.nombre_completo}</span>
+                                            <span>
+                                              {a.nombre && a.apellido
+                                                ? `${a.nombre} ${a.apellido}`
+                                                : a.nombre || a.nombre_completo || "N/A"}
+                                            </span>
                                           )}
                                           {idx < tesis.autores.length - 1 && ", "}
                                         </React.Fragment>
@@ -736,37 +1025,50 @@ const Profile = () => {
                     <Divider sx={{ mb: 2 }} />
                     {tesisAsJurado.length > 0 ? (
                       <TableContainer>
-                        <Table size="small">
+                        <Table size="medium" sx={{ tableLayout: "fixed" }}>
                           <TableHead>
                             <TableRow>
-                              <TableCell>
+                              <TableCell sx={{ width: "40%" }}>
                                 <strong>Título</strong>
                               </TableCell>
-                              <TableCell>
+                              <TableCell sx={{ width: "15%" }}>
                                 <strong>Estado</strong>
                               </TableCell>
-                              <TableCell>
+                              <TableCell sx={{ width: "15%" }}>
                                 <strong>Fecha</strong>
                               </TableCell>
-                              <TableCell>
-                                <strong>Autor</strong>
+                              <TableCell sx={{ width: "30%" }}>
+                                <strong>Autores</strong>
                               </TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
                             {tesisAsJurado.map((tesis) => (
-                              <TableRow key={tesis.id_tesis || tesis.id}>
-                                <TableCell>
+                              <TableRow key={tesis.id_tesis || tesis.id} hover>
+                                <TableCell
+                                  sx={{
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
                                   {tesis.nombre || tesis.titulo || "Sin título"}
                                 </TableCell>
                                 <TableCell>
                                   <Chip
-                                    label={tesis.estado || "N/A"}
+                                    label={
+                                      tesis.estado
+                                        ? tesis.estado.charAt(0).toUpperCase() +
+                                          tesis.estado.slice(1).toLowerCase()
+                                        : "N/A"
+                                    }
                                     size="small"
                                     color={
-                                      tesis.estado === "Aprobado"
+                                      tesis.estado?.toLowerCase() === "aprobado" ||
+                                      tesis.estado?.toLowerCase() === "aprobada"
                                         ? "success"
-                                        : tesis.estado === "Rechazado"
+                                        : tesis.estado?.toLowerCase() === "rechazado" ||
+                                          tesis.estado?.toLowerCase() === "rechazada"
                                         ? "error"
                                         : "default"
                                     }
@@ -777,27 +1079,13 @@ const Profile = () => {
                                     ? dayjs(tesis.fecha).format("DD/MM/YYYY")
                                     : "N/A"}
                                 </TableCell>
-                                <TableCell>
-                                  {tesis.autor && tesis.autor.ci ? (
-                                    <Link
-                                      component="button"
-                                      variant="body2"
-                                      onClick={() =>
-                                        navigateToProfile(tesis.autor.ci, "estudiante")
-                                      }
-                                      sx={{
-                                        cursor: "pointer",
-                                        textDecoration: "none",
-                                        "&:hover": {
-                                          textDecoration: "underline",
-                                        },
-                                      }}
-                                    >
-                                      {tesis.autor.nombre_completo ||
-                                        `${tesis.autor.nombre} ${tesis.autor.apellido}` ||
-                                        tesis.autor.nombre}
-                                    </Link>
-                                  ) : tesis.autores ? (
+                                <TableCell
+                                  sx={{
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
+                                >
+                                  {tesis.autores && Array.isArray(tesis.autores) && tesis.autores.length > 0 ? (
                                     <>
                                       {tesis.autores.map((a, idx) => (
                                         <React.Fragment key={idx}>
@@ -816,10 +1104,16 @@ const Profile = () => {
                                                 },
                                               }}
                                             >
-                                              {a.nombre || a.nombre_completo}
+                                              {a.nombre && a.apellido
+                                                ? `${a.nombre} ${a.apellido}`
+                                                : a.nombre || a.nombre_completo || "N/A"}
                                             </Link>
                                           ) : (
-                                            <span>{a.nombre || a.nombre_completo}</span>
+                                            <span>
+                                              {a.nombre && a.apellido
+                                                ? `${a.nombre} ${a.apellido}`
+                                                : a.nombre || a.nombre_completo || "N/A"}
+                                            </span>
                                           )}
                                           {idx < tesis.autores.length - 1 && ", "}
                                         </React.Fragment>

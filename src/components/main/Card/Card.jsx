@@ -81,9 +81,9 @@ const useDownloadTesis = (tesisId, setModalState) => {
       const contentDisposition = response.headers["content-disposition"];
       let filename = `tesis_${tesisId}.pdf`; 
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-        if (filenameMatch.length > 1) {
-          filename = filenameMatch[1];
+        const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
+        if (filenameMatch && filenameMatch.length > 1) {
+          filename = filenameMatch[1].replace(/_+$/, "");
         }
       }
 

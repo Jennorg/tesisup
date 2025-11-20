@@ -432,10 +432,30 @@ const Profile = () => {
       ...tesisAsTutor.map((t) => ({ ...t, rol: "Tutor" })),
       ...tesisAsJurado.map((t) => ({ ...t, rol: "Jurado" })),
     ];
+    // Preparar datos para Excel con columnas ordenadas y formateo
+    const headers = [
+      "Título",
+      "ID Tesis",
+      "Rol",
+      "Estado",
+      "Fecha",
+      "Autores (nombres)",
+      "Autores (cédulas)",
+      "Jurados (nombres)",
+      "Jurados (cédulas)",
+      "Sede",
+    ];
 
-    // Preparar datos para Excel con los campos solicitados
-    const excelData = allTesisWithRole.map((tesis) => {
-      // Obtener cédulas de autores
+    const rows = [headers];
+
+    allTesisWithRole.forEach((tesis) => {
+      const nombresAutores = tesis.autores && Array.isArray(tesis.autores)
+        ? tesis.autores
+            .map((a) => (a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""))
+            .filter(Boolean)
+            .join(", ")
+        : "";
+
       const cedulasAutores = tesis.autores && Array.isArray(tesis.autores)
         ? tesis.autores
             .map((a) => {
@@ -446,18 +466,13 @@ const Profile = () => {
             .join(", ")
         : "";
 
-      // Obtener nombres de autores
-      const nombresAutores = tesis.autores && Array.isArray(tesis.autores)
-        ? tesis.autores
-            .map((a) =>
-              a.nombre && a.apellido
-                ? `${a.nombre} ${a.apellido}`
-                : a.nombre || a.nombre_completo || "N/A"
-            )
+      const nombresJurados = tesis.jurados && Array.isArray(tesis.jurados)
+        ? tesis.jurados
+            .map((j) => (j.nombre && j.apellido ? `${j.nombre} ${j.apellido}` : j.nombre || j.nombre_completo || ""))
+            .filter(Boolean)
             .join(", ")
         : "";
 
-      // Obtener cédulas de jurados
       const cedulasJurados = tesis.jurados && Array.isArray(tesis.jurados)
         ? tesis.jurados
             .map((j) => {
@@ -468,44 +483,97 @@ const Profile = () => {
             .join(", ")
         : "";
 
-      // Obtener nombres de jurados
-      const nombresJurados = tesis.jurados && Array.isArray(tesis.jurados)
-        ? tesis.jurados
-            .map((j) =>
-              j.nombre && j.apellido
-                ? `${j.nombre} ${j.apellido}`
-                : j.nombre || j.nombre_completo || "N/A"
-            )
-            .join(", ")
-        : "";
+      // Fecha: si existe, conviértela a objeto Date para que Excel la reconozca
+      const fechaVal = tesis.fecha ? dayjs(tesis.fecha).isValid() ? dayjs(tesis.fecha).toDate() : null : null;
 
-      return {
-        "ID Tesis": tesis.id_tesis || tesis.id || "",
-        "Título": tesis.nombre || tesis.titulo || "",
-        "Cedula de autores": cedulasAutores,
-        "nombre de Autores": nombresAutores,
-        "Estado": tesis.estado
-          ? tesis.estado.charAt(0).toUpperCase() + tesis.estado.slice(1).toLowerCase()
-          : "",
-        "Rol": tesis.rol || "",
-        "Fecha": tesis.fecha
-          ? dayjs(tesis.fecha).format("DD/MM/YYYY")
-          : "",
-        "Cedula de jurados": cedulasJurados,
-        "nombre de Jurados": nombresJurados,
-        "Sede": tesis.sede_nombre || tesis.sede || "",
-      };
+      rows.push([
+        tesis.nombre || tesis.titulo || "",
+        tesis.id_tesis || tesis.id || "",
+        tesis.rol || "",
+        tesis.estado ? tesis.estado.charAt(0).toUpperCase() + tesis.estado.slice(1).toLowerCase() : "",
+        fechaVal || "",
+        nombresAutores,
+        cedulasAutores,
+        nombresJurados,
+        cedulasJurados,
+        tesis.sede_nombre || tesis.sede || "",
+      ]);
     });
 
-    // Crear workbook y worksheet
-    const ws = XLSX.utils.json_to_sheet(excelData);
+    // Crear worksheet desde AOA (array of arrays) para controlar encabezados y orden
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Establecer anchos de columnas para mejor legibilidad
+    ws["!cols"] = [
+      { wch: 40 }, // Título
+      { wch: 12 }, // ID
+      { wch: 12 }, // Rol
+      { wch: 14 }, // Estado
+      { wch: 12 }, // Fecha
+      { wch: 30 }, // Autores nombres
+      { wch: 20 }, // Autores cédulas
+      { wch: 30 }, // Jurados nombres
+      { wch: 20 }, // Jurados cédulas
+      { wch: 20 }, // Sede
+    ];
+
+    // Aplicar estilos de encabezado (fondo, color, negrita) y bordes a toda la tabla.
+    const headerFill = { patternType: "solid", fgColor: { rgb: "FF2F6BFF" } }; // azul
+    const headerFont = { bold: true, color: { rgb: "FFFFFFFF" }, sz: 12 };
+    const thinBorder = {
+      top: { style: "thin", color: { rgb: "FF000000" } },
+      bottom: { style: "thin", color: { rgb: "FF000000" } },
+      left: { style: "thin", color: { rgb: "FF000000" } },
+      right: { style: "thin", color: { rgb: "FF000000" } },
+    };
+
+    const totalRows = rows.length;
+    const totalCols = headers.length;
+
+    for (let r = 0; r < totalRows; ++r) {
+      for (let c = 0; c < totalCols; ++c) {
+        const addr = XLSX.utils.encode_cell({ c, r });
+        if (!ws[addr]) continue;
+
+        // Asegurarnos de no perder estilos previos
+        ws[addr].s = ws[addr].s || {};
+
+        // Encabezado: fondo y fuente blanca centrada
+        if (r === 0) {
+          ws[addr].s.font = headerFont;
+          ws[addr].s.fill = headerFill;
+          ws[addr].s.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+        } else {
+          // Celdas de datos: alineación y ajuste para columnas largas
+          ws[addr].s.alignment = { horizontal: c === 0 || c === 5 || c === 6 || c === 7 ? "left" : "center", vertical: "center", wrapText: true };
+          // Si es columna Fecha (índice 4), forzar formato de fecha
+          if (c === 4 && ws[addr].v instanceof Date) {
+            ws[addr].t = "d";
+            ws[addr].z = "DD/MM/YYYY";
+          }
+        }
+
+        // Añadir bordes a todas las celdas
+        ws[addr].s.border = thinBorder;
+      }
+    }
+
+    // Autofiltrar y congelar fila de encabezado
+    ws["!autofilter"] = { ref: `A1:${XLSX.utils.encode_col(headers.length - 1)}1` };
+
+    // Workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Tesis");
+
+    // Views: congelar primera fila
+    wb.Workbook = wb.Workbook || {};
+    wb.Workbook.Views = wb.Workbook.Views || [];
+    wb.Workbook.Views.push({ xSplit: 0, ySplit: 1, topLeftCell: "A2", activeTab: 0 });
 
     // Generar nombre del archivo
     const fileName = `Tesis_${displayData?.nombre || "Profesor"}_${dayjs().format("YYYY-MM-DD")}.xlsx`;
 
-    // Descargar archivo
+    // Escribir archivo
     XLSX.writeFile(wb, fileName);
   };
 

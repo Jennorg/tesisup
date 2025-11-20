@@ -142,12 +142,8 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
   };
 
   const getUserTypeColor = (userType) => {
-    const colors = {
-      estudiante: "#1976d2", // Azul
-      profesor: "#2e7d32", // Verde
-      encargado: "#ed6c02", // Naranja
-    };
-    return colors[userType?.toLowerCase()] || "inherit";
+    // Return blue for all user types
+    return "#1976d2";
   };
 
   const { handleDelete, isDeleting } = useDeleteTesis(
@@ -245,8 +241,9 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
                           color: getUserTypeColor("estudiante"),
                           fontWeight: 500,
                           "&:hover": {
+                            backgroundColor: "rgba(0,0,0,0.05)",
                             textDecoration: "underline",
-                            opacity: 0.8,
+                            opacity: 1,
                           },
                         }}
                       >
@@ -272,8 +269,9 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
                     color: getUserTypeColor("estudiante"),
                     fontWeight: 500,
                     "&:hover": {
+                      backgroundColor: "rgba(0,0,0,0.05)",
                       textDecoration: "underline",
-                      opacity: 0.8,
+                      opacity: 1,
                     },
                   }}
                 >
@@ -301,8 +299,9 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
                     color: getUserTypeColor("encargado"),
                     fontWeight: 500,
                     "&:hover": {
+                      backgroundColor: "rgba(0,0,0,0.05)",
                       textDecoration: "underline",
-                      opacity: 0.8,
+                      opacity: 1,
                     },
                   }}
                 >
@@ -332,8 +331,9 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
                     color: getUserTypeColor("profesor"),
                     fontWeight: 500,
                     "&:hover": {
+                      backgroundColor: "rgba(0,0,0,0.05)",
                       textDecoration: "underline",
-                      opacity: 0.8,
+                      opacity: 1,
                     },
                   }}
                 >
@@ -364,8 +364,9 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
                           color: getUserTypeColor("profesor"),
                           fontWeight: 500,
                           "&:hover": {
+                            backgroundColor: "rgba(0,0,0,0.05)",
                             textDecoration: "underline",
-                            opacity: 0.8,
+                            opacity: 1,
                           },
                         }}
                       >

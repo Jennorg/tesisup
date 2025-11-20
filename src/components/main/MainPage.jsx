@@ -6,6 +6,10 @@ import Header from "@/components/main/Layout/Header";
 import Filters from "@/components/main/Layout/Filters";
 import CustomPagination from "@/components/Ui/Pagination"; // Importado para la paginación
 import LoadingModal from "@/hooks/Modals/LoadingModal";
+import { Button, Menu, MenuItem } from "@mui/material";
+import SortIcon from "@mui/icons-material/Sort";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 const MainPage = () => {
   const [isAsideVisible, setIsAsideVisible] = useState(false);
@@ -18,7 +22,11 @@ const MainPage = () => {
   const [haBuscado, setHaBuscado] = useState(false);
   const [searchQuery, setSearchQuery] = useState(""); // Añadido para la nueva lógica
   const tesisFormRef = useRef(null);
-
+  
+  // Estado para el ordenamiento
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
+  // Anchor for attribute menu
+  const [anchorEl, setAnchorEl] = useState(null);
   // Estado para la paginación (de la nueva lógica)
   const [paginationData, setPaginationData] = useState({
     page: 1,
@@ -77,6 +85,11 @@ const MainPage = () => {
           page: paginationData.page,
           limit: paginationData.limit,
         });
+        // Add sorting parameters if set
+        if (sortConfig.key && sortConfig.direction) {
+          params.append('sortBy', sortConfig.key);
+          params.append('order', sortConfig.direction);
+        }
 
         if (activeFilters) {
           Object.entries(activeFilters).forEach(([key, value]) => {
@@ -421,6 +434,64 @@ const MainPage = () => {
     setPaginationData((prev) => ({ ...prev, page: newPage }));
   };
 
+  // Handlers para el menú de selección de atributo
+  const handleAttributeMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleAttributeMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Reset pagination page when sorting changes
+  useEffect(() => {
+    setPaginationData((prev) => ({ ...prev, page: 1 }));
+  }, [sortConfig]);
+
+  const handleSelectAttribute = (key) => {
+    // Set selected attribute with default ascending direction
+    setSortConfig({ key, direction: "asc" });
+    handleAttributeMenuClose();
+  };
+
+  // Handler para alternar dirección del atributo actual
+  const handleToggleDirection = () => {
+    setSortConfig((prev) => {
+      if (!prev.key) return prev; // No attribute selected
+      const newDirection = prev.direction === "asc" ? "desc" : "asc";
+      return { ...prev, direction: newDirection };
+    });
+  };
+
+  // Función para ordenar las tesis (now handled by backend, but keeping for client-side if needed)
+  const getSortedTesis = () => {
+    if (!sortConfig.key || !sortConfig.direction) {
+      return tesisEncontradas;
+    }
+
+    const sorted = [...tesisEncontradas].sort((a, b) => {
+      let aValue, bValue;
+
+      if (sortConfig.key === "fecha") {
+        aValue = new Date(a.fecha);
+        bValue = new Date(b.fecha);
+      } else if (sortConfig.key === "nombre") {
+        aValue = (a.nombre || "").toLowerCase();
+        bValue = (b.nombre || "").toLowerCase();
+      }
+
+      if (sortConfig.direction === "asc") {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      }
+    });
+
+    return sorted;
+  };
+
+  const sortedTesis = getSortedTesis();
+
   return (
     <div className="flex flex-col h-dvh">
       <Header
@@ -438,17 +509,80 @@ const MainPage = () => {
           isAsideVisible ? "pl-32" : "pl-4"
         }`}
       >
-        {/* --- H1 Y BOTÓN DE DESCARGA AÑADIDOS --- */}
+        {/* --- H1 Y BOTONES DE DESCARGA Y ORDENAMIENTO --- */}
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-text-primary">
             Gestión de Tesis
           </h1>
-          <button
-            onClick={handleDownloadAll}
-            className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-300"
-          >
-            Descargar tesis
-          </button>
+          <div className="flex gap-2">
+            {/* Botón para seleccionar atributo */}
+            <Button
+              variant="outlined"
+              startIcon={<SortIcon />}
+              onClick={handleAttributeMenuOpen}
+              sx={{
+                color: "var(--primary-main)",
+                borderColor: "var(--primary-main)",
+                "&:hover": {
+                  borderColor: "var(--primary-dark)",
+                  bgcolor: "rgba(59, 130, 246, 0.1)",
+                },
+              }}
+            >
+              {sortConfig.key
+                ? sortConfig.key === "fecha"
+                  ? "Fecha"
+                  : "Nombre"
+                : "Sin orden"}
+            </Button>
+            {/* Menú de selección de atributo */}
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleAttributeMenuClose}
+            >
+              <MenuItem onClick={() => handleSelectAttribute("fecha")}>
+                Fecha
+              </MenuItem>
+              <MenuItem onClick={() => handleSelectAttribute("nombre")}>
+                Nombre
+              </MenuItem>
+            </Menu>
+            {/* Botón para alternar dirección */}
+            <Button
+              variant="outlined"
+              startIcon={
+                sortConfig.direction === "asc" ? (
+                  <ArrowUpwardIcon />
+                ) : (
+                  <ArrowDownwardIcon />
+                )
+              }
+              onClick={handleToggleDirection}
+              disabled={!sortConfig.key}
+              sx={{
+                marginLeft: "8px",
+                color: "var(--primary-main)",
+                borderColor: "var(--primary-main)",
+                "&:hover": {
+                  borderColor: "var(--primary-dark)",
+                  bgcolor: "rgba(59, 130, 246, 0.1)",
+                },
+              }}
+            >
+              {sortConfig.direction
+                ? sortConfig.direction === "asc"
+                  ? "Asc"
+                  : "Desc"
+                : "Orden"}
+            </Button>
+            <button
+              onClick={handleDownloadAll}
+              className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-300"
+            >
+              Descargar tesis
+            </button>
+          </div>
         </div>
 
         <Content
@@ -456,7 +590,7 @@ const MainPage = () => {
           isTesisFormVisible={isTesisFormVisible}
           setIsTesisFormVisible={setIsTesisFormVisible} // Para el botón "Añadir"
           isLoading={isLoading}
-          tesisEncontradas={tesisEncontradas}
+          tesisEncontradas={sortedTesis}
           haBuscado={haBuscado}
           onEditTesis={handleEditTesis}
           onTesisDeleted={handleSuccessModal}
@@ -479,7 +613,7 @@ const MainPage = () => {
         className={`absolute top-0 left-0 h-full z-30 transition-transform duration-300 ease-in-out ${
           isFilterVisible ? "translate-x-0" : "-translate-x-full"
         }`}
-        style={{ width: "300px" }}
+        style={{ width: "400px" }}
       >
         <Filters
           onClose={() => setIsFilterVisible(false)}

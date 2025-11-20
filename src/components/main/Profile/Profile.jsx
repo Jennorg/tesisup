@@ -372,6 +372,43 @@ const Profile = () => {
 
         setIsEditing(false);
         setError(null);
+      } else if (userType === "estudiante") {
+        // Preparar payload para estudiante
+        const payload = {
+          ci: parseInt(targetCi),
+          ci_type: profileData.ci_type || "V",
+          nombre: String(editData.nombre),
+          apellido: String(editData.apellido),
+          email: String(editData.email || ""),
+          telefono: String(editData.telefono || ""),
+        };
+
+        console.log("Enviando datos de actualización (estudiante):", payload);
+
+        const response = await axios.put(
+          `${VITE_API_URL}/estudiantes/${targetCi}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("Respuesta del servidor (estudiante):", response.data);
+
+        // Actualizar los datos del perfil
+        setProfileData({
+          ...profileData,
+          nombre: editData.nombre,
+          apellido: editData.apellido,
+          email: editData.email,
+          telefono: editData.telefono,
+        });
+
+        setIsEditing(false);
+        setError(null);
       }
     } catch (err) {
       console.error("Error al guardar cambios:", err);
@@ -609,10 +646,11 @@ const Profile = () => {
                     <PersonIcon color="primary" />
                     Información Personal
                   </Typography>
-                  {/* Botón de editar solo para encargados viendo perfil de profesor */}
+                  {/* Botón de editar solo para encargados viendo perfil de profesor o estudiante */}
                   {user?.user_type?.toLowerCase() === "encargado" &&
-                    (viewingUserType || profileData?.user_type?.toLowerCase()) ===
-                      "profesor" && (
+                    ["profesor", "estudiante"].includes(
+                      (viewingUserType || profileData?.user_type?.toLowerCase())
+                    ) && (
                       <Box sx={{ display: "flex", gap: 1 }}>
                         {!isEditing ? (
                           <Button
@@ -675,8 +713,9 @@ const Profile = () => {
                         </Typography>
                         {isEditing &&
                         user?.user_type?.toLowerCase() === "encargado" &&
-                        (viewingUserType || profileData?.user_type?.toLowerCase()) ===
-                          "profesor" ? (
+                        ["profesor", "estudiante"].includes(
+                          (viewingUserType || profileData?.user_type?.toLowerCase())
+                        ) ? (
                           <TextField
                             fullWidth
                             size="small"
@@ -705,8 +744,9 @@ const Profile = () => {
                         </Typography>
                         {isEditing &&
                         user?.user_type?.toLowerCase() === "encargado" &&
-                        (viewingUserType || profileData?.user_type?.toLowerCase()) ===
-                          "profesor" ? (
+                        ["profesor", "estudiante"].includes(
+                          (viewingUserType || profileData?.user_type?.toLowerCase())
+                        ) ? (
                           <TextField
                             fullWidth
                             size="small"
@@ -729,8 +769,9 @@ const Profile = () => {
                   {/* Campos de nombre y apellido editables */}
                   {isEditing &&
                     user?.user_type?.toLowerCase() === "encargado" &&
-                    (viewingUserType || profileData?.user_type?.toLowerCase()) ===
-                      "profesor" && (
+                    ["profesor", "estudiante"].includes(
+                      (viewingUserType || profileData?.user_type?.toLowerCase())
+                    ) && (
                       <>
                         <Grid item xs={12} sm={6} md={4}>
                           <TextField

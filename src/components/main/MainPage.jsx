@@ -21,6 +21,7 @@ const MainPage = () => {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [haBuscado, setHaBuscado] = useState(false);
   const [searchQuery, setSearchQuery] = useState(""); // Añadido para la nueva lógica
+  const [errorMessage, setErrorMessage] = useState(null);
   const tesisFormRef = useRef(null);
   
   // Estado para el ordenamiento
@@ -75,60 +76,70 @@ const MainPage = () => {
   }, [isTesisFormVisible]);
 
   // useEffect para cargar los datos (lógica de paginación)
-  useEffect(() => {
-    const fetchTesis = async () => {
-      setIsLoading(true);
-      setHaBuscado(true);
+  const fetchTesis = async () => {
+    setIsLoading(true);
+    setHaBuscado(true);
+    setErrorMessage(null);
 
-      try {
-        const params = new URLSearchParams({
-          page: paginationData.page,
-          limit: paginationData.limit,
-        });
-        // Add sorting parameters if set
-        if (sortConfig.key && sortConfig.direction) {
-          params.append('sortBy', sortConfig.key);
-          params.append('order', sortConfig.direction);
-        }
+    try {
+      const params = new URLSearchParams({
+        page: paginationData.page,
+        limit: paginationData.limit,
+      });
+      // Add sorting parameters if set
+      if (sortConfig.key && sortConfig.direction) {
+        params.append('sortBy', sortConfig.key);
+        params.append('order', sortConfig.direction);
+      }
 
-        if (activeFilters) {
-          Object.entries(activeFilters).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== "") {
+      if (activeFilters) {
+        Object.entries(activeFilters).forEach(([key, value]) => {
+          if (value !== null && value !== undefined && value !== "") {
+            if (Array.isArray(value)) {
+              value.forEach((v) => params.append(key, v));
+            } else {
               params.append(key, value);
             }
-          });
-        }
-
-        if (searchQuery) {
-          params.append("cadena", searchQuery);
-        }
-
-        const apiUrl = `${import.meta.env.VITE_API_URL}/tesis`;
-        const response = await axios.get(apiUrl, {
-          params,
-          withCredentials: true,
+          }
         });
+      }
 
-        if (response.data && Array.isArray(response.data.data)) {
-          setTesisEncontradas(response.data.data);
-          setPaginationData((prev) => ({
-            ...prev,
-            total: response.data.total,
-          }));
-        } else {
-          console.warn("Respuesta inesperada de la API:", response.data);
-          setTesisEncontradas([]);
-          setPaginationData((prev) => ({ ...prev, total: 0 }));
-        }
-      } catch (error) {
-        console.error("Error al buscar tesis:", error);
+      if (searchQuery) {
+        params.append("cadena", searchQuery);
+      }
+
+      const apiUrl = `${import.meta.env.VITE_API_URL}/tesis`;
+      const response = await axios.get(apiUrl, {
+        params,
+        withCredentials: true,
+      });
+
+      if (response.data && Array.isArray(response.data.data)) {
+        setTesisEncontradas(response.data.data);
+        setPaginationData((prev) => ({
+          ...prev,
+          total: response.data.total,
+        }));
+      } else {
+        console.warn("Respuesta inesperada de la API:", response.data);
         setTesisEncontradas([]);
         setPaginationData((prev) => ({ ...prev, total: 0 }));
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error al buscar tesis:", error);
+      setTesisEncontradas([]);
+      setPaginationData((prev) => ({ ...prev, total: 0 }));
+      setErrorMessage(
+        error?.message?.includes('Network')
+          ? "Error de conexión: no se pudo contactar al servidor."
+          : "Error al obtener los datos de tesis."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTesis();
   }, [
     paginationData.page,
@@ -586,7 +597,7 @@ const MainPage = () => {
           </div>
         </div>
 
-        <Content
+      <Content
           isAsideVisible={isAsideVisible}
           isTesisFormVisible={isTesisFormVisible}
           setIsTesisFormVisible={setIsTesisFormVisible} // Para el botón "Añadir"
@@ -596,6 +607,7 @@ const MainPage = () => {
           onEditTesis={handleEditTesis}
           onTesisDeleted={handleSuccessModal}
           onStatusChange={handleStatusChange}
+          error={errorMessage}
         />
 
         {/* Lógica de paginación */}

@@ -20,15 +20,29 @@ const Content = ({
     <div
       className={`flex-grow w-full p-4 overflow-ellipsis transition-margin-left duration-300 ease-in-out ${marginLeftClass}`}
     >
-      <CardList
-        isLoading={isLoading}
-        tesisEncontradas={tesisEncontradas}
-        haBuscado={haBuscado}
-        onEditTesis={onEditTesis}
-        onTesisDeleted={onTesisDeleted} // <-- Pasar la prop a CardList
-        onStatusChange={onStatusChange} // <-- Pasar la prop a CardList
-        error={error}
-      />
+          {error && (
+          <p className="text-red-500 text-center mt-4">
+            {error}
+          </p>
+        )}
+        {/* No results message when there are no tesis and no error */}
+        {!error && !isLoading && haBuscado && tesisEncontradas.length === 0 && (
+          <p className="text-center mt-4 text-gray-600">
+            No se encontraron tesis con los criterios de búsqueda.
+          </p>
+        )}
+        {/* Render CardList only when there is at least one tesis */}
+        {!error && tesisEncontradas.length > 0 && (
+          <CardList
+            isLoading={isLoading}
+            tesisEncontradas={tesisEncontradas}
+            haBuscado={haBuscado}
+            onEditTesis={onEditTesis}
+            onTesisDeleted={onTesisDeleted} // <--- Pasar la prop a CardList
+            onStatusChange={onStatusChange} // <--- Pasar la prop a CardList
+            error={error}
+          />
+        )}
 
       <div className="fixed bottom-10 right-10 z-10">
         <Fab

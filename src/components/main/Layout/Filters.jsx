@@ -11,6 +11,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Autocomplete from "@mui/material/Autocomplete";
+import Chip from "@mui/material/Chip";
 
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -20,13 +22,28 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const initialFilters = {
   nombre: "",
-  autor: "",
+  autor: [], // Changed to array for multi-select
   encargado: "",
   fechaDesde: null,
   fechaHasta: null,
   tutor: "",
+  jurado: [], // Added jurado filter
   sede: "",
   estado: "",
+};
+
+const getPersonaLabel = (option) => {
+  if (typeof option === "string") return option;
+  
+  const nombre = option.nombre_completo || `${option.nombre || ''} ${option.apellido || ''}`.trim() || option.nombre || "";
+  const ciType = option.ci_type || "V";
+  const ci = option.ci || option.id || "";
+  
+  // Si no hay CI/ID, solo mostrar el nombre
+  if (!ci) return nombre;
+  
+  // Formato: "Nombre (CI: V-123456)"
+  return `${nombre} (CI: ${ciType}-${ci})`;
 };
 
 const Filters = ({ onClose, onApply }) => {
@@ -89,9 +106,10 @@ const Filters = ({ onClose, onApply }) => {
   const handleFilter = () => {
     // Mapear nombres de filtros a nombres que espera el backend
     const filterMapping = {
-      autor: "id_estudiante", // El backend probablemente espera id_estudiante
+      // autor: "id_estudiante", // Handled manually for arrays
       encargado: "id_encargado",
       tutor: "id_tutor",
+      // jurado: "id_jurado", // Handled manually for arrays
       sede: "id_sede",
     };
 
@@ -116,6 +134,19 @@ const Filters = ({ onClose, onApply }) => {
         }
       }
     });
+
+    // Handle array filters (autor and jurado)
+    if (Array.isArray(filters.autor) && filters.autor.length > 0) {
+      // If backend expects multiple parameters with same name (e.g. id_estudiante=1&id_estudiante=2)
+      // or comma separated. For axios params serializer, arrays are usually handled well.
+      // Let's pass the array directly, axios will handle it as id_estudiante[]=1 or similar depending on config.
+      // But often backends expect a specific format. Let's assume standard array for now.
+      filtersToApply["id_estudiante"] = filters.autor;
+    }
+
+    if (Array.isArray(filters.jurado) && filters.jurado.length > 0) {
+      filtersToApply["id_jurado"] = filters.jurado;
+    }
 
     // Eliminar valores undefined para no enviar queries innecesarias
     Object.keys(filtersToApply).forEach((key) => {
@@ -200,51 +231,70 @@ const Filters = ({ onClose, onApply }) => {
             fullWidth
           />
 
-          <FormControl variant="filled" fullWidth>
-            <InputLabel id="autor-label">Autor</InputLabel>
-            <Select
-              labelId="autor-label"
-              id="autor-select"
-              name="autor"
-              value={filters.autor}
-              onChange={handleInputChange}
-            >
-              <MenuItem value="">
-                <em>Ninguno</em>
-              </MenuItem>
-              {dropdownOptions.autores.map((autor) => (
-                <MenuItem
-                  key={autor.ci ?? autor.id}
-                  value={String(autor.ci ?? autor.id)}
-                >
-                  {autor.nombre_completo || autor.nombre}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            id="autor-select"
+            multiple
+            options={dropdownOptions.autores}
+            getOptionLabel={getPersonaLabel}
+            value={filters.autor.map(id => 
+              dropdownOptions.autores.find(a => String(a.ci ?? a.id) === String(id))
+            ).filter(Boolean)}
+            onChange={(event, newValue) => {
+              handleInputChange({
+                target: {
+                  name: "autor",
+                  value: newValue.map(v => String(v.ci ?? v.id)),
+                },
+              });
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Autores"
+                variant="filled"
+                fullWidth
+              />
+            )}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => (
+                <Chip
+                  variant="outlined"
+                  label={getPersonaLabel(option)}
+                  {...getTagProps({ index })}
+                  key={option.ci ?? option.id}
+                />
+              ))
+            }
+            noOptionsText="No se encontraron autores"
+          />
 
-          <FormControl variant="filled" fullWidth>
-            <InputLabel id="encargado-label">Encargado</InputLabel>
-            <Select
-              labelId="encargado-label"
-              id="encargado-select"
-              name="encargado"
-              value={filters.encargado}
-              onChange={handleInputChange}
-            >
-              <MenuItem value="">
-                <em>Ninguno</em>
-              </MenuItem>
-              {dropdownOptions.encargados.map((encargado) => (
-                <MenuItem
-                  key={encargado.ci ?? encargado.id}
-                  value={String(encargado.ci ?? encargado.id)}
-                >
-                  {encargado.nombre_completo || encargado.nombre}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            id="encargado-select"
+            options={dropdownOptions.encargados}
+            getOptionLabel={getPersonaLabel}
+            value={
+              dropdownOptions.encargados.find(
+                (e) => String(e.ci ?? e.id) === String(filters.encargado)
+              ) || null
+            }
+            onChange={(event, newValue) => {
+              handleInputChange({
+                target: {
+                  name: "encargado",
+                  value: newValue ? String(newValue.ci ?? newValue.id) : "",
+                },
+              });
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Encargado"
+                variant="filled"
+                fullWidth
+              />
+            )}
+            noOptionsText="No se encontraron encargados"
+          />
 
           <Box
             sx={{
@@ -281,48 +331,98 @@ const Filters = ({ onClose, onApply }) => {
             />
           </Box>
 
-          <FormControl variant="filled" fullWidth>
-            <InputLabel id="tutor-label">Tutor</InputLabel>
-            <Select
-              labelId="tutor-label"
-              id="tutor-select"
-              name="tutor"
-              value={filters.tutor}
-              onChange={handleInputChange}
-            >
-              <MenuItem value="">
-                <em>Ninguno</em>
-              </MenuItem>
-              {dropdownOptions.tutores.map((tutor) => (
-                <MenuItem
-                  key={tutor.ci ?? tutor.id}
-                  value={String(tutor.ci ?? tutor.id)}
-                >
-                  {tutor.nombre_completo || tutor.nombre}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            id="tutor-select"
+            options={dropdownOptions.tutores}
+            getOptionLabel={getPersonaLabel}
+            value={
+              dropdownOptions.tutores.find(
+                (t) => String(t.ci ?? t.id) === String(filters.tutor)
+              ) || null
+            }
+            onChange={(event, newValue) => {
+              handleInputChange({
+                target: {
+                  name: "tutor",
+                  value: newValue ? String(newValue.ci ?? newValue.id) : "",
+                },
+              });
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Tutor"
+                variant="filled"
+                fullWidth
+              />
+            )}
+            noOptionsText="No se encontraron tutores"
+          />
 
-          <FormControl variant="filled" fullWidth>
-            <InputLabel id="sede-label">Sede</InputLabel>
-            <Select
-              labelId="sede-label"
-              id="sede-select"
-              name="sede"
-              value={filters.sede}
-              onChange={handleInputChange}
-            >
-              <MenuItem value="">
-                <em>Ninguno</em>
-              </MenuItem>
-              {dropdownOptions.sedes.map((sede) => (
-                <MenuItem key={sede.id} value={String(sede.id)}>
-                  {sede.nombre}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            id="jurado-select"
+            multiple
+            options={dropdownOptions.tutores} // Jurados are professors
+            getOptionLabel={getPersonaLabel}
+            value={filters.jurado.map(id => 
+              dropdownOptions.tutores.find(t => String(t.ci ?? t.id) === String(id))
+            ).filter(Boolean)}
+            onChange={(event, newValue) => {
+              handleInputChange({
+                target: {
+                  name: "jurado",
+                  value: newValue.map(v => String(v.ci ?? v.id)),
+                },
+              });
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Jurados"
+                variant="filled"
+                fullWidth
+              />
+            )}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => (
+                <Chip
+                  variant="outlined"
+                  label={getPersonaLabel(option)}
+                  {...getTagProps({ index })}
+                  key={option.ci ?? option.id}
+                />
+              ))
+            }
+            noOptionsText="No se encontraron jurados"
+          />
+
+          <Autocomplete
+            id="sede-select"
+            options={dropdownOptions.sedes}
+            getOptionLabel={(option) => option.nombre}
+            value={
+              dropdownOptions.sedes.find(
+                (s) => String(s.id) === String(filters.sede)
+              ) || null
+            }
+            onChange={(event, newValue) => {
+              handleInputChange({
+                target: {
+                  name: "sede",
+                  value: newValue ? String(newValue.id) : "",
+                },
+              });
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Sede"
+                variant="filled"
+                fullWidth
+              />
+            )}
+            noOptionsText="No se encontraron sedes"
+          />
 
           <FormControl variant="filled" fullWidth>
             <InputLabel id="estado-label">Estado</InputLabel>

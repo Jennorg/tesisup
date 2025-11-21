@@ -5,11 +5,17 @@ import { createTheme } from '@mui/material/styles';
 export const ThemeContext = createContext();
 
 export const ThemeProviderWrapper = ({ children }) => {
-  const [mode, setMode] = useState('light');
+  // Initialize mode from localStorage or default to 'light'
+  const [mode, setMode] = useState(() => {
+    const savedMode = localStorage.getItem('themeMode');
+    return savedMode || 'light';
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;
     root.setAttribute('data-theme', mode);
+    // Persist theme preference to localStorage
+    localStorage.setItem('themeMode', mode);
   }, [mode]);
 
   const toggleColorMode = () => {

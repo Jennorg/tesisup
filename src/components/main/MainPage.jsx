@@ -24,8 +24,17 @@ const MainPage = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const tesisFormRef = useRef(null);
   
-  // Estado para el ordenamiento
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
+  
+  // Estado para el ordenamiento - initialize from localStorage
+  const [sortConfig, setSortConfig] = useState(() => {
+    const savedSort = localStorage.getItem('sortConfig');
+    return savedSort ? JSON.parse(savedSort) : { key: null, direction: null };
+  });
+
+  // Persist sortConfig to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sortConfig', JSON.stringify(sortConfig));
+  }, [sortConfig]);
   // Anchor for attribute menu
   const [anchorEl, setAnchorEl] = useState(null);
   // Estado para la paginación (de la nueva lógica)
@@ -256,9 +265,9 @@ const MainPage = () => {
         const contentDisposition = response.headers["content-disposition"];
         let filename = "todas_las_tesis.zip"; // Nombre por defecto
         if (contentDisposition) {
-          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
           if (filenameMatch && filenameMatch.length > 1) {
-            filename = filenameMatch[1];
+            filename = filenameMatch[1].replace(/_+$/, ""); // Remove trailing underscores
           }
         }
         link.setAttribute("download", filename);

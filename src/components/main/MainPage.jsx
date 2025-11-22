@@ -12,7 +12,6 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 const MainPage = () => {
-  const [isAsideVisible, setIsAsideVisible] = useState(false);
   const [isTesisFormVisible, setIsTesisFormVisible] = useState(false);
   const [reloadTesisKey, setReloadTesisKey] = useState(0);
   const [activeFilters, setActiveFilters] = useState(null);
@@ -516,8 +515,6 @@ const MainPage = () => {
   return (
     <div className="flex flex-col h-dvh">
       <Header
-        isAsideVisible={isAsideVisible}
-        onToggleMenu={setIsAsideVisible}
         setIsLoading={setIsLoading}
         setHaBuscado={setHaBuscado}
         isFilterVisible={isFilterVisible}
@@ -526,16 +523,14 @@ const MainPage = () => {
         setSearchQuery={setSearchQuery} // Prop para la nueva lógica
       />
       <main
-        className={`relative z-10 flex-grow pr-4 pt-4 overflow-y-auto transition-all duration-300 ${
-          isAsideVisible ? "pl-32" : "pl-4"
-        }`}
+        className="relative z-10 flex-grow pr-4 pt-4 pl-4 overflow-y-auto transition-all duration-300"
       >
         {/* --- H1 Y BOTONES DE DESCARGA Y ORDENAMIENTO --- */}
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-text-primary">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+          <h1 className="text-2xl font-bold text-text-primary text-center md:text-left">
             Gestión de Tesis
           </h1>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2">
             {/* Botón para seleccionar atributo */}
             <Button
               variant="outlined"
@@ -544,6 +539,7 @@ const MainPage = () => {
               sx={{
                 color: "var(--primary-main)",
                 borderColor: "var(--primary-main)",
+                width: { xs: "100%", sm: "auto" },
                 "&:hover": {
                   borderColor: "var(--primary-dark)",
                   bgcolor: "rgba(59, 130, 246, 0.1)",
@@ -582,9 +578,9 @@ const MainPage = () => {
               onClick={handleToggleDirection}
               disabled={!sortConfig.key}
               sx={{
-                marginLeft: "8px",
                 color: "var(--primary-main)",
                 borderColor: "var(--primary-main)",
+                width: { xs: "100%", sm: "auto" },
                 "&:hover": {
                   borderColor: "var(--primary-dark)",
                   bgcolor: "rgba(59, 130, 246, 0.1)",
@@ -599,7 +595,7 @@ const MainPage = () => {
             </Button>
             <button
               onClick={handleDownloadAll}
-              className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-300"
+              className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-300 w-full sm:w-auto"
             >
               Descargar tesis
             </button>
@@ -607,7 +603,6 @@ const MainPage = () => {
         </div>
 
       <Content
-          isAsideVisible={isAsideVisible}
           isTesisFormVisible={isTesisFormVisible}
           setIsTesisFormVisible={setIsTesisFormVisible} // Para el botón "Añadir"
           isLoading={isLoading}
@@ -634,8 +629,7 @@ const MainPage = () => {
       <div
         className={`absolute top-0 left-0 h-full z-30 transition-transform duration-300 ease-in-out ${
           isFilterVisible ? "translate-x-0" : "-translate-x-full"
-        }`}
-        style={{ width: "400px" }}
+        } w-full md:w-[400px]`}
       >
         <Filters
           onClose={() => setIsFilterVisible(false)}

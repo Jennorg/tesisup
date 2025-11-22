@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { ThemeContext } from "@/context/ThemeContext";
-import Aside from "@/components/main/Layout/Aside";
+
 import SearchBar from "@/components/main/Search/SearchBar";
 import LogoContainer from "@/components/main/Ui/LogoContainer";
 
@@ -25,8 +25,6 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const Header = ({
-  isAsideVisible,
-  onToggleMenu,
   setIsLoading,
   setHaBuscado,
   onToggleFilter,

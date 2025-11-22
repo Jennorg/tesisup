@@ -4,7 +4,6 @@ import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
 
 const Content = ({
-  isAsideVisible,
   setIsTesisFormVisible,
   isLoading,
   tesisEncontradas,
@@ -14,11 +13,10 @@ const Content = ({
   onStatusChange, // <-- Aceptar la prop para actualizar estado
   error, // Pasar el error si existe
 }) => {
-  const marginLeftClass = isAsideVisible ? "ml-16" : "ml-0";
 
   return (
     <div
-      className={`flex-grow w-full p-4 overflow-ellipsis transition-margin-left duration-300 ease-in-out ${marginLeftClass}`}
+      className="flex-grow w-full p-4 overflow-ellipsis transition-all duration-300 ease-in-out ml-0"
     >
           {error && (
           <p className="text-red-500 text-center mt-4">

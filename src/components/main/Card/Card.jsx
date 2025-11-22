@@ -9,6 +9,7 @@ import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import LoadingModal from "@/hooks/Modals/LoadingModal";
+import ConfirmationModal from "@/hooks/Modals/ConfirmationModal";
 import StatusSelect from "./StatusSelect";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
@@ -135,6 +136,8 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
     message: "",
   });
 
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
   const navigateToProfile = (ci, userType) => {
     if (ci && userType) {
       navigate(`/profile/${userType}/${ci}`);
@@ -179,13 +182,12 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
 
   const handleConfirmDelete = (e) => {
     e.stopPropagation();
-    if (
-      window.confirm(
-        `¿Estás seguro de que quieres eliminar la tesis "${data.nombre}" (ID: ${data.id})? Esta acción es irreversible.`
-      )
-    ) {
-      handleDelete();
-    }
+    setIsConfirmOpen(true);
+  };
+
+  const handleExecuteDelete = () => {
+    handleDelete();
+    setIsConfirmOpen(false);
   };
 
   const handleCloseModal = () => {
@@ -199,6 +201,13 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
         status={modalState.status}
         message={modalState.message}
         onClose={handleCloseModal}
+      />
+
+      <ConfirmationModal
+        isOpen={isConfirmOpen}
+        message={`¿Estás seguro de que quieres eliminar la tesis "${data.nombre}"? Esta acción es irreversible.`}
+        onConfirm={handleExecuteDelete}
+        onCancel={() => setIsConfirmOpen(false)}
       />
 
       <div className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full bg-background-paper">
@@ -385,7 +394,7 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
           </p>
         </div>
 
-        <div className="flex gap-2 mt-auto">
+        <div className="flex flex-wrap gap-2 mt-auto">
           {/* 💡 Botón de Editar (Añadido) */}
           <Button
             variant="outlined"
@@ -397,6 +406,7 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
             }}
             disabled={isDeleting || isDownloading || modalState.isOpen}
             sx={{
+              flex: "1 1 auto",
               color: "var(--primary-main)",
               borderColor: "var(--primary-main)",
               "&:hover": {
@@ -415,6 +425,7 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
             onClick={handleConfirmDelete}
             disabled={isDeleting || modalState.isOpen}
             sx={{
+              flex: "1 1 auto",
               color: "var(--error-main)",
               borderColor: "var(--error-main)",
               "&:hover": {
@@ -436,6 +447,7 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
             }}
             disabled={isDownloading || modalState.isOpen}
             sx={{
+              flex: "1 1 auto",
               bgcolor: "var(--primary-main)",
               "&:hover": {
                 bgcolor: "var(--primary-dark)",

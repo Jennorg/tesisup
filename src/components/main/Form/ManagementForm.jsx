@@ -115,13 +115,13 @@ const ManagementForm = forwardRef((props, ref) => {
       sx={{
         bgcolor: "background.paper",
         color: "text.primary",
-        p: 3,
-        borderRadius: 2,
+        p: { xs: 1, sm: 3 },
+        borderRadius: { xs: 1, sm: 2 },
         boxShadow: 24,
-        maxWidth: "600px",
-        width: "95%",
+        maxWidth: "380px",
+        width: { xs: "80%", sm: "60%" },
         mx: "auto",
-        maxHeight: "90vh",
+        maxHeight: { xs: "100vh", sm: "90vh" },
         display: "flex",
         flexDirection: "column",
       }}

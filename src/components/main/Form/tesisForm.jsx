@@ -321,9 +321,11 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
           display: "flex",
           flexDirection: "column",
           gap: 3,
-          overflowY: "auto", 
-          maxHeight: "65vh", 
-          p: 1, 
+          overflowY: "auto",
+          overflowX: "hidden",
+          width: "100%", 
+          maxHeight: "65vh",
+          p: { xs: 0, sm: 1 }, 
           "&::-webkit-scrollbar": { width: "8px" },
           "&::-webkit-scrollbar-track": { background: "#f1f1f1" },
           "&::-webkit-scrollbar-thumb": {
@@ -352,7 +354,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
               ? "success.main"
               : "grey.400",
             borderRadius: 1,
-            p: 3,
+            p: { xs: 2, sm: 3 },
             textAlign: "center",
             cursor: formData.archivo_pdf || isLoading ? "default" : "pointer",
             transition: "border-color 0.3s, background-color 0.3s",

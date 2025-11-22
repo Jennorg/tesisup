@@ -226,7 +226,9 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
           <span className="text-text-secondary text-sm">
             {formatDate(data.fecha)}
           </span>
-          <span className="text-text-secondary text-sm">{data.sede}</span>
+          <span className="text-text-secondary text-sm">
+            {typeof data.sede === 'object' ? data.sede.nombre : data.sede}
+          </span>
         </div>
 
         <div className="space-y-1 flex-1">

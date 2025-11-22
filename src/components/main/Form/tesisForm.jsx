@@ -99,11 +99,11 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
         id_tesis: tesisToEdit.id || "",
         nombre: tesisToEdit.nombre || "",
         id_estudiantes: (tesisToEdit.autores || []).map(a => String(a.ci)),
-        id_tutor: String(tesisToEdit.id_tutor || ""),
-        id_encargado: String(tesisToEdit.id_encargado || ""),
+        id_tutor: String(tesisToEdit.tutor?.ci || tesisToEdit.id_tutor || ""),
+        id_encargado: String(tesisToEdit.encargado?.ci || tesisToEdit.id_encargado || ""),
         id_jurados: (tesisToEdit.jurados || []).map(j => String(j.ci)), 
         fecha: tesisToEdit.fecha ? dayjs(tesisToEdit.fecha) : null,
-        id_sede: tesisToEdit.id_sede || "",
+        id_sede: tesisToEdit.id_sede || (dropdownOptions.sedes.find(s => s.nombre === tesisToEdit.sede)?.id) || "",
         estado: tesisToEdit.estado || "", // Esto (ej: "aprobado") ahora coincidirá con el array 'estados'
         archivo_pdf: null,
         modo_envio: "normal",
@@ -441,7 +441,9 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
             const estudiante = dropdownOptions.estudiantes.find(
               (e) => String(e.ci) === String(ci)
             );
-            return estudiante || null;
+            if (estudiante) return estudiante;
+            // Fallback: buscar en tesisToEdit
+            return tesisToEdit?.autores?.find(a => String(a.ci) === String(ci)) || null;
           }).filter(Boolean)}
           filterOptions={filterOptions} 
           getOptionLabel={getPersonaLabel}
@@ -492,7 +494,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
           value={
             dropdownOptions.profesores.find(
               (p) => String(p.ci) === formData.id_tutor
-            ) || null
+            ) || (tesisToEdit?.tutor && String(tesisToEdit.tutor.ci) === formData.id_tutor ? tesisToEdit.tutor : null) || null
           }
           filterOptions={filterOptions}
           getOptionLabel={getPersonaLabel}
@@ -529,7 +531,7 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
           value={
             dropdownOptions.encargados.find(
               (e) => String(e.ci) === formData.id_encargado
-            ) || null
+            ) || (tesisToEdit?.encargado && String(tesisToEdit.encargado.ci) === formData.id_encargado ? tesisToEdit.encargado : null) || null
           }
           filterOptions={filterOptions} 
           onChange={(event, newValue) => {
@@ -603,7 +605,9 @@ const TesisForm = forwardRef(({ dropdownOptions, onSuccess, onClose, onRequestCr
               const profesor = dropdownOptions.profesores.find(
                 (p) => String(p.ci) === String(ci)
               );
-              return profesor || null;
+              if (profesor) return profesor;
+              // Fallback: buscar en tesisToEdit
+              return tesisToEdit?.jurados?.find(j => String(j.ci) === String(ci)) || null;
             })
             .filter(Boolean)}
           onChange={(event, newValue) => {

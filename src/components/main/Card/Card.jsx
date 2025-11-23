@@ -5,12 +5,14 @@ import formatDate from "@/hooks/utils/formatDate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit"; // 💡 Importado
+import Tooltip from "@mui/material/Tooltip"; // 💡 1. Importamos el componente Tooltip
 import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import LoadingModal from "@/hooks/Modals/LoadingModal";
 import ConfirmationModal from "@/hooks/Modals/ConfirmationModal";
 import StatusSelect from "./StatusSelect";
+
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
@@ -212,9 +214,25 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
 
       <div className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full bg-background-paper">
         <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold text-text-primary line-clamp-2">
-            {data.nombre}
-          </h2>
+          {/* 💡 2. Implementación del Tooltip:
+              Envuelve el título. Si el título es muy largo y se corta, 
+              el usuario puede poner el mouse encima para verlo completo.
+          */}
+          <Tooltip 
+            title={data.nombre} 
+            arrow 
+            placement="top"
+            enterTouchDelay={0}    // Abre inmediatamente al tocar
+            leaveTouchDelay={2500} // Se cierra solo a los 2.5 segundos
+          >
+            <h2 
+              className="text-lg font-semibold text-text-primary line-clamp-2 cursor-default"
+              aria-label={data.nombre}
+              onClick={(e) => e.stopPropagation()} // Evita que el click en el título abra el modal de edición
+            >
+              {data.nombre}
+            </h2>
+          </Tooltip>
         </div>
 
         <div className="flex flex-wrap gap-2 items-center">

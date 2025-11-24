@@ -642,13 +642,15 @@ const MainPage = () => {
 
       {/* Modal de Tesis (Crear o Editar) */}
       {isTesisFormVisible ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-background bg-opacity-50 backdrop-blur-sm">
-          <TesisForm
-            ref={tesisFormRef}
-            onClose={handleCloseModal}
-            onSuccess={handleSuccessModal}
-            tesisToEdit={tesisToEdit}
-          />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-[95%] md:max-w-[800px] lg:max-w-[900px] xl:max-w-[1000px]">
+            <TesisForm
+              ref={tesisFormRef}
+              onClose={handleCloseModal}
+              onSuccess={handleSuccessModal}
+              tesisToEdit={tesisToEdit}
+            />
+          </div>
         </div>
       ) : null}
 

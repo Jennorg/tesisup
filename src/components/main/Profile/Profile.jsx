@@ -16,6 +16,7 @@ import {
   Alert,
   useMediaQuery,
   Tooltip,
+  Skeleton,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { deepOrange } from "@mui/material/colors";
@@ -61,6 +62,7 @@ const Profile = () => {
   const [tesisAsJurado, setTesisAsJurado] = useState([]);
   const [allTesisData, setAllTesisData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingTesis, setLoadingTesis] = useState(false);
   const [error, setError] = useState(null);
   const [viewingUserType, setViewingUserType] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -199,6 +201,7 @@ const Profile = () => {
 
         // Si es profesor, obtener todas las tesis y datos relacionados
         if (userType === "profesor") {
+          setLoadingTesis(true);
           try {
             // Obtener todas las tesis con paginación (obtener todas las páginas)
             let allTesis = [];
@@ -299,6 +302,8 @@ const Profile = () => {
           } catch (tesisError) {
             console.error("Error al obtener tesis del profesor:", tesisError);
             setError("Error al cargar las tesis del profesor");
+          } finally {
+            setLoadingTesis(false);
           }
         }
       } catch (err) {
@@ -617,17 +622,48 @@ const Profile = () => {
   };
 
 
+
   if (loading && !profileData) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <CircularProgress />
+      <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: "1200px", mx: "auto" }}>
+        {/* Botón de regreso */}
+        <IconButton
+          onClick={() => navigate(-1)}
+          sx={{ mb: { xs: 1, sm: 2 } }}
+          aria-label="volver"
+        >
+          <ArrowBackIcon />
+        </IconButton>
+
+        <Card sx={{ overflow: "visible" }}>
+          {/* Header skeleton */}
+          <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "center", gap: { xs: 2, md: 3 } }}>
+              <Skeleton variant="circular" width={120} height={120} />
+              <Box sx={{ flex: 1, width: "100%" }}>
+                <Skeleton variant="text" width="60%" height={40} />
+                <Skeleton variant="rectangular" width={100} height={24} sx={{ mt: 1, borderRadius: 1 }} />
+              </Box>
+            </Box>
+          </Box>
+
+          <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+            {/* Información Personal skeleton */}
+            <Box sx={{ mb: 3 }}>
+              <Skeleton variant="text" width="40%" height={32} />
+              <Skeleton variant="text" width="100%" height={20} sx={{ mt: 1 }} />
+              <Skeleton variant="text" width="90%" height={20} />
+              <Skeleton variant="text" width="85%" height={20} />
+            </Box>
+
+            {/* Más secciones skeleton */}
+            <Box sx={{ mb: 3 }}>
+              <Skeleton variant="text" width="35%" height={32} />
+              <Skeleton variant="text" width="100%" height={20} sx={{ mt: 1 }} />
+              <Skeleton variant="text" width="80%" height={20} />
+            </Box>
+          </CardContent>
+        </Card>
       </Box>
     );
   }
@@ -653,11 +689,11 @@ const Profile = () => {
     : "U";
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: "1200px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: "1200px", mx: "auto" }}>
       {/* Botón de regreso */}
       <IconButton
         onClick={() => navigate(-1)}
-        sx={{ mb: 2 }}
+        sx={{ mb: { xs: 1, sm: 2 } }}
         aria-label="volver"
       >
         <ArrowBackIcon />
@@ -687,29 +723,33 @@ const Profile = () => {
                 ? "#66bb6a"
                 : "#ff9800"
             } 100%)`,
-            p: { xs: 2, md: 4 },
+            p: { xs: 2, sm: 3, md: 4 },
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
             alignItems: "center",
-            gap: 3,
+            gap: { xs: 2, md: 3 },
           }}
         >
           <Avatar
             sx={{
-              width: { xs: 84, md: 120 },
-              height: { xs: 84, md: 120 },
+              width: { xs: 80, sm: 100, md: 120 },
+              height: { xs: 80, sm: 100, md: 120 },
               bgcolor: "white",
               color: "primary.main",
-              fontSize: { xs: "2.5rem", md: "4rem" },
+              fontSize: { xs: "2.5rem", sm: "3rem", md: "4rem" },
               border: "4px solid white",
             }}
           >
             {avatarLetter}
           </Avatar>
-          <Box sx={{ flex: 1, color: "white" }}>
+          <Box sx={{ flex: 1, color: "white", textAlign: { xs: "center", md: "left" } }}>
             <Typography
-              variant={isXs ? "h6" : "h4"}
-              sx={{ fontWeight: "bold", mb: 1 }}
+              variant="h4"
+              sx={{ 
+                fontWeight: "bold", 
+                mb: 1,
+                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" }
+              }}
               component="h1"
             >
               {displayData?.nombre} {displayData?.apellido}
@@ -726,14 +766,14 @@ const Profile = () => {
           </Box>
         </Box>
 
-        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-          <Grid container spacing={3}>
+        <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {/* Información Personal */}
             <Grid item xs={12}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: 3,
+                  p: { xs: 2, sm: 3 },
                   bgcolor: "background.default",
                   borderRadius: 2,
                 }}
@@ -742,13 +782,15 @@ const Profile = () => {
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: { xs: "flex-start", sm: "center" },
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 1, sm: 0 },
                     mb: 2,
                   }}
                 >
                   <Typography
                     variant="h6"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
                   >
                     <PersonIcon color="primary" />
                     Información Personal
@@ -758,7 +800,7 @@ const Profile = () => {
                     ["profesor", "estudiante"].includes(
                       (viewingUserType || profileData?.user_type?.toLowerCase())
                     ) && (
-                      <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" }, width: { xs: "100%", sm: "auto" } }}>
+                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", flexDirection: { xs: "column", sm: "row" }, width: { xs: "100%", sm: "auto" } }}>
                         {!isEditing ? (
                           <Button
                             variant="outlined"
@@ -915,25 +957,26 @@ const Profile = () => {
             {(viewingUserType || user?.user_type?.toLowerCase()) === "encargado" && (
               <Grid item xs={12}>
                 <Paper
-                  elevation={0}
+                elevation={0}
+                sx={{
+                  p: { xs: 2, sm: 3 },
+                  bgcolor: "background.default",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography
+                  variant="h6"
                   sx={{
-                    p: { xs: 2, md: 3 },
-                    bgcolor: "background.default",
-                    borderRadius: 2,
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    fontSize: { xs: "1.1rem", sm: "1.25rem" }
                   }}
                 >
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      mb: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                    }}
-                  >
-                    <BusinessIcon color="primary" />
-                    Información de Sede
-                  </Typography>
+                  <BusinessIcon color="primary" />
+                  Información de Sede
+                </Typography>
                   <Divider sx={{ mb: 2 }} />
                   {sedeData ? (
                     <Box>
@@ -958,25 +1001,26 @@ const Profile = () => {
             {(viewingUserType || user?.user_type?.toLowerCase()) === "estudiante" && (
               <Grid item xs={12}>
                 <Paper
-                  elevation={0}
+                elevation={0}
+                sx={{
+                  p: { xs: 2, sm: 3 },
+                  bgcolor: "background.default",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography
+                  variant="h6"
                   sx={{
-                    p: 3,
-                    bgcolor: "background.default",
-                    borderRadius: 2,
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    fontSize: { xs: "1.1rem", sm: "1.25rem" }
                   }}
                 >
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      mb: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                    }}
-                  >
-                    <SchoolIcon color="primary" />
-                    Información Académica
-                  </Typography>
+                  <SchoolIcon color="primary" />
+                  Información Académica
+                </Typography>
                   <Divider sx={{ mb: 2 }} />
                   <Typography variant="body2" color="text.secondary">
                     Estudiante registrado en el sistema
@@ -989,31 +1033,31 @@ const Profile = () => {
               <>
                 <Grid item xs={12}>
                   <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 2,
-                      flexWrap: "wrap",
-                      gap: 2,
-                    }}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: { xs: "flex-start", sm: "center" },
+                    flexDirection: { xs: "column", sm: "row" },
+                    mb: 2,
+                    gap: { xs: 1.5, sm: 2 },
+                  }}
+                >
+                  <Typography variant="h5" sx={{ fontWeight: "bold", fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
+                    Tesis en las que ha participado
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<DownloadIcon />}
+                    onClick={handleDownloadExcel}
+                    disabled={
+                      tesisAsTutor.length === 0 && tesisAsJurado.length === 0
+                    }
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
                   >
-                    <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                      Tesis en las que ha participado
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<DownloadIcon />}
-                      onClick={handleDownloadExcel}
-                      disabled={
-                        tesisAsTutor.length === 0 && tesisAsJurado.length === 0
-                      }
-                      sx={{ width: { xs: "100%", sm: "auto" } }}
-                    >
-                      Descargar Excel
-                    </Button>
-                  </Box>
+                    Descargar Excel
+                  </Button>
+                </Box>
                 </Grid>
 
                 {/* Tesis como Tutor */}
@@ -1021,7 +1065,7 @@ const Profile = () => {
                   <Paper
                     elevation={0}
                     sx={{
-                      p: 3,
+                      p: { xs: 2, sm: 3 },
                       bgcolor: "background.default",
                       borderRadius: 2,
                     }}
@@ -1033,6 +1077,7 @@ const Profile = () => {
                         display: "flex",
                         alignItems: "center",
                         gap: 1,
+                        fontSize: { xs: "1.1rem", sm: "1.25rem" }
                       }}
                     >
                       <AssignmentIcon color="primary" />
@@ -1141,7 +1186,13 @@ const Profile = () => {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {tesisAsTutor.length > 0 ? (
+                            {loadingTesis ? (
+                              <TableRow>
+                                <TableCell colSpan={4} sx={{ textAlign: "center", py: 4 }}>
+                                  <CircularProgress />
+                                </TableCell>
+                              </TableRow>
+                            ) : tesisAsTutor.length > 0 ? (
                               tesisAsTutor.map((tesis) => (
                                 <TableRow key={tesis.id_tesis || tesis.id} hover>
                                       <TableCell
@@ -1210,10 +1261,12 @@ const Profile = () => {
                                                 sx={{
                                                   cursor: "pointer",
                                                   textDecoration: "none",
-                                                  
+                                                  color: "#1976d2",
+                                                  fontWeight: 500,
                                                   "&:hover": {
+                                                    backgroundColor: "rgba(0,0,0,0.05)",
                                                     textDecoration: "underline",
-                                                    
+                                                    opacity: 1,
                                                   },
                                                 }}
                                               >
@@ -1257,7 +1310,7 @@ const Profile = () => {
                   <Paper
                     elevation={0}
                     sx={{
-                      p: 3,
+                      p: { xs: 2, sm: 3 },
                       bgcolor: "background.default",
                       borderRadius: 2,
                     }}
@@ -1269,6 +1322,7 @@ const Profile = () => {
                         display: "flex",
                         alignItems: "center",
                         gap: 1,
+                        fontSize: { xs: "1.1rem", sm: "1.25rem" }
                       }}
                     >
                       <GavelIcon color="primary" />
@@ -1377,7 +1431,13 @@ const Profile = () => {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {tesisAsJurado.length > 0 ? (
+                            {loadingTesis ? (
+                              <TableRow>
+                                <TableCell colSpan={4} sx={{ textAlign: "center", py: 4 }}>
+                                  <CircularProgress />
+                                </TableCell>
+                              </TableRow>
+                            ) : tesisAsJurado.length > 0 ? (
                               tesisAsJurado.map((tesis) => (
                                 <TableRow key={tesis.id_tesis || tesis.id} hover>
                                   <TableCell
@@ -1446,10 +1506,12 @@ const Profile = () => {
                                                 sx={{
                                                   cursor: "pointer",
                                                   textDecoration: "none",
-                                                  
+                                                  color: "#1976d2",
+                                                  fontWeight: 500,
                                                   "&:hover": {
+                                                    backgroundColor: "rgba(0,0,0,0.05)",
                                                     textDecoration: "underline",
-                                                    
+                                                    opacity: 1,
                                                   },
                                                 }}
                                               >

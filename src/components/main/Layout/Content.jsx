@@ -29,8 +29,8 @@ const Content = ({
             No se encontraron tesis con los criterios de búsqueda.
           </p>
         )}
-        {/* Render CardList only when there is at least one tesis */}
-        {!error && tesisEncontradas.length > 0 && (
+        {/* Render CardList when loading OR when there is at least one tesis */}
+        {!error && (isLoading || tesisEncontradas.length > 0) && (
           <CardList
             isLoading={isLoading}
             tesisEncontradas={tesisEncontradas}

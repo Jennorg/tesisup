@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 
 const LogoContainer = () => {
   return (
-    <Link to="/MainPage">
+    <Link to="/MainPage" className="flex items-center">
       <img
-        className="h-20 md:h-28 w-auto object-contain"
+        className="h-20 md:h-14 w-auto object-contain"
         src="/img/uneg-logo.png"
         alt="UNEG Logo"
       />

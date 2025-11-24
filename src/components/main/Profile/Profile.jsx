@@ -1061,9 +1061,28 @@ const Profile = () => {
                                       authors.map((a, idx) => (
                                         a.ci ? (
                                           <React.Fragment key={idx}>
-                                            <Link component="button" variant="caption" onClick={() => navigateToProfile(a.ci, "estudiante")} sx={{ textDecoration: "none", cursor: "pointer", color: "text.secondary" }}>
+                                            <Typography
+                                              component="button"
+                                              variant="caption"
+                                              onClick={() => navigateToProfile(a.ci, "estudiante")}
+                                              sx={{
+                                                textDecoration: "none",
+                                                cursor: "pointer",
+                                                color: "text.secondary",
+                                                background: "none",
+                                                border: "none",
+                                                p: 0,
+                                                m: 0,
+                                                display: "inline",
+                                                "&:hover": {
+                                                  textDecoration: "underline",
+                                                  color: "text.secondary",
+                                                },
+                                                "&:focus": { outline: "none" },
+                                              }}
+                                            >
                                               {a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}
-                                            </Link>
+                                            </Typography>
                                             {idx < authors.length - 1 && ", "}
                                           </React.Fragment>
                                         ) : (
@@ -1132,8 +1151,14 @@ const Profile = () => {
                                           whiteSpace: "nowrap",
                                         }}
                                       >
-                                        <Tooltip title={tesis.nombre || tesis.titulo || "Sin título"} open={openTitleTooltip === (tesis.id_tesis || tesis.id)} arrow>
-                                          <Box data-tooltip-id={tesis.id_tesis || tesis.id} onClick={() => showTitleTooltip(tesis.id_tesis || tesis.id)} sx={{ cursor: "pointer", display: "inline-block", minWidth: 0 }}>
+                                        <Tooltip
+                                          title={tesis.nombre || tesis.titulo || "Sin título"}
+                                          open={openTitleTooltip === (tesis.id_tesis || tesis.id)}
+                                          arrow
+                                          placement="top"
+                                          PopperProps={{ modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] }}
+                                        >
+                                          <Box data-tooltip-id={tesis.id_tesis || tesis.id} onClick={() => showTitleTooltip(tesis.id_tesis || tesis.id)} sx={{ cursor: "pointer", display: "inline", minWidth: 0 }}>
                                             <Typography sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                               {tesis.nombre || tesis.titulo || "Sin título"}
                                             </Typography>
@@ -1185,8 +1210,10 @@ const Profile = () => {
                                                 sx={{
                                                   cursor: "pointer",
                                                   textDecoration: "none",
+                                                  color: "text.primary",
                                                   "&:hover": {
                                                     textDecoration: "underline",
+                                                    color: "text.primary",
                                                   },
                                                 }}
                                               >
@@ -1270,9 +1297,28 @@ const Profile = () => {
                                       authors.map((a, idx) => (
                                         a.ci ? (
                                           <React.Fragment key={idx}>
-                                            <Link component="button" variant="caption" onClick={() => navigateToProfile(a.ci, "estudiante")} sx={{ textDecoration: "none", cursor: "pointer", color: "text.secondary" }}>
+                                            <Typography
+                                              component="button"
+                                              variant="caption"
+                                              onClick={() => navigateToProfile(a.ci, "estudiante")}
+                                              sx={{
+                                                textDecoration: "none",
+                                                cursor: "pointer",
+                                                color: "text.secondary",
+                                                background: "none",
+                                                border: "none",
+                                                p: 0,
+                                                m: 0,
+                                                display: "inline",
+                                                "&:hover": {
+                                                  textDecoration: "underline",
+                                                  color: "text.secondary",
+                                                },
+                                                "&:focus": { outline: "none" },
+                                              }}
+                                            >
                                               {a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}
-                                            </Link>
+                                            </Typography>
                                             {idx < authors.length - 1 && ", "}
                                           </React.Fragment>
                                         ) : (
@@ -1341,8 +1387,14 @@ const Profile = () => {
                                       whiteSpace: "nowrap",
                                     }}
                                   >
-                                    <Tooltip title={tesis.nombre || tesis.titulo || "Sin título"} open={openTitleTooltip === (tesis.id_tesis || tesis.id)} arrow>
-                                      <Box data-tooltip-id={tesis.id_tesis || tesis.id} onClick={() => showTitleTooltip(tesis.id_tesis || tesis.id)} sx={{ cursor: "pointer", display: "inline-block", minWidth: 0 }}>
+                                    <Tooltip
+                                      title={tesis.nombre || tesis.titulo || "Sin título"}
+                                      open={openTitleTooltip === (tesis.id_tesis || tesis.id)}
+                                      arrow
+                                      placement="top"
+                                      PopperProps={{ modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] }}
+                                    >
+                                      <Box data-tooltip-id={tesis.id_tesis || tesis.id} onClick={() => showTitleTooltip(tesis.id_tesis || tesis.id)} sx={{ cursor: "pointer", display: "inline", minWidth: 0 }}>
                                         <Typography sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                           {tesis.nombre || tesis.titulo || "Sin título"}
                                         </Typography>
@@ -1394,8 +1446,10 @@ const Profile = () => {
                                                 sx={{
                                                   cursor: "pointer",
                                                   textDecoration: "none",
+                                                  color: "text.primary",
                                                   "&:hover": {
                                                     textDecoration: "underline",
+                                                    color: "text.primary",
                                                   },
                                                 }}
                                               >

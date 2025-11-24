@@ -1210,10 +1210,10 @@ const Profile = () => {
                                                 sx={{
                                                   cursor: "pointer",
                                                   textDecoration: "none",
-                                                  color: "text.primary",
+                                                  
                                                   "&:hover": {
                                                     textDecoration: "underline",
-                                                    color: "text.primary",
+                                                    
                                                   },
                                                 }}
                                               >
@@ -1446,10 +1446,10 @@ const Profile = () => {
                                                 sx={{
                                                   cursor: "pointer",
                                                   textDecoration: "none",
-                                                  color: "text.primary",
+                                                  
                                                   "&:hover": {
                                                     textDecoration: "underline",
-                                                    color: "text.primary",
+                                                    
                                                   },
                                                 }}
                                               >

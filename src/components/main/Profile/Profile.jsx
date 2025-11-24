@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
@@ -14,7 +14,10 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  useMediaQuery,
+  Tooltip,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { deepOrange } from "@mui/material/colors";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import IconButton from "@mui/material/IconButton";
@@ -46,6 +49,9 @@ const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
 const Profile = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down("sm"));
+  const isSm = useMediaQuery(theme.breakpoints.up("sm"));
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const { userType: urlUserType, ci: urlCi } = useParams();
@@ -65,7 +71,53 @@ const Profile = () => {
     telefono: "",
   });
   const [saving, setSaving] = useState(false);
+  const [openTitleTooltip, setOpenTitleTooltip] = useState(null);
+  const tooltipTimerRef = useRef(null);
 
+  useEffect(() => {
+    return () => {
+      if (tooltipTimerRef.current) {
+        clearTimeout(tooltipTimerRef.current);
+        tooltipTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const showTitleTooltip = (id) => {
+    if (tooltipTimerRef.current) {
+      clearTimeout(tooltipTimerRef.current);
+    }
+    setOpenTitleTooltip(id);
+    tooltipTimerRef.current = setTimeout(() => {
+      setOpenTitleTooltip(null);
+      tooltipTimerRef.current = null;
+    }, 3500);
+  };
+  // Close tooltip when user taps/clicks outside the currently open tooltip
+  useEffect(() => {
+    if (openTitleTooltip == null) return;
+
+    const onPointerDown = (e) => {
+      try {
+        const target = e.target;
+        // If the click is inside the element that opened the tooltip, ignore
+        const selector = `[data-tooltip-id="${openTitleTooltip}"]`;
+        if (target && target.closest && target.closest(selector)) {
+          return;
+        }
+      } catch (err) {
+        // ignore
+      }
+      if (tooltipTimerRef.current) {
+        clearTimeout(tooltipTimerRef.current);
+        tooltipTimerRef.current = null;
+      }
+      setOpenTitleTooltip(null);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [openTitleTooltip]);
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!user || !token) {
@@ -90,30 +142,17 @@ const Profile = () => {
         let data = null;
 
         if (userType === "estudiante") {
-          // Intentar primero con el endpoint específico
-          try {
-            const response = await axios.get(
-              `${VITE_API_URL}/estudiantes/${targetCi}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-            data = response.data.data || response.data;
-          } catch (err) {
-            // Si falla, obtener todos los estudiantes y buscar por CI
-            console.log("Endpoint específico falló, buscando en lista completa...");
-            const estudiantesRes = await axios.get(`${VITE_API_URL}/estudiantes`, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            const estudiantes = estudiantesRes.data.data || estudiantesRes.data || [];
-            data = estudiantes.find((e) => String(e.ci) === String(targetCi));
-            if (!data) {
-              throw new Error("Estudiante no encontrado");
-            }
+          // Evitar llamadas que devuelvan 404 a /estudiantes/:ci en algunos backends.
+          // En su lugar, obtener la lista y buscar el CI en el cliente.
+          const estudiantesRes = await axios.get(`${VITE_API_URL}/estudiantes`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const estudiantes = estudiantesRes.data.data || estudiantesRes.data || [];
+          data = estudiantes.find((e) => String(e.ci) === String(targetCi));
+          if (!data) {
+            throw new Error("Estudiante no encontrado");
           }
         } else if (userType === "profesor") {
           const response = await axios.get(
@@ -614,7 +653,7 @@ const Profile = () => {
     : "U";
 
   return (
-    <Box sx={{ p: 3, maxWidth: "1200px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: "1200px", mx: "auto" }}>
       {/* Botón de regreso */}
       <IconButton
         onClick={() => navigate(-1)}
@@ -648,7 +687,7 @@ const Profile = () => {
                 ? "#66bb6a"
                 : "#ff9800"
             } 100%)`,
-            p: 4,
+            p: { xs: 2, md: 4 },
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
             alignItems: "center",
@@ -657,11 +696,11 @@ const Profile = () => {
         >
           <Avatar
             sx={{
-              width: { xs: 100, md: 120 },
-              height: { xs: 100, md: 120 },
+              width: { xs: 84, md: 120 },
+              height: { xs: 84, md: 120 },
               bgcolor: "white",
               color: "primary.main",
-              fontSize: { xs: "3rem", md: "4rem" },
+              fontSize: { xs: "2.5rem", md: "4rem" },
               border: "4px solid white",
             }}
           >
@@ -669,7 +708,7 @@ const Profile = () => {
           </Avatar>
           <Box sx={{ flex: 1, color: "white" }}>
             <Typography
-              variant="h4"
+              variant={isXs ? "h6" : "h4"}
               sx={{ fontWeight: "bold", mb: 1 }}
               component="h1"
             >
@@ -687,7 +726,7 @@ const Profile = () => {
           </Box>
         </Box>
 
-        <CardContent sx={{ p: 4 }}>
+        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
           <Grid container spacing={3}>
             {/* Información Personal */}
             <Grid item xs={12}>
@@ -719,13 +758,14 @@ const Profile = () => {
                     ["profesor", "estudiante"].includes(
                       (viewingUserType || profileData?.user_type?.toLowerCase())
                     ) && (
-                      <Box sx={{ display: "flex", gap: 1 }}>
+                      <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" }, width: { xs: "100%", sm: "auto" } }}>
                         {!isEditing ? (
                           <Button
                             variant="outlined"
                             size="small"
                             startIcon={<EditIcon />}
                             onClick={handleStartEdit}
+                            fullWidth={isXs}
                           >
                             Editar
                           </Button>
@@ -738,6 +778,7 @@ const Profile = () => {
                               startIcon={<SaveIcon />}
                               onClick={handleSaveEdit}
                               disabled={saving}
+                              fullWidth={isXs}
                             >
                               {saving ? "Guardando..." : "Guardar"}
                             </Button>
@@ -748,6 +789,7 @@ const Profile = () => {
                               startIcon={<CancelIcon />}
                               onClick={handleCancelEdit}
                               disabled={saving}
+                              fullWidth={isXs}
                             >
                               Cancelar
                             </Button>
@@ -875,7 +917,7 @@ const Profile = () => {
                 <Paper
                   elevation={0}
                   sx={{
-                    p: 3,
+                    p: { xs: 2, md: 3 },
                     bgcolor: "background.default",
                     borderRadius: 2,
                   }}
@@ -967,6 +1009,7 @@ const Profile = () => {
                       disabled={
                         tesisAsTutor.length === 0 && tesisAsJurado.length === 0
                       }
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
                     >
                       Descargar Excel
                     </Button>
@@ -996,118 +1039,189 @@ const Profile = () => {
                       Tesis como Tutor ({tesisAsTutor.length})
                     </Typography>
                     <Divider sx={{ mb: 2 }} />
-                    <TableContainer sx={{ maxHeight: 300, minHeight: 140 }}>
-                      <Table size="medium" sx={{ tableLayout: "fixed" }}>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell sx={{ width: "40%" }}>
-                              <strong>Título</strong>
-                            </TableCell>
-                            <TableCell sx={{ width: "15%" }}>
-                              <strong>Estado</strong>
-                            </TableCell>
-                            <TableCell sx={{ width: "15%" }}>
-                              <strong>Fecha</strong>
-                            </TableCell>
-                            <TableCell sx={{ width: "30%" }}>
-                              <strong>Autores</strong>
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {tesisAsTutor.length > 0 ? (
-                            tesisAsTutor.map((tesis) => (
-                              <TableRow key={tesis.id_tesis || tesis.id} hover>
-                                <TableCell
-                                  sx={{
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  {tesis.nombre || tesis.titulo || "Sin título"}
-                                </TableCell>
-                                <TableCell>
+                    {isXs ? (
+                      tesisAsTutor.length > 0 ? (
+                        tesisAsTutor.map((tesis) => {
+                          const tesisKey = tesis.id_tesis || tesis.id;
+                          const authors = tesis.autores && Array.isArray(tesis.autores) ? tesis.autores.slice(0, 2) : [];
+
+                          return (
+                            <Paper key={tesisKey} sx={{ p: 2, mb: 1 }}>
+                              <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                  <Tooltip title={tesis.nombre || tesis.titulo || "Sin título"} open={openTitleTooltip === tesisKey} arrow>
+                                    <Box data-tooltip-id={tesisKey} onClick={() => showTitleTooltip(tesisKey)} sx={{ cursor: "pointer" }}>
+                                      <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {tesis.nombre || tesis.titulo || "Sin título"}
+                                      </Typography>
+                                    </Box>
+                                  </Tooltip>
+                                  <Typography variant="caption" color="text.secondary" noWrap>
+                                    {authors.length > 0 ? (
+                                      authors.map((a, idx) => (
+                                        a.ci ? (
+                                          <React.Fragment key={idx}>
+                                            <Link component="button" variant="caption" onClick={() => navigateToProfile(a.ci, "estudiante")} sx={{ textDecoration: "none", cursor: "pointer", color: "text.secondary" }}>
+                                              {a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}
+                                            </Link>
+                                            {idx < authors.length - 1 && ", "}
+                                          </React.Fragment>
+                                        ) : (
+                                          <span key={idx}>{a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}{idx < authors.length - 1 && ", "}</span>
+                                        )
+                                      ))
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, ml: 1 }}>
                                   <Chip
                                     label={
                                       tesis.estado
-                                        ? tesis.estado.charAt(0).toUpperCase() +
-                                          tesis.estado.slice(1).toLowerCase()
+                                        ? tesis.estado.charAt(0).toUpperCase() + tesis.estado.slice(1).toLowerCase()
                                         : "N/A"
                                     }
                                     size="small"
                                     color={
-                                      tesis.estado?.toLowerCase() === "aprobado" ||
-                                      tesis.estado?.toLowerCase() === "aprobada"
+                                      tesis.estado?.toLowerCase() === "aprobado" || tesis.estado?.toLowerCase() === "aprobada"
                                         ? "success"
-                                        : tesis.estado?.toLowerCase() === "rechazado" ||
-                                          tesis.estado?.toLowerCase() === "rechazada"
+                                        : tesis.estado?.toLowerCase() === "rechazado" || tesis.estado?.toLowerCase() === "rechazada"
                                         ? "error"
                                         : "default"
                                     }
                                   />
-                                </TableCell>
-                                <TableCell>
-                                  {tesis.fecha
-                                    ? dayjs(tesis.fecha).format("DD/MM/YYYY")
-                                    : "N/A"}
-                                </TableCell>
-                                <TableCell
-                                  sx={{
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                  }}
-                                >
-                                  {tesis.autores && Array.isArray(tesis.autores) && tesis.autores.length > 0 ? (
-                                    <>
-                                      {tesis.autores.map((a, idx) => (
-                                        <React.Fragment key={idx}>
-                                          {a.ci ? (
-                                            <Link
-                                              component="button"
-                                              variant="body2"
-                                              onClick={() =>
-                                                navigateToProfile(a.ci, "estudiante")
-                                              }
-                                              sx={{
-                                                cursor: "pointer",
-                                                textDecoration: "none",
-                                                "&:hover": {
-                                                  textDecoration: "underline",
-                                                },
-                                              }}
-                                            >
-                                              {a.nombre && a.apellido
-                                                ? `${a.nombre} ${a.apellido}`
-                                                : a.nombre || a.nombre_completo || "N/A"}
-                                            </Link>
-                                          ) : (
-                                            <span>
-                                              {a.nombre && a.apellido
-                                                ? `${a.nombre} ${a.apellido}`
-                                                : a.nombre || a.nombre_completo || "N/A"}
-                                            </span>
-                                          )}
-                                          {idx < tesis.autores.length - 1 && ", "}
-                                        </React.Fragment>
-                                      ))}
-                                    </>
-                                  ) : (
-                                    "N/A"
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {tesis.fecha ? dayjs(tesis.fecha).format("DD/MM/YYYY") : "N/A"}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Paper>
+                          );
+                        })
+                      ) : (
+                        <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>No hay tesis registradas como tutor</Box>
+                      )
+                    ) : (
+                      <TableContainer sx={{ maxHeight: { xs: 220, md: 300 }, minHeight: { xs: 120, md: 140 } }}>
+                        <Table size={isXs ? "small" : "medium"} sx={{ tableLayout: "fixed" }}>
+                          <TableHead>
                             <TableRow>
-                              <TableCell colSpan={4} sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
-                                No hay tesis registradas como tutor
+                              <TableCell sx={{ width: { xs: "auto", md: "40%" } }}>
+                                <strong>Título</strong>
+                              </TableCell>
+                              <TableCell sx={{ width: { xs: "auto", md: "15%" } }}>
+                                <strong>Estado</strong>
+                              </TableCell>
+                              <TableCell sx={{ width: { xs: "auto", md: "15%" } }}>
+                                <strong>Fecha</strong>
+                              </TableCell>
+                              <TableCell sx={{ width: { xs: "auto", md: "30%" } }}>
+                                <strong>Autores</strong>
                               </TableCell>
                             </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                          </TableHead>
+                          <TableBody>
+                            {tesisAsTutor.length > 0 ? (
+                              tesisAsTutor.map((tesis) => (
+                                <TableRow key={tesis.id_tesis || tesis.id} hover>
+                                      <TableCell
+                                        sx={{
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          whiteSpace: "nowrap",
+                                        }}
+                                      >
+                                        <Tooltip title={tesis.nombre || tesis.titulo || "Sin título"} open={openTitleTooltip === (tesis.id_tesis || tesis.id)} arrow>
+                                          <Box data-tooltip-id={tesis.id_tesis || tesis.id} onClick={() => showTitleTooltip(tesis.id_tesis || tesis.id)} sx={{ cursor: "pointer", display: "inline-block", minWidth: 0 }}>
+                                            <Typography sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                              {tesis.nombre || tesis.titulo || "Sin título"}
+                                            </Typography>
+                                          </Box>
+                                        </Tooltip>
+                                      </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      label={
+                                        tesis.estado
+                                          ? tesis.estado.charAt(0).toUpperCase() +
+                                            tesis.estado.slice(1).toLowerCase()
+                                          : "N/A"
+                                      }
+                                      size="small"
+                                      color={
+                                        tesis.estado?.toLowerCase() === "aprobado" ||
+                                        tesis.estado?.toLowerCase() === "aprobada"
+                                          ? "success"
+                                          : tesis.estado?.toLowerCase() === "rechazado" ||
+                                            tesis.estado?.toLowerCase() === "rechazada"
+                                          ? "error"
+                                          : "default"
+                                      }
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    {tesis.fecha
+                                      ? dayjs(tesis.fecha).format("DD/MM/YYYY")
+                                      : "N/A"}
+                                  </TableCell>
+                                  <TableCell
+                                    sx={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
+                                    {tesis.autores && Array.isArray(tesis.autores) && tesis.autores.length > 0 ? (
+                                      <>
+                                        {tesis.autores.map((a, idx) => (
+                                          <React.Fragment key={idx}>
+                                            {a.ci ? (
+                                              <Link
+                                                component="button"
+                                                variant="body2"
+                                                onClick={() =>
+                                                  navigateToProfile(a.ci, "estudiante")
+                                                }
+                                                sx={{
+                                                  cursor: "pointer",
+                                                  textDecoration: "none",
+                                                  "&:hover": {
+                                                    textDecoration: "underline",
+                                                  },
+                                                }}
+                                              >
+                                                {a.nombre && a.apellido
+                                                  ? `${a.nombre} ${a.apellido}`
+                                                  : a.nombre || a.nombre_completo || "N/A"}
+                                              </Link>
+                                            ) : (
+                                              <span>
+                                                {a.nombre && a.apellido
+                                                  ? `${a.nombre} ${a.apellido}`
+                                                  : a.nombre || a.nombre_completo || "N/A"}
+                                              </span>
+                                            )}
+                                            {idx < tesis.autores.length - 1 && ", "}
+                                          </React.Fragment>
+                                        ))}
+                                      </>
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell colSpan={4} sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+                                  No hay tesis registradas como tutor
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
                   </Paper>
                 </Grid>
 
@@ -1134,118 +1248,189 @@ const Profile = () => {
                       Tesis como Jurado ({tesisAsJurado.length})
                     </Typography>
                     <Divider sx={{ mb: 2 }} />
-                    <TableContainer sx={{ maxHeight: 300, minHeight: 140 }}>
-                      <Table size="medium" sx={{ tableLayout: "fixed" }}>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell sx={{ width: "40%" }}>
-                              <strong>Título</strong>
-                            </TableCell>
-                            <TableCell sx={{ width: "15%" }}>
-                              <strong>Estado</strong>
-                            </TableCell>
-                            <TableCell sx={{ width: "15%" }}>
-                              <strong>Fecha</strong>
-                            </TableCell>
-                            <TableCell sx={{ width: "30%" }}>
-                              <strong>Autores</strong>
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {tesisAsJurado.length > 0 ? (
-                            tesisAsJurado.map((tesis) => (
-                              <TableRow key={tesis.id_tesis || tesis.id} hover>
-                                <TableCell
-                                  sx={{
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  {tesis.nombre || tesis.titulo || "Sin título"}
-                                </TableCell>
-                                <TableCell>
+                    {isXs ? (
+                      tesisAsJurado.length > 0 ? (
+                        tesisAsJurado.map((tesis) => {
+                          const tesisKey = tesis.id_tesis || tesis.id;
+                          const authors = tesis.autores && Array.isArray(tesis.autores) ? tesis.autores.slice(0, 2) : [];
+
+                          return (
+                            <Paper key={tesisKey} sx={{ p: 2, mb: 1 }}>
+                              <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                  <Tooltip title={tesis.nombre || tesis.titulo || "Sin título"} open={openTitleTooltip === tesisKey} arrow>
+                                    <Box data-tooltip-id={tesisKey} onClick={() => showTitleTooltip(tesisKey)} sx={{ cursor: "pointer" }}>
+                                      <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {tesis.nombre || tesis.titulo || "Sin título"}
+                                      </Typography>
+                                    </Box>
+                                  </Tooltip>
+                                  <Typography variant="caption" color="text.secondary" noWrap>
+                                    {authors.length > 0 ? (
+                                      authors.map((a, idx) => (
+                                        a.ci ? (
+                                          <React.Fragment key={idx}>
+                                            <Link component="button" variant="caption" onClick={() => navigateToProfile(a.ci, "estudiante")} sx={{ textDecoration: "none", cursor: "pointer", color: "text.secondary" }}>
+                                              {a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}
+                                            </Link>
+                                            {idx < authors.length - 1 && ", "}
+                                          </React.Fragment>
+                                        ) : (
+                                          <span key={idx}>{a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}{idx < authors.length - 1 && ", "}</span>
+                                        )
+                                      ))
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, ml: 1 }}>
                                   <Chip
                                     label={
                                       tesis.estado
-                                        ? tesis.estado.charAt(0).toUpperCase() +
-                                          tesis.estado.slice(1).toLowerCase()
+                                        ? tesis.estado.charAt(0).toUpperCase() + tesis.estado.slice(1).toLowerCase()
                                         : "N/A"
                                     }
                                     size="small"
                                     color={
-                                      tesis.estado?.toLowerCase() === "aprobado" ||
-                                      tesis.estado?.toLowerCase() === "aprobada"
+                                      tesis.estado?.toLowerCase() === "aprobado" || tesis.estado?.toLowerCase() === "aprobada"
                                         ? "success"
-                                        : tesis.estado?.toLowerCase() === "rechazado" ||
-                                          tesis.estado?.toLowerCase() === "rechazada"
+                                        : tesis.estado?.toLowerCase() === "rechazado" || tesis.estado?.toLowerCase() === "rechazada"
                                         ? "error"
                                         : "default"
                                     }
                                   />
-                                </TableCell>
-                                <TableCell>
-                                  {tesis.fecha
-                                    ? dayjs(tesis.fecha).format("DD/MM/YYYY")
-                                    : "N/A"}
-                                </TableCell>
-                                <TableCell
-                                  sx={{
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                  }}
-                                >
-                                  {tesis.autores && Array.isArray(tesis.autores) && tesis.autores.length > 0 ? (
-                                    <>
-                                      {tesis.autores.map((a, idx) => (
-                                        <React.Fragment key={idx}>
-                                          {a.ci ? (
-                                            <Link
-                                              component="button"
-                                              variant="body2"
-                                              onClick={() =>
-                                                navigateToProfile(a.ci, "estudiante")
-                                              }
-                                              sx={{
-                                                cursor: "pointer",
-                                                textDecoration: "none",
-                                                "&:hover": {
-                                                  textDecoration: "underline",
-                                                },
-                                              }}
-                                            >
-                                              {a.nombre && a.apellido
-                                                ? `${a.nombre} ${a.apellido}`
-                                                : a.nombre || a.nombre_completo || "N/A"}
-                                            </Link>
-                                          ) : (
-                                            <span>
-                                              {a.nombre && a.apellido
-                                                ? `${a.nombre} ${a.apellido}`
-                                                : a.nombre || a.nombre_completo || "N/A"}
-                                            </span>
-                                          )}
-                                          {idx < tesis.autores.length - 1 && ", "}
-                                        </React.Fragment>
-                                      ))}
-                                    </>
-                                  ) : (
-                                    "N/A"
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {tesis.fecha ? dayjs(tesis.fecha).format("DD/MM/YYYY") : "N/A"}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Paper>
+                          );
+                        })
+                      ) : (
+                        <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>No hay tesis registradas como jurado</Box>
+                      )
+                    ) : (
+                      <TableContainer sx={{ maxHeight: { xs: 220, md: 300 }, minHeight: { xs: 120, md: 140 } }}>
+                        <Table size={isXs ? "small" : "medium"} sx={{ tableLayout: "fixed" }}>
+                          <TableHead>
                             <TableRow>
-                              <TableCell colSpan={4} sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
-                                No hay tesis registradas como jurado
+                              <TableCell sx={{ width: { xs: "auto", md: "40%" } }}>
+                                <strong>Título</strong>
+                              </TableCell>
+                              <TableCell sx={{ width: { xs: "auto", md: "15%" } }}>
+                                <strong>Estado</strong>
+                              </TableCell>
+                              <TableCell sx={{ width: { xs: "auto", md: "15%" } }}>
+                                <strong>Fecha</strong>
+                              </TableCell>
+                              <TableCell sx={{ width: { xs: "auto", md: "30%" } }}>
+                                <strong>Autores</strong>
                               </TableCell>
                             </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                          </TableHead>
+                          <TableBody>
+                            {tesisAsJurado.length > 0 ? (
+                              tesisAsJurado.map((tesis) => (
+                                <TableRow key={tesis.id_tesis || tesis.id} hover>
+                                  <TableCell
+                                    sx={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    <Tooltip title={tesis.nombre || tesis.titulo || "Sin título"} open={openTitleTooltip === (tesis.id_tesis || tesis.id)} arrow>
+                                      <Box data-tooltip-id={tesis.id_tesis || tesis.id} onClick={() => showTitleTooltip(tesis.id_tesis || tesis.id)} sx={{ cursor: "pointer", display: "inline-block", minWidth: 0 }}>
+                                        <Typography sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                          {tesis.nombre || tesis.titulo || "Sin título"}
+                                        </Typography>
+                                      </Box>
+                                    </Tooltip>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      label={
+                                        tesis.estado
+                                          ? tesis.estado.charAt(0).toUpperCase() +
+                                            tesis.estado.slice(1).toLowerCase()
+                                          : "N/A"
+                                      }
+                                      size="small"
+                                      color={
+                                        tesis.estado?.toLowerCase() === "aprobado" ||
+                                        tesis.estado?.toLowerCase() === "aprobada"
+                                          ? "success"
+                                          : tesis.estado?.toLowerCase() === "rechazado" ||
+                                            tesis.estado?.toLowerCase() === "rechazada"
+                                          ? "error"
+                                          : "default"
+                                      }
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    {tesis.fecha
+                                      ? dayjs(tesis.fecha).format("DD/MM/YYYY")
+                                      : "N/A"}
+                                  </TableCell>
+                                  <TableCell
+                                    sx={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
+                                    {tesis.autores && Array.isArray(tesis.autores) && tesis.autores.length > 0 ? (
+                                      <>
+                                        {tesis.autores.map((a, idx) => (
+                                          <React.Fragment key={idx}>
+                                            {a.ci ? (
+                                              <Link
+                                                component="button"
+                                                variant="body2"
+                                                onClick={() =>
+                                                  navigateToProfile(a.ci, "estudiante")
+                                                }
+                                                sx={{
+                                                  cursor: "pointer",
+                                                  textDecoration: "none",
+                                                  "&:hover": {
+                                                    textDecoration: "underline",
+                                                  },
+                                                }}
+                                              >
+                                                {a.nombre && a.apellido
+                                                  ? `${a.nombre} ${a.apellido}`
+                                                  : a.nombre || a.nombre_completo || "N/A"}
+                                              </Link>
+                                            ) : (
+                                              <span>
+                                                {a.nombre && a.apellido
+                                                  ? `${a.nombre} ${a.apellido}`
+                                                  : a.nombre || a.nombre_completo || "N/A"}
+                                              </span>
+                                            )}
+                                            {idx < tesis.autores.length - 1 && ", "}
+                                          </React.Fragment>
+                                        ))}
+                                      </>
+                                    ) : (
+                                      "N/A"
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell colSpan={4} sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+                                  No hay tesis registradas como jurado
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
                   </Paper>
                 </Grid>
               </>

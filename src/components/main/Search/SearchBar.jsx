@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { GoSearch } from "react-icons/go";
 
-const SearchBar = ({
-  setSearchQuery,
-  setPaginationData,
-}) => {
+const SearchBar = ({ setSearchQuery, setPaginationData }) => {
   const [searchValue, setSearchValue] = useState("");
   const timeoutRef = useRef(null);
 
@@ -42,15 +39,17 @@ const SearchBar = ({
   };
 
   return (
-    <div className="flex max-h-10 max-w-2xl p-3 place-items-center border-2 rounded-lg w-11/12 relative">
+    <div className="flex max-h-12 w-full place-items-center border-2 rounded-lg relative transition-all duration-200 overflow-hidden">
       <input
         type="text"
-        className="w-full pr-8"
+        className="w-full pr-8 py-2 bg-transparent focus:outline-none"
         placeholder="Buscar tesis"
         value={searchValue}
         onChange={handleInput}
       />
-      <GoSearch className="pointer-events-none" />
+      <div className="absolute right-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+        <GoSearch size={20} />
+      </div>
     </div>
   );
 };

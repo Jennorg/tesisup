@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
+import authService from "@/services/auth.service";
+import userService from "@/services/user.service";
 import handleInputChange from "@/hooks/utils/handleInputChange";
 import { useNavigate, Link } from "react-router-dom";
 import LoadingModal from "@/hooks/Modals/LoadingModal";
@@ -52,12 +53,12 @@ const SignUp = () => {
 
   const fetchSedes = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/sede`);
-      if (response.data.data.length > 0 && !formData.id_sede) {
-        setFormData((prev) => ({ ...prev, id_sede: response.data.data[0].id }));
+      const data = await userService.getSedes();
+      if (data.data.length > 0 && !formData.id_sede) {
+        setFormData((prev) => ({ ...prev, id_sede: data.data[0].id }));
       }
-      setSedeOptions(response.data.data);
-      console.log("Sedes obtenidas:", response.data.data);
+      setSedeOptions(data.data);
+      console.log("Sedes obtenidas:", data.data);
     } catch (error) {
       console.error("Error fetching sedes:", error);
       setSedeOptions([]);
@@ -110,12 +111,9 @@ const SignUp = () => {
     });
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/${endpoint}`,
-        payload
-      );
+      const registerResponse = await authService.register(endpoint, payload);
 
-      console.log("Respuesta del servidor:", res.data);
+      console.log("Respuesta del servidor:", registerResponse);
       setModalState({
         isOpen: true,
         status: "success",
@@ -123,11 +121,11 @@ const SignUp = () => {
       });
       // Intentar iniciar sesión automáticamente con las credenciales proporcionadas
       try {
-        const loginRes = await axios.post(`${import.meta.env.VITE_API_URL}/login`, {
+        const loginData = await authService.login({
           email: formData.email,
           password: formData.password,
         });
-        const { token, user } = loginRes.data;
+        const { token, user } = loginData;
         // Guardar token/usuario en el contexto global
         authLogin(user, token);
         // Navegar a la main page ya autenticado

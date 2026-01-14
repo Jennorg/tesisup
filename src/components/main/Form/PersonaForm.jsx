@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import authService from "@/services/auth.service";
 import {
   TextField,
   Select,
@@ -21,13 +21,19 @@ const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
 // 💡 1. PROPS ACTUALIZADAS: Recibe 'prefillData' y 'onPrefillConsumed'
-const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillConsumed }) => {
+const PersonaForm = ({
+  role,
+  onUserCreated,
+  sedes = [],
+  prefillData,
+  onPrefillConsumed,
+}) => {
   const [modalState, setModalState] = useState({
     isOpen: false,
     status: "loading",
     message: "",
   });
-  
+
   const initialData = {
     nombre: "",
     apellido: "",
@@ -35,10 +41,10 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
     ci_type: "V",
     email: "",
     telefono: "",
-    password: "", 
-    id_sede: "", 
+    password: "",
+    id_sede: "",
   };
-  
+
   const [newUserData, setNewUserData] = useState(initialData);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -49,18 +55,17 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
       const nameParts = prefillData.name.trim().split(" ");
       const nombre = nameParts[0] || "";
       const apellido = nameParts.slice(1).join(" ") || "";
-      
+
       setNewUserData((prev) => ({
         ...initialData, // Limpia el formulario
         nombre: nombre,
         apellido: apellido,
       }));
-      
+
       // Limpia el pre-llenado en el padre para que no se reutilice
-      onPrefillConsumed(); 
+      onPrefillConsumed();
     }
   }, [prefillData, role, onPrefillConsumed]);
-
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -68,7 +73,7 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
   };
 
   const handleAutocompleteChange = (name, value) => {
-     setNewUserData((prev) => ({ ...prev, [name]: value }));
+    setNewUserData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleCreateUser = async () => {
@@ -76,7 +81,7 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
     if (role === "estudiante") endpoint = "estudiantes";
     else if (role === "profesor") endpoint = "profesor";
     else if (role === "encargado") endpoint = "encargado";
-    
+
     setModalState({
       isOpen: true,
       status: "loading",
@@ -84,19 +89,19 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
     });
 
     try {
-      const isEncargado = role === 'encargado';
+      const isEncargado = role === "encargado";
       const ciString = String(newUserData.ci);
       const ciTypeString = String(newUserData.ci_type || "V");
 
-      const emailToSend = isEncargado 
-        ? String(newUserData.email) 
-        : (newUserData.email || `temporal${ciString}@uneg.edu.ve`);
+      const emailToSend = isEncargado
+        ? String(newUserData.email)
+        : newUserData.email || `temporal${ciString}@uneg.edu.ve`;
 
-      const telefonoToSend = newUserData.telefono || "00000000000"; 
+      const telefonoToSend = newUserData.telefono || "00000000000";
 
-      const passwordToSend = isEncargado 
-        ? String(newUserData.password) 
-        : `${ciTypeString}${ciString}`; 
+      const passwordToSend = isEncargado
+        ? String(newUserData.password)
+        : `${ciTypeString}${ciString}`;
 
       const payload = {
         ...newUserData,
@@ -109,26 +114,27 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
         password: passwordToSend,
       };
 
-      if (role === 'encargado') {
+      if (role === "encargado") {
         payload.id_sede = parseInt(newUserData.id_sede);
       } else {
-        delete payload.id_sede; 
+        delete payload.id_sede;
       }
 
-      await axios.post(`${VITE_API_URL}/${endpoint}`, payload);
-      
+      await authService.register(endpoint, payload);
+
       if (onUserCreated) {
         onUserCreated();
       }
-      
+
       setModalState({
         isOpen: true,
         status: "success",
-        message: `${role.charAt(0).toUpperCase() + role.slice(1)} creado correctamente.`,
+        message: `${
+          role.charAt(0).toUpperCase() + role.slice(1)
+        } creado correctamente.`,
       });
 
-      setNewUserData(initialData); 
-
+      setNewUserData(initialData);
     } catch (err) {
       console.error(`Error al crear ${role}:`, err);
       setModalState({
@@ -142,12 +148,17 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
   const handleModalClose = () => {
     setModalState((s) => ({ ...s, isOpen: false }));
   };
-  
-  const isBaseInvalid = !newUserData.nombre || !newUserData.apellido || !newUserData.ci;
+
+  const isBaseInvalid =
+    !newUserData.nombre || !newUserData.apellido || !newUserData.ci;
   let isFormInvalid = isBaseInvalid;
 
-  if (role === 'encargado') {
-    isFormInvalid = isBaseInvalid || !newUserData.email || !newUserData.password || !newUserData.id_sede;
+  if (role === "encargado") {
+    isFormInvalid =
+      isBaseInvalid ||
+      !newUserData.email ||
+      !newUserData.password ||
+      !newUserData.id_sede;
   }
 
   return (
@@ -159,7 +170,7 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
         flexDirection: "column",
         gap: 3,
         overflowY: "auto",
-        maxHeight: "65vh", 
+        maxHeight: "65vh",
         p: 1,
         "&::-webkit-scrollbar": { width: "8px" },
         "&::-webkit-scrollbar-track": { background: "#f1f1f1" },
@@ -170,14 +181,15 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
         "&::-webkit-scrollbar-thumb:hover": { background: "#555" },
       }}
     >
-      {role === 'encargado' ? (
-         <Alert severity="info">
-           Rellena los campos para crear un nuevo {role}. Teléfono es opcional.
-         </Alert>
+      {role === "encargado" ? (
+        <Alert severity="info">
+          Rellena los campos para crear un nuevo {role}. Teléfono es opcional.
+        </Alert>
       ) : (
-         <Alert severity="info">
-           Rellena los campos para crear un nuevo {role}. Email y teléfono son opcionales.
-         </Alert>
+        <Alert severity="info">
+          Rellena los campos para crear un nuevo {role}. Email y teléfono son
+          opcionales.
+        </Alert>
       )}
 
       <Box sx={{ display: "flex", gap: 2 }}>
@@ -223,8 +235,8 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
         onChange={handleInputChange}
         required
       />
-      
-      {role !== 'encargado' && (
+
+      {role !== "encargado" && (
         <>
           <TextField
             fullWidth
@@ -248,7 +260,7 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
         </>
       )}
 
-      {role === 'encargado' && (
+      {role === "encargado" && (
         <>
           <TextField
             fullWidth
@@ -258,7 +270,7 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
             type="email"
             value={newUserData.email}
             onChange={handleInputChange}
-            required 
+            required
           />
 
           <TextField
@@ -287,29 +299,29 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
           />
 
           <Autocomplete
-              id="sede-select-encargado"
-              options={sedes}
-              getOptionLabel={(option) => option.nombre}
-              value={
-                sedes.find((s) => String(s.id) === String(newUserData.id_sede)) ||
-                null
-              }
-              onChange={(event, newValue) => {
-                handleAutocompleteChange("id_sede", newValue ? newValue.id : "");
-              }}
-              disablePortal
-              renderInput={(params) => (
-                <TextField 
-                  {...params} 
-                  label="Sede Asignada" 
-                  variant="filled" 
-                  fullWidth 
-                  required 
-                />
-              )}
-              noOptionsText="No hay sedes registradas"
-            />
-          
+            id="sede-select-encargado"
+            options={sedes}
+            getOptionLabel={(option) => option.nombre}
+            value={
+              sedes.find((s) => String(s.id) === String(newUserData.id_sede)) ||
+              null
+            }
+            onChange={(event, newValue) => {
+              handleAutocompleteChange("id_sede", newValue ? newValue.id : "");
+            }}
+            disablePortal
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Sede Asignada"
+                variant="filled"
+                fullWidth
+                required
+              />
+            )}
+            noOptionsText="No hay sedes registradas"
+          />
+
           <TextField
             fullWidth
             label="Teléfono (Opcional)"
@@ -334,7 +346,7 @@ const PersonaForm = ({ role, onUserCreated, sedes = [], prefillData, onPrefillCo
       >
         Crear {role}
       </Button>
-      
+
       <LoadingModal
         isOpen={modalState.isOpen}
         status={modalState.status}

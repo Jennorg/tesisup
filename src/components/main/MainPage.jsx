@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Content from "@/components/main/Layout/Content";
-import axios from "axios";
+import tesisService from "@/services/tesis.service";
 import TesisForm from "@/components/main/Form/ManagementForm.jsx"; // Tu alias para ManagementForm
 import Header from "@/components/main/Layout/Header";
 import Filters from "@/components/main/Layout/Filters";
@@ -22,17 +22,16 @@ const MainPage = () => {
   const [searchQuery, setSearchQuery] = useState(""); // Añadido para la nueva lógica
   const [errorMessage, setErrorMessage] = useState(null);
   const tesisFormRef = useRef(null);
-  
-  
+
   // Estado para el ordenamiento - initialize from localStorage
   const [sortConfig, setSortConfig] = useState(() => {
-    const savedSort = localStorage.getItem('sortConfig');
+    const savedSort = localStorage.getItem("sortConfig");
     return savedSort ? JSON.parse(savedSort) : { key: null, direction: null };
   });
 
   // Persist sortConfig to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('sortConfig', JSON.stringify(sortConfig));
+    localStorage.setItem("sortConfig", JSON.stringify(sortConfig));
   }, [sortConfig]);
   // Anchor for attribute menu
   const [anchorEl, setAnchorEl] = useState(null);
@@ -45,7 +44,7 @@ const MainPage = () => {
 
   // Estado para guardar la tesis que se va a editar
   const [tesisToEdit, setTesisToEdit] = useState(null);
-  
+
   // Estado para el modal de descarga
   const [downloadModal, setDownloadModal] = useState({
     isOpen: false,
@@ -96,8 +95,8 @@ const MainPage = () => {
       });
       // Add sorting parameters if set
       if (sortConfig.key && sortConfig.direction) {
-        params.append('sortBy', sortConfig.key);
-        params.append('order', sortConfig.direction);
+        params.append("sortBy", sortConfig.key);
+        params.append("order", sortConfig.direction);
       }
 
       if (activeFilters) {
@@ -116,17 +115,14 @@ const MainPage = () => {
         params.append("cadena", searchQuery);
       }
 
-      const apiUrl = `${import.meta.env.VITE_API_URL}/tesis`;
-      const response = await axios.get(apiUrl, {
-        params,
-        withCredentials: true,
-      });
+      const response = await tesisService.getAll(params);
 
-      if (response.data && Array.isArray(response.data.data)) {
-        setTesisEncontradas(response.data.data);
+      // tesisService.getAll returns response.data (which is { data: [...], total: ... })
+      if (response && Array.isArray(response.data)) {
+        setTesisEncontradas(response.data);
         setPaginationData((prev) => ({
           ...prev,
-          total: response.data.total,
+          total: response.total,
         }));
       } else {
         console.warn("Respuesta inesperada de la API:", response.data);
@@ -138,7 +134,7 @@ const MainPage = () => {
       setTesisEncontradas([]);
       setPaginationData((prev) => ({ ...prev, total: 0 }));
       setErrorMessage(
-        error?.message?.includes('Network')
+        error?.message?.includes("Network")
           ? "Error de conexión: no se pudo contactar al servidor."
           : "Error al obtener los datos de tesis."
       );
@@ -204,7 +200,9 @@ const MainPage = () => {
     // Función auxiliar para descargar el archivo
     const downloadFile = async (downloadPath) => {
       if (isDownloading) {
-        console.log("La descarga ya está en progreso, ignorando llamada duplicada");
+        console.log(
+          "La descarga ya está en progreso, ignorando llamada duplicada"
+        );
         return;
       }
       isDownloading = true;
@@ -216,15 +214,12 @@ const MainPage = () => {
           message: "Descargando archivo...",
         });
 
-        const downloadApiUrl = `${import.meta.env.VITE_API_URL}${downloadPath}`;
+        const downloadApiUrl = `${downloadPath}`;
         console.log("Descargando archivo desde:", downloadApiUrl);
 
-        // Para la descarga del archivo, no usar withCredentials si causa problemas de CORS
-        const response = await axios.get(downloadApiUrl, {
-          responseType: "blob",
-          withCredentials: true,
-          timeout: 300000, // 5 minutos
-          onDownloadProgress: (progressEvent) => {
+        const { data: blob, headers } = await tesisService.downloadFile(
+          downloadApiUrl,
+          (progressEvent) => {
             if (progressEvent.total) {
               const percentCompleted = Math.round(
                 (progressEvent.loaded * 100) / progressEvent.total
@@ -235,11 +230,10 @@ const MainPage = () => {
                 message: `Descargando archivo... ${percentCompleted}% completado`,
               });
             }
-          },
-        });
+          }
+        );
 
-        const blob = response.data;
-        const contentType = response.headers["content-type"];
+        const contentType = headers["content-type"];
 
         // Verificar que sea un ZIP
         const isZip = contentType && contentType.includes("application/zip");
@@ -249,7 +243,10 @@ const MainPage = () => {
           const text = await blob.text();
           try {
             const errorData = JSON.parse(text);
-            throw new Error(errorData.message || "Error: La respuesta no es un archivo ZIP válido");
+            throw new Error(
+              errorData.message ||
+                "Error: La respuesta no es un archivo ZIP válido"
+            );
           } catch (parseError) {
             throw new Error("Error: La respuesta no es un archivo ZIP válido");
           }
@@ -261,10 +258,12 @@ const MainPage = () => {
         link.href = url;
 
         // Extraer el nombre del archivo de las cabeceras si está disponible
-        const contentDisposition = response.headers["content-disposition"];
+        const contentDisposition = headers["content-disposition"];
         let filename = "todas_las_tesis.zip"; // Nombre por defecto
         if (contentDisposition) {
-          const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
+          const filenameMatch = contentDisposition.match(
+            /filename="?([^";]+)"?/
+          );
           if (filenameMatch && filenameMatch.length > 1) {
             filename = filenameMatch[1].replace(/_+$/, ""); // Remove trailing underscores
           }
@@ -292,13 +291,8 @@ const MainPage = () => {
 
     try {
       // Paso 1: Iniciar el proceso de descarga y obtener el jobId
-      const apiUrl = `${import.meta.env.VITE_API_URL}/tesis/download/all`;
-      const initResponse = await axios.get(apiUrl, {
-        withCredentials: true,
-      });
-
-      // El backend devuelve un JSON con jobId y URLs
-      const { jobId, progressUrl, streamUrl } = initResponse.data;
+      const { jobId, progressUrl, streamUrl } =
+        await tesisService.initiateDownloadAll();
 
       console.log("Job iniciado:", { jobId, progressUrl, streamUrl });
 
@@ -313,7 +307,13 @@ const MainPage = () => {
       });
 
       // Paso 2: Usar Server-Sent Events (SSE) para recibir actualizaciones de progreso
-      const sseUrl = `${import.meta.env.VITE_API_URL}${streamUrl || progressUrl || `/tesis/download/progress/${jobId}/stream`}`;
+      // Note: EventSource doesn't support custom headers easily without polyfills,
+      // but usually cookie-based auth works if configured.
+      // If we need headers, we might need a different approach or a library like event-source-polyfill
+      // However, we'll assume the URL contains a token or cookies work as before.
+      const sseUrl = `${import.meta.env.VITE_API_URL}${
+        streamUrl || progressUrl || `/tesis/download/progress/${jobId}/stream`
+      }`;
       console.log("Conectando a SSE:", sseUrl);
 
       eventSource = new EventSource(sseUrl);
@@ -323,9 +323,14 @@ const MainPage = () => {
           const data = JSON.parse(event.data);
           console.log("Evento SSE recibido:", data);
 
-          const { total, processed, current, status, percentage, downloadUrl } = data;
+          const { total, processed, current, status, percentage, downloadUrl } =
+            data;
 
-          if (status === "completed" || status === "done" || status === "finished") {
+          if (
+            status === "completed" ||
+            status === "done" ||
+            status === "finished"
+          ) {
             // El proceso está completo
             console.log("Proceso completado, iniciando descarga...");
             if (eventSource) {
@@ -334,7 +339,8 @@ const MainPage = () => {
             }
 
             // Descargar el archivo usando el downloadUrl proporcionado
-            const finalDownloadUrl = downloadUrl || `/tesis/download/result/${jobId}`;
+            const finalDownloadUrl =
+              downloadUrl || `/tesis/download/result/${jobId}`;
             downloadFile(finalDownloadUrl).catch((error) => {
               console.error("Error al descargar:", error);
               setDownloadModal({
@@ -357,11 +363,16 @@ const MainPage = () => {
             });
           } else if (total && processed !== undefined) {
             // Mostrar progreso numérico
-            const percent = percentage !== undefined ? percentage : Math.round((processed / total) * 100);
+            const percent =
+              percentage !== undefined
+                ? percentage
+                : Math.round((processed / total) * 100);
             setDownloadModal({
               isOpen: true,
               status: "loading",
-              message: `Procesando tesis... ${processed} de ${total} (${percent}%)${current ? ` - ${current}` : ""}`,
+              message: `Procesando tesis... ${processed} de ${total} (${percent}%)${
+                current ? ` - ${current}` : ""
+              }`,
             });
           } else if (current) {
             // Mostrar tesis actual
@@ -401,12 +412,12 @@ const MainPage = () => {
             setDownloadModal({
               isOpen: true,
               status: "error",
-              message: "Error en la conexión con el servidor. Intenta de nuevo.",
+              message:
+                "Error en la conexión con el servidor. Intenta de nuevo.",
             });
           }
         }
       };
-
     } catch (error) {
       // Cerrar SSE si está abierto
       if (eventSource) {
@@ -414,11 +425,11 @@ const MainPage = () => {
         eventSource = null;
       }
       console.error("Error al descargar las tesis:", error);
-      
+
       // Intentar parsear el error si viene como JSON
       let errorMessage = "Error al descargar las tesis. Intenta de nuevo.";
       if (error.response?.data) {
-        if (typeof error.response.data === 'string') {
+        if (typeof error.response.data === "string") {
           try {
             const errorData = JSON.parse(error.response.data);
             errorMessage = errorData.message || errorMessage;
@@ -431,7 +442,7 @@ const MainPage = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       // Mostrar modal de error
       setDownloadModal({
         isOpen: true,
@@ -522,9 +533,7 @@ const MainPage = () => {
         setPaginationData={setPaginationData} // Prop para la nueva lógica
         setSearchQuery={setSearchQuery} // Prop para la nueva lógica
       />
-      <main
-        className="relative z-10 flex-grow pr-4 pt-4 pl-4 overflow-y-auto transition-all duration-300"
-      >
+      <main className="relative z-10 flex-grow pr-4 pt-4 pl-4 overflow-y-auto transition-all duration-300">
         {/* --- H1 Y BOTONES DE DESCARGA Y ORDENAMIENTO --- */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
           <h1 className="text-2xl font-bold text-text-primary text-center md:text-left">
@@ -602,7 +611,7 @@ const MainPage = () => {
           </div>
         </div>
 
-      <Content
+        <Content
           isTesisFormVisible={isTesisFormVisible}
           setIsTesisFormVisible={setIsTesisFormVisible} // Para el botón "Añadir"
           isLoading={isLoading}

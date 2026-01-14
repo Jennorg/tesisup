@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useCallback, forwardRef } from "react";
-import axios from "axios";
-import {
-  Box,
-  Tabs,
-  Tab,
-} from "@mui/material";
+import userService from "@/services/user.service";
+import { Box, Tabs, Tab } from "@mui/material";
 import {
   Description as TesisIcon,
   Person as EstudianteIcon,
   School as ProfesorIcon,
-  SupervisorAccount as EncargadoIcon
+  SupervisorAccount as EncargadoIcon,
 } from "@mui/icons-material";
 
 // Importa los formularios separados
@@ -31,23 +27,21 @@ function TabPanel(props) {
       {...other}
     >
       {/* Se eliminó la condición 'value === index &&' para conservar el estado */}
-      <Box sx={{ pt: 3, pb: 3, px: 1 }}>
-        {children}
-      </Box>
+      <Box sx={{ pt: 3, pb: 3, px: 1 }}>{children}</Box>
     </div>
   );
 }
 
 const ManagementForm = forwardRef((props, ref) => {
-  const [activeTab, setActiveTab] = useState(0); 
-  
+  const [activeTab, setActiveTab] = useState(0);
+
   const [dropdownOptions, setDropdownOptions] = useState({
     profesores: [],
     encargados: [],
     sedes: [],
     estudiantes: [],
   });
-  
+
   // Estado para guardar la tesis a editar
   const [prefillData, setPrefillData] = useState(null);
 
@@ -62,17 +56,17 @@ const ManagementForm = forwardRef((props, ref) => {
     try {
       const [profesoresRes, encargadosRes, sedesRes, estudiantesRes] =
         await Promise.all([
-          axios.get(`${VITE_API_URL}/profesor`),
-          axios.get(`${VITE_API_URL}/encargado`),
-          axios.get(`${VITE_API_URL}/sede`),
-          axios.get(`${VITE_API_URL}/estudiantes`),
+          userService.getProfesores(),
+          userService.getEncargados(),
+          userService.getSedes(),
+          userService.getEstudiantes(),
         ]);
 
       setDropdownOptions({
-        profesores: profesoresRes.data.data || [],
-        encargados: encargadosRes.data.data || [],
-        sedes: sedesRes.data.data || [],
-        estudiantes: estudiantesRes.data.data || [],
+        profesores: profesoresRes.data || [],
+        encargados: encargadosRes.data || [],
+        sedes: sedesRes.data || [],
+        estudiantes: estudiantesRes.data || [],
       });
     } catch (error) {
       console.error("Error al cargar opciones:", error);
@@ -98,13 +92,13 @@ const ManagementForm = forwardRef((props, ref) => {
   const handleRequestCreateUser = (type, name) => {
     console.log("Solicitud para crear:", type, "con nombre:", name);
     setPrefillData({ type, name }); // Guarda el nombre y tipo
-    
+
     // Cambia a la pestaña correspondiente
-    if (type === 'estudiante') {
+    if (type === "estudiante") {
       setActiveTab(1);
-    } else if (type === 'profesor') {
+    } else if (type === "profesor") {
       setActiveTab(2);
-    } else if (type === 'encargado') {
+    } else if (type === "encargado") {
       setActiveTab(3);
     }
   };
@@ -145,9 +139,9 @@ const ManagementForm = forwardRef((props, ref) => {
       <TabPanel value={activeTab} index={0}>
         <TesisForm
           dropdownOptions={dropdownOptions}
-          onSuccess={props.onSuccess} 
-          onClose={props.onClose}     
-          onRequestCreateUser={handleRequestCreateUser} 
+          onSuccess={props.onSuccess}
+          onClose={props.onClose}
+          onRequestCreateUser={handleRequestCreateUser}
           tesisToEdit={props.tesisToEdit} // Pasar 'tesisToEdit' al TesisForm
         />
       </TabPanel>
@@ -156,7 +150,7 @@ const ManagementForm = forwardRef((props, ref) => {
       <TabPanel value={activeTab} index={1}>
         <PersonaForm
           role="estudiante"
-          onUserCreated={loadFormOptions} 
+          onUserCreated={loadFormOptions}
           prefillData={prefillData} // Pasar los datos de pre-llenado
           onPrefillConsumed={() => setPrefillData(null)} // Función para limpiar
         />
@@ -166,8 +160,8 @@ const ManagementForm = forwardRef((props, ref) => {
       <TabPanel value={activeTab} index={2}>
         <PersonaForm
           role="profesor"
-          onUserCreated={loadFormOptions} 
-          prefillData={prefillData} 
+          onUserCreated={loadFormOptions}
+          prefillData={prefillData}
           onPrefillConsumed={() => setPrefillData(null)}
         />
       </TabPanel>
@@ -176,9 +170,9 @@ const ManagementForm = forwardRef((props, ref) => {
       <TabPanel value={activeTab} index={3}>
         <PersonaForm
           role="encargado"
-          onUserCreated={loadFormOptions} 
-          sedes={dropdownOptions.sedes} 
-          prefillData={prefillData} 
+          onUserCreated={loadFormOptions}
+          sedes={dropdownOptions.sedes}
+          prefillData={prefillData}
           onPrefillConsumed={() => setPrefillData(null)}
         />
       </TabPanel>

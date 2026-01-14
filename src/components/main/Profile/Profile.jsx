@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import axios from "axios";
+import userService from "@/services/user.service";
+import tesisService from "@/services/tesis.service";
 import {
   Box,
   Card,
@@ -133,7 +134,8 @@ const Profile = () => {
       try {
         // Si hay parámetros en la URL, usar esos; si no, usar el usuario autenticado
         const targetCi = urlCi || user.ci;
-        const targetUserType = urlUserType?.toLowerCase() || user.user_type?.toLowerCase();
+        const targetUserType =
+          urlUserType?.toLowerCase() || user.user_type?.toLowerCase();
 
         // Determinar el endpoint según el tipo de usuario
         let endpoint = "";
@@ -144,38 +146,12 @@ const Profile = () => {
         let data = null;
 
         if (userType === "estudiante") {
-          // Evitar llamadas que devuelvan 404 a /estudiantes/:ci en algunos backends.
-          // En su lugar, obtener la lista y buscar el CI en el cliente.
-          const estudiantesRes = await axios.get(`${VITE_API_URL}/estudiantes`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          const estudiantes = estudiantesRes.data.data || estudiantesRes.data || [];
-          data = estudiantes.find((e) => String(e.ci) === String(targetCi));
-          if (!data) {
-            throw new Error("Estudiante no encontrado");
-          }
+          // Use userService.getByCi which handles the logic
+          data = await userService.getByCi("estudiante", targetCi);
         } else if (userType === "profesor") {
-          const response = await axios.get(
-            `${VITE_API_URL}/profesor/${targetCi}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          data = response.data.data || response.data;
+          data = await userService.getByCi("profesor", targetCi);
         } else if (userType === "encargado") {
-          const response = await axios.get(
-            `${VITE_API_URL}/encargado/${targetCi}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          data = response.data.data || response.data;
+          data = await userService.getByCi("encargado", targetCi);
         } else {
           throw new Error("Tipo de usuario no válido");
         }
@@ -185,17 +161,13 @@ const Profile = () => {
         // Si es encargado, obtener información de la sede
         if (userType === "encargado" && data.id_sede) {
           try {
-            const sedeResponse = await axios.get(
-              `${VITE_API_URL}/sede/search/${data.id_sede}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-            setSedeData(sedeResponse.data.data || sedeResponse.data);
+            const sedeData = await userService.getSedeById(data.id_sede);
+            setSedeData(sedeData);
           } catch (sedeError) {
-            console.error("Error al obtener información de la sede:", sedeError);
+            console.error(
+              "Error al obtener información de la sede:",
+              sedeError
+            );
           }
         }
 
@@ -210,17 +182,7 @@ const Profile = () => {
             const limit = 100; // Obtener 100 por página para minimizar requests
 
             while (hasMore) {
-              const tesisResponse = await axios.get(`${VITE_API_URL}/tesis`, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-                params: {
-                  page,
-                  limit,
-                },
-              });
-
-              const responseData = tesisResponse.data;
+              const responseData = await tesisService.getAll({ page, limit });
               const tesisPage = responseData.data || [];
               allTesis = [...allTesis, ...tesisPage];
 
@@ -231,46 +193,31 @@ const Profile = () => {
             }
 
             // Obtener datos relacionados
-            const [profesoresRes, encargadosRes, estudiantesRes, sedesRes] =
+            const [profesores, encargados, estudiantes, sedes] =
               await Promise.all([
-                axios.get(`${VITE_API_URL}/profesor`, {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }),
-                axios.get(`${VITE_API_URL}/encargado`, {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }),
-                axios.get(`${VITE_API_URL}/estudiantes`, {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }),
-                axios.get(`${VITE_API_URL}/sede`, {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }),
+                userService.getProfesores(),
+                userService.getEncargados(),
+                userService.getEstudiantes(),
+                userService.getSedes(),
               ]);
 
-            const profesores = profesoresRes.data.data || profesoresRes.data || [];
-            const encargados = encargadosRes.data.data || encargadosRes.data || [];
-            const estudiantes = estudiantesRes.data.data || estudiantesRes.data || [];
-            const sedes = sedesRes.data.data || sedesRes.data || [];
+            // Normalize data structures from services if needed (services usually return data array directly if possible, but let's be safe)
+            const profesoresList = profesores.data || profesores;
+            const encargadosList = encargados.data || encargados;
+            const estudiantesList = estudiantes.data || estudiantes;
+            const sedesList = sedes.data || sedes;
 
             // Enriquecer datos de tesis con información relacionada
             const enrichedTesis = allTesis.map((tesis) => {
               // Las tesis ya vienen con autores y jurados desde el backend
               // Solo necesitamos enriquecer con datos adicionales si es necesario
-              const tutor = profesores.find(
+              const tutor = profesoresList.find(
                 (p) => String(p.ci) === String(tesis.id_tutor)
               );
-              const encargado = encargados.find(
+              const encargado = encargadosList.find(
                 (e) => String(e.ci) === String(tesis.id_encargado)
               );
-              const sede = sedes.find((s) => s.id === tesis.id_sede);
+              const sede = sedesList.find((s) => s.id === tesis.id_sede);
 
               return {
                 ...tesis,
@@ -379,7 +326,7 @@ const Profile = () => {
       const targetCi = urlCi || profileData.ci;
       const userType = viewingUserType || profileData.user_type?.toLowerCase();
 
-      if (userType === "profesor") {
+      if (userType === "profesor" || userType === "estudiante") {
         // Preparar payload con todos los campos necesarios
         const payload = {
           ci: parseInt(targetCi),
@@ -390,57 +337,9 @@ const Profile = () => {
           telefono: String(editData.telefono || ""),
         };
 
-        console.log("Enviando datos de actualización:", payload);
+        console.log(`Enviando datos de actualización (${userType}):`, payload);
 
-        const response = await axios.put(
-          `${VITE_API_URL}/profesor/${targetCi}`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        console.log("Respuesta del servidor:", response.data);
-
-        // Actualizar los datos del perfil
-        setProfileData({
-          ...profileData,
-          nombre: editData.nombre,
-          apellido: editData.apellido,
-          email: editData.email,
-          telefono: editData.telefono,
-        });
-
-        setIsEditing(false);
-        setError(null);
-      } else if (userType === "estudiante") {
-        // Preparar payload para estudiante
-        const payload = {
-          ci: parseInt(targetCi),
-          ci_type: profileData.ci_type || "V",
-          nombre: String(editData.nombre),
-          apellido: String(editData.apellido),
-          email: String(editData.email || ""),
-          telefono: String(editData.telefono || ""),
-        };
-
-        console.log("Enviando datos de actualización (estudiante):", payload);
-
-        const response = await axios.put(
-          `${VITE_API_URL}/estudiantes/${targetCi}`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        console.log("Respuesta del servidor (estudiante):", response.data);
+        await userService.update(userType, targetCi, payload);
 
         // Actualizar los datos del perfil
         setProfileData({
@@ -470,7 +369,7 @@ const Profile = () => {
 
   const handleDownloadExcel = () => {
     const displayData = profileData || user;
-    
+
     // Combinar todas las tesis con su rol
     const allTesisWithRole = [
       ...tesisAsTutor.map((t) => ({ ...t, rol: "Tutor" })),
@@ -493,48 +392,67 @@ const Profile = () => {
     const rows = [headers];
 
     allTesisWithRole.forEach((tesis) => {
-      const nombresAutores = tesis.autores && Array.isArray(tesis.autores)
-        ? tesis.autores
-            .map((a) => (a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""))
-            .filter(Boolean)
-            .join(", ")
-        : "";
+      const nombresAutores =
+        tesis.autores && Array.isArray(tesis.autores)
+          ? tesis.autores
+              .map((a) =>
+                a.nombre && a.apellido
+                  ? `${a.nombre} ${a.apellido}`
+                  : a.nombre || a.nombre_completo || ""
+              )
+              .filter(Boolean)
+              .join(", ")
+          : "";
 
-      const cedulasAutores = tesis.autores && Array.isArray(tesis.autores)
-        ? tesis.autores
-            .map((a) => {
-              const ciType = a.ci_type || "V";
-              return a.ci ? `${ciType}-${a.ci}` : "";
-            })
-            .filter(Boolean)
-            .join(", ")
-        : "";
+      const cedulasAutores =
+        tesis.autores && Array.isArray(tesis.autores)
+          ? tesis.autores
+              .map((a) => {
+                const ciType = a.ci_type || "V";
+                return a.ci ? `${ciType}-${a.ci}` : "";
+              })
+              .filter(Boolean)
+              .join(", ")
+          : "";
 
-      const nombresJurados = tesis.jurados && Array.isArray(tesis.jurados)
-        ? tesis.jurados
-            .map((j) => (j.nombre && j.apellido ? `${j.nombre} ${j.apellido}` : j.nombre || j.nombre_completo || ""))
-            .filter(Boolean)
-            .join(", ")
-        : "";
+      const nombresJurados =
+        tesis.jurados && Array.isArray(tesis.jurados)
+          ? tesis.jurados
+              .map((j) =>
+                j.nombre && j.apellido
+                  ? `${j.nombre} ${j.apellido}`
+                  : j.nombre || j.nombre_completo || ""
+              )
+              .filter(Boolean)
+              .join(", ")
+          : "";
 
-      const cedulasJurados = tesis.jurados && Array.isArray(tesis.jurados)
-        ? tesis.jurados
-            .map((j) => {
-              const ciType = j.ci_type || "V";
-              return j.ci ? `${ciType}-${j.ci}` : "";
-            })
-            .filter(Boolean)
-            .join(", ")
-        : "";
+      const cedulasJurados =
+        tesis.jurados && Array.isArray(tesis.jurados)
+          ? tesis.jurados
+              .map((j) => {
+                const ciType = j.ci_type || "V";
+                return j.ci ? `${ciType}-${j.ci}` : "";
+              })
+              .filter(Boolean)
+              .join(", ")
+          : "";
 
       // Fecha: si existe, conviértela a objeto Date para que Excel la reconozca
-      const fechaVal = tesis.fecha ? dayjs(tesis.fecha).isValid() ? dayjs(tesis.fecha).toDate() : null : null;
+      const fechaVal = tesis.fecha
+        ? dayjs(tesis.fecha).isValid()
+          ? dayjs(tesis.fecha).toDate()
+          : null
+        : null;
 
       rows.push([
         tesis.nombre || tesis.titulo || "",
         tesis.id_tesis || tesis.id || "",
         tesis.rol || "",
-        tesis.estado ? tesis.estado.charAt(0).toUpperCase() + tesis.estado.slice(1).toLowerCase() : "",
+        tesis.estado
+          ? tesis.estado.charAt(0).toUpperCase() +
+            tesis.estado.slice(1).toLowerCase()
+          : "",
         fechaVal || "",
         nombresAutores,
         cedulasAutores,
@@ -586,10 +504,19 @@ const Profile = () => {
         if (r === 0) {
           ws[addr].s.font = headerFont;
           ws[addr].s.fill = headerFill;
-          ws[addr].s.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+          ws[addr].s.alignment = {
+            horizontal: "center",
+            vertical: "center",
+            wrapText: true,
+          };
         } else {
           // Celdas de datos: alineación y ajuste para columnas largas
-          ws[addr].s.alignment = { horizontal: c === 0 || c === 5 || c === 6 || c === 7 ? "left" : "center", vertical: "center", wrapText: true };
+          ws[addr].s.alignment = {
+            horizontal:
+              c === 0 || c === 5 || c === 6 || c === 7 ? "left" : "center",
+            vertical: "center",
+            wrapText: true,
+          };
           // Si es columna Fecha (índice 4), forzar formato de fecha
           if (c === 4 && ws[addr].v instanceof Date) {
             ws[addr].t = "d";
@@ -603,7 +530,9 @@ const Profile = () => {
     }
 
     // Autofiltrar y congelar fila de encabezado
-    ws["!autofilter"] = { ref: `A1:${XLSX.utils.encode_col(headers.length - 1)}1` };
+    ws["!autofilter"] = {
+      ref: `A1:${XLSX.utils.encode_col(headers.length - 1)}1`,
+    };
 
     // Workbook
     const wb = XLSX.utils.book_new();
@@ -612,16 +541,21 @@ const Profile = () => {
     // Views: congelar primera fila
     wb.Workbook = wb.Workbook || {};
     wb.Workbook.Views = wb.Workbook.Views || [];
-    wb.Workbook.Views.push({ xSplit: 0, ySplit: 1, topLeftCell: "A2", activeTab: 0 });
+    wb.Workbook.Views.push({
+      xSplit: 0,
+      ySplit: 1,
+      topLeftCell: "A2",
+      activeTab: 0,
+    });
 
     // Generar nombre del archivo
-    const fileName = `Tesis_${displayData?.nombre || "Profesor"}_${dayjs().format("YYYY-MM-DD")}.xlsx`;
+    const fileName = `Tesis_${
+      displayData?.nombre || "Profesor"
+    }_${dayjs().format("YYYY-MM-DD")}.xlsx`;
 
     // Escribir archivo
     XLSX.writeFile(wb, fileName);
   };
-
-
 
   if (loading && !profileData) {
     return (
@@ -638,11 +572,23 @@ const Profile = () => {
         <Card sx={{ overflow: "visible" }}>
           {/* Header skeleton */}
           <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "center", gap: { xs: 2, md: 3 } }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", md: "row" },
+                alignItems: "center",
+                gap: { xs: 2, md: 3 },
+              }}
+            >
               <Skeleton variant="circular" width={120} height={120} />
               <Box sx={{ flex: 1, width: "100%" }}>
                 <Skeleton variant="text" width="60%" height={40} />
-                <Skeleton variant="rectangular" width={100} height={24} sx={{ mt: 1, borderRadius: 1 }} />
+                <Skeleton
+                  variant="rectangular"
+                  width={100}
+                  height={24}
+                  sx={{ mt: 1, borderRadius: 1 }}
+                />
               </Box>
             </Box>
           </Box>
@@ -651,7 +597,12 @@ const Profile = () => {
             {/* Información Personal skeleton */}
             <Box sx={{ mb: 3 }}>
               <Skeleton variant="text" width="40%" height={32} />
-              <Skeleton variant="text" width="100%" height={20} sx={{ mt: 1 }} />
+              <Skeleton
+                variant="text"
+                width="100%"
+                height={20}
+                sx={{ mt: 1 }}
+              />
               <Skeleton variant="text" width="90%" height={20} />
               <Skeleton variant="text" width="85%" height={20} />
             </Box>
@@ -659,7 +610,12 @@ const Profile = () => {
             {/* Más secciones skeleton */}
             <Box sx={{ mb: 3 }}>
               <Skeleton variant="text" width="35%" height={32} />
-              <Skeleton variant="text" width="100%" height={20} sx={{ mt: 1 }} />
+              <Skeleton
+                variant="text"
+                width="100%"
+                height={20}
+                sx={{ mt: 1 }}
+              />
               <Skeleton variant="text" width="80%" height={20} />
             </Box>
           </CardContent>
@@ -711,15 +667,19 @@ const Profile = () => {
         <Box
           sx={{
             background: `linear-gradient(135deg, ${
-              (viewingUserType || user?.user_type?.toLowerCase()) === "estudiante"
+              (viewingUserType || user?.user_type?.toLowerCase()) ===
+              "estudiante"
                 ? "#1976d2"
-                : (viewingUserType || user?.user_type?.toLowerCase()) === "profesor"
+                : (viewingUserType || user?.user_type?.toLowerCase()) ===
+                  "profesor"
                 ? "#2e7d32"
                 : "#ed6c02"
             } 0%, ${
-              (viewingUserType || user?.user_type?.toLowerCase()) === "estudiante"
+              (viewingUserType || user?.user_type?.toLowerCase()) ===
+              "estudiante"
                 ? "#42a5f5"
-                : (viewingUserType || user?.user_type?.toLowerCase()) === "profesor"
+                : (viewingUserType || user?.user_type?.toLowerCase()) ===
+                  "profesor"
                 ? "#66bb6a"
                 : "#ff9800"
             } 100%)`,
@@ -742,13 +702,19 @@ const Profile = () => {
           >
             {avatarLetter}
           </Avatar>
-          <Box sx={{ flex: 1, color: "white", textAlign: { xs: "center", md: "left" } }}>
+          <Box
+            sx={{
+              flex: 1,
+              color: "white",
+              textAlign: { xs: "center", md: "left" },
+            }}
+          >
             <Typography
               variant="h4"
-              sx={{ 
-                fontWeight: "bold", 
+              sx={{
+                fontWeight: "bold",
                 mb: 1,
-                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" }
+                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
               }}
               component="h1"
             >
@@ -790,7 +756,12 @@ const Profile = () => {
                 >
                   <Typography
                     variant="h6"
-                    sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                    }}
                   >
                     <PersonIcon color="primary" />
                     Información Personal
@@ -798,9 +769,17 @@ const Profile = () => {
                   {/* Botón de editar solo para encargados viendo perfil de profesor o estudiante */}
                   {user?.user_type?.toLowerCase() === "encargado" &&
                     ["profesor", "estudiante"].includes(
-                      (viewingUserType || profileData?.user_type?.toLowerCase())
+                      viewingUserType || profileData?.user_type?.toLowerCase()
                     ) && (
-                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", flexDirection: { xs: "column", sm: "row" }, width: { xs: "100%", sm: "auto" } }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          flexWrap: "wrap",
+                          flexDirection: { xs: "column", sm: "row" },
+                          width: { xs: "100%", sm: "auto" },
+                        }}
+                      >
                         {!isEditing ? (
                           <Button
                             variant="outlined"
@@ -857,7 +836,9 @@ const Profile = () => {
                   </Grid>
 
                   <Grid item xs={12} sm={6} md={4}>
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
+                    >
                       <EmailIcon sx={{ color: "text.secondary", mt: 1 }} />
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="caption" color="text.secondary">
@@ -866,7 +847,8 @@ const Profile = () => {
                         {isEditing &&
                         user?.user_type?.toLowerCase() === "encargado" &&
                         ["profesor", "estudiante"].includes(
-                          (viewingUserType || profileData?.user_type?.toLowerCase())
+                          viewingUserType ||
+                            profileData?.user_type?.toLowerCase()
                         ) ? (
                           <TextField
                             fullWidth
@@ -874,7 +856,10 @@ const Profile = () => {
                             variant="outlined"
                             value={editData.email}
                             onChange={(e) =>
-                              setEditData({ ...editData, email: e.target.value })
+                              setEditData({
+                                ...editData,
+                                email: e.target.value,
+                              })
                             }
                             sx={{ mt: 0.5 }}
                           />
@@ -888,7 +873,9 @@ const Profile = () => {
                   </Grid>
 
                   <Grid item xs={12} sm={6} md={4}>
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
+                    >
                       <PhoneIcon sx={{ color: "text.secondary", mt: 1 }} />
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="caption" color="text.secondary">
@@ -897,7 +884,8 @@ const Profile = () => {
                         {isEditing &&
                         user?.user_type?.toLowerCase() === "encargado" &&
                         ["profesor", "estudiante"].includes(
-                          (viewingUserType || profileData?.user_type?.toLowerCase())
+                          viewingUserType ||
+                            profileData?.user_type?.toLowerCase()
                         ) ? (
                           <TextField
                             fullWidth
@@ -905,7 +893,10 @@ const Profile = () => {
                             variant="outlined"
                             value={editData.telefono}
                             onChange={(e) =>
-                              setEditData({ ...editData, telefono: e.target.value })
+                              setEditData({
+                                ...editData,
+                                telefono: e.target.value,
+                              })
                             }
                             sx={{ mt: 0.5 }}
                           />
@@ -922,7 +913,7 @@ const Profile = () => {
                   {isEditing &&
                     user?.user_type?.toLowerCase() === "encargado" &&
                     ["profesor", "estudiante"].includes(
-                      (viewingUserType || profileData?.user_type?.toLowerCase())
+                      viewingUserType || profileData?.user_type?.toLowerCase()
                     ) && (
                       <>
                         <Grid item xs={12} sm={6} md={4}>
@@ -932,7 +923,10 @@ const Profile = () => {
                             variant="outlined"
                             value={editData.nombre}
                             onChange={(e) =>
-                              setEditData({ ...editData, nombre: e.target.value })
+                              setEditData({
+                                ...editData,
+                                nombre: e.target.value,
+                              })
                             }
                           />
                         </Grid>
@@ -943,7 +937,10 @@ const Profile = () => {
                             variant="outlined"
                             value={editData.apellido}
                             onChange={(e) =>
-                              setEditData({ ...editData, apellido: e.target.value })
+                              setEditData({
+                                ...editData,
+                                apellido: e.target.value,
+                              })
                             }
                           />
                         </Grid>
@@ -954,29 +951,30 @@ const Profile = () => {
             </Grid>
 
             {/* Información específica según el tipo de usuario */}
-            {(viewingUserType || user?.user_type?.toLowerCase()) === "encargado" && (
+            {(viewingUserType || user?.user_type?.toLowerCase()) ===
+              "encargado" && (
               <Grid item xs={12}>
                 <Paper
-                elevation={0}
-                sx={{
-                  p: { xs: 2, sm: 3 },
-                  bgcolor: "background.default",
-                  borderRadius: 2,
-                }}
-              >
-                <Typography
-                  variant="h6"
+                  elevation={0}
                   sx={{
-                    mb: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    fontSize: { xs: "1.1rem", sm: "1.25rem" }
+                    p: { xs: 2, sm: 3 },
+                    bgcolor: "background.default",
+                    borderRadius: 2,
                   }}
                 >
-                  <BusinessIcon color="primary" />
-                  Información de Sede
-                </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      mb: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                    }}
+                  >
+                    <BusinessIcon color="primary" />
+                    Información de Sede
+                  </Typography>
                   <Divider sx={{ mb: 2 }} />
                   {sedeData ? (
                     <Box>
@@ -998,29 +996,30 @@ const Profile = () => {
               </Grid>
             )}
 
-            {(viewingUserType || user?.user_type?.toLowerCase()) === "estudiante" && (
+            {(viewingUserType || user?.user_type?.toLowerCase()) ===
+              "estudiante" && (
               <Grid item xs={12}>
                 <Paper
-                elevation={0}
-                sx={{
-                  p: { xs: 2, sm: 3 },
-                  bgcolor: "background.default",
-                  borderRadius: 2,
-                }}
-              >
-                <Typography
-                  variant="h6"
+                  elevation={0}
                   sx={{
-                    mb: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    fontSize: { xs: "1.1rem", sm: "1.25rem" }
+                    p: { xs: 2, sm: 3 },
+                    bgcolor: "background.default",
+                    borderRadius: 2,
                   }}
                 >
-                  <SchoolIcon color="primary" />
-                  Información Académica
-                </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      mb: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                    }}
+                  >
+                    <SchoolIcon color="primary" />
+                    Información Académica
+                  </Typography>
                   <Divider sx={{ mb: 2 }} />
                   <Typography variant="body2" color="text.secondary">
                     Estudiante registrado en el sistema
@@ -1029,35 +1028,42 @@ const Profile = () => {
               </Grid>
             )}
 
-            {(viewingUserType || user?.user_type?.toLowerCase()) === "profesor" && (
+            {(viewingUserType || user?.user_type?.toLowerCase()) ===
+              "profesor" && (
               <>
                 <Grid item xs={12}>
                   <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: { xs: "flex-start", sm: "center" },
-                    flexDirection: { xs: "column", sm: "row" },
-                    mb: 2,
-                    gap: { xs: 1.5, sm: 2 },
-                  }}
-                >
-                  <Typography variant="h5" sx={{ fontWeight: "bold", fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
-                    Tesis en las que ha participado
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<DownloadIcon />}
-                    onClick={handleDownloadExcel}
-                    disabled={
-                      tesisAsTutor.length === 0 && tesisAsJurado.length === 0
-                    }
-                    sx={{ width: { xs: "100%", sm: "auto" } }}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      flexDirection: { xs: "column", sm: "row" },
+                      mb: 2,
+                      gap: { xs: 1.5, sm: 2 },
+                    }}
                   >
-                    Descargar Excel
-                  </Button>
-                </Box>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                      }}
+                    >
+                      Tesis en las que ha participado
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<DownloadIcon />}
+                      onClick={handleDownloadExcel}
+                      disabled={
+                        tesisAsTutor.length === 0 && tesisAsJurado.length === 0
+                      }
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
+                    >
+                      Descargar Excel
+                    </Button>
+                  </Box>
                 </Grid>
 
                 {/* Tesis como Tutor */}
@@ -1077,7 +1083,7 @@ const Profile = () => {
                         display: "flex",
                         alignItems: "center",
                         gap: 1,
-                        fontSize: { xs: "1.1rem", sm: "1.25rem" }
+                        fontSize: { xs: "1.1rem", sm: "1.25rem" },
                       }}
                     >
                       <AssignmentIcon color="primary" />
@@ -1088,75 +1094,146 @@ const Profile = () => {
                       tesisAsTutor.length > 0 ? (
                         tesisAsTutor.map((tesis) => {
                           const tesisKey = tesis.id_tesis || tesis.id;
-                          const authors = tesis.autores && Array.isArray(tesis.autores) ? tesis.autores.slice(0, 2) : [];
+                          const authors =
+                            tesis.autores && Array.isArray(tesis.autores)
+                              ? tesis.autores.slice(0, 2)
+                              : [];
 
                           return (
                             <Paper key={tesisKey} sx={{ p: 2, mb: 1 }}>
-                              <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  gap: 2,
+                                }}
+                              >
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                                  <Tooltip title={tesis.nombre || tesis.titulo || "Sin título"} open={openTitleTooltip === tesisKey} arrow>
-                                    <Box data-tooltip-id={tesisKey} onClick={() => showTitleTooltip(tesisKey)} sx={{ cursor: "pointer" }}>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                        {tesis.nombre || tesis.titulo || "Sin título"}
+                                  <Tooltip
+                                    title={
+                                      tesis.nombre ||
+                                      tesis.titulo ||
+                                      "Sin título"
+                                    }
+                                    open={openTitleTooltip === tesisKey}
+                                    arrow
+                                  >
+                                    <Box
+                                      data-tooltip-id={tesisKey}
+                                      onClick={() => showTitleTooltip(tesisKey)}
+                                      sx={{ cursor: "pointer" }}
+                                    >
+                                      <Typography
+                                        variant="subtitle2"
+                                        sx={{
+                                          fontWeight: "bold",
+                                          mb: 0.5,
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          whiteSpace: "nowrap",
+                                        }}
+                                      >
+                                        {tesis.nombre ||
+                                          tesis.titulo ||
+                                          "Sin título"}
                                       </Typography>
                                     </Box>
                                   </Tooltip>
-                                  <Typography variant="caption" color="text.secondary" noWrap>
-                                    {authors.length > 0 ? (
-                                      authors.map((a, idx) => (
-                                        a.ci ? (
-                                          <React.Fragment key={idx}>
-                                            <Typography
-                                              component="button"
-                                              variant="caption"
-                                              onClick={() => navigateToProfile(a.ci, "estudiante")}
-                                              sx={{
-                                                textDecoration: "none",
-                                                cursor: "pointer",
-                                                color: "text.secondary",
-                                                background: "none",
-                                                border: "none",
-                                                p: 0,
-                                                m: 0,
-                                                display: "inline",
-                                                "&:hover": {
-                                                  textDecoration: "underline",
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    noWrap
+                                  >
+                                    {authors.length > 0
+                                      ? authors.map((a, idx) =>
+                                          a.ci ? (
+                                            <React.Fragment key={idx}>
+                                              <Typography
+                                                component="button"
+                                                variant="caption"
+                                                onClick={() =>
+                                                  navigateToProfile(
+                                                    a.ci,
+                                                    "estudiante"
+                                                  )
+                                                }
+                                                sx={{
+                                                  textDecoration: "none",
+                                                  cursor: "pointer",
                                                   color: "text.secondary",
-                                                },
-                                                "&:focus": { outline: "none" },
-                                              }}
-                                            >
-                                              {a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}
-                                            </Typography>
-                                            {idx < authors.length - 1 && ", "}
-                                          </React.Fragment>
-                                        ) : (
-                                          <span key={idx}>{a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}{idx < authors.length - 1 && ", "}</span>
+                                                  background: "none",
+                                                  border: "none",
+                                                  p: 0,
+                                                  m: 0,
+                                                  display: "inline",
+                                                  "&:hover": {
+                                                    textDecoration: "underline",
+                                                    color: "text.secondary",
+                                                  },
+                                                  "&:focus": {
+                                                    outline: "none",
+                                                  },
+                                                }}
+                                              >
+                                                {a.nombre && a.apellido
+                                                  ? `${a.nombre} ${a.apellido}`
+                                                  : a.nombre ||
+                                                    a.nombre_completo ||
+                                                    ""}
+                                              </Typography>
+                                              {idx < authors.length - 1 && ", "}
+                                            </React.Fragment>
+                                          ) : (
+                                            <span key={idx}>
+                                              {a.nombre && a.apellido
+                                                ? `${a.nombre} ${a.apellido}`
+                                                : a.nombre ||
+                                                  a.nombre_completo ||
+                                                  ""}
+                                              {idx < authors.length - 1 && ", "}
+                                            </span>
+                                          )
                                         )
-                                      ))
-                                    ) : (
-                                      "N/A"
-                                    )}
+                                      : "N/A"}
                                   </Typography>
                                 </Box>
-                                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, ml: 1 }}>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
+                                    gap: 0.5,
+                                    ml: 1,
+                                  }}
+                                >
                                   <Chip
                                     label={
                                       tesis.estado
-                                        ? tesis.estado.charAt(0).toUpperCase() + tesis.estado.slice(1).toLowerCase()
+                                        ? tesis.estado.charAt(0).toUpperCase() +
+                                          tesis.estado.slice(1).toLowerCase()
                                         : "N/A"
                                     }
                                     size="small"
                                     color={
-                                      tesis.estado?.toLowerCase() === "aprobado" || tesis.estado?.toLowerCase() === "aprobada"
+                                      tesis.estado?.toLowerCase() ===
+                                        "aprobado" ||
+                                      tesis.estado?.toLowerCase() === "aprobada"
                                         ? "success"
-                                        : tesis.estado?.toLowerCase() === "rechazado" || tesis.estado?.toLowerCase() === "rechazada"
+                                        : tesis.estado?.toLowerCase() ===
+                                            "rechazado" ||
+                                          tesis.estado?.toLowerCase() ===
+                                            "rechazada"
                                         ? "error"
                                         : "default"
                                     }
                                   />
-                                  <Typography variant="caption" color="text.secondary">
-                                    {tesis.fecha ? dayjs(tesis.fecha).format("DD/MM/YYYY") : "N/A"}
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    {tesis.fecha
+                                      ? dayjs(tesis.fecha).format("DD/MM/YYYY")
+                                      : "N/A"}
                                   </Typography>
                                 </Box>
                               </Box>
@@ -1164,23 +1241,47 @@ const Profile = () => {
                           );
                         })
                       ) : (
-                        <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>No hay tesis registradas como tutor</Box>
+                        <Box
+                          sx={{
+                            textAlign: "center",
+                            py: 3,
+                            color: "text.secondary",
+                          }}
+                        >
+                          No hay tesis registradas como tutor
+                        </Box>
                       )
                     ) : (
-                      <TableContainer sx={{ maxHeight: { xs: 220, md: 300 }, minHeight: { xs: 120, md: 140 } }}>
-                        <Table size={isXs ? "small" : "medium"} sx={{ tableLayout: "fixed" }}>
+                      <TableContainer
+                        sx={{
+                          maxHeight: { xs: 220, md: 300 },
+                          minHeight: { xs: 120, md: 140 },
+                        }}
+                      >
+                        <Table
+                          size={isXs ? "small" : "medium"}
+                          sx={{ tableLayout: "fixed" }}
+                        >
                           <TableHead>
                             <TableRow>
-                              <TableCell sx={{ width: { xs: "auto", md: "40%" } }}>
+                              <TableCell
+                                sx={{ width: { xs: "auto", md: "40%" } }}
+                              >
                                 <strong>Título</strong>
                               </TableCell>
-                              <TableCell sx={{ width: { xs: "auto", md: "15%" } }}>
+                              <TableCell
+                                sx={{ width: { xs: "auto", md: "15%" } }}
+                              >
                                 <strong>Estado</strong>
                               </TableCell>
-                              <TableCell sx={{ width: { xs: "auto", md: "15%" } }}>
+                              <TableCell
+                                sx={{ width: { xs: "auto", md: "15%" } }}
+                              >
                                 <strong>Fecha</strong>
                               </TableCell>
-                              <TableCell sx={{ width: { xs: "auto", md: "30%" } }}>
+                              <TableCell
+                                sx={{ width: { xs: "auto", md: "30%" } }}
+                              >
                                 <strong>Autores</strong>
                               </TableCell>
                             </TableRow>
@@ -1188,49 +1289,97 @@ const Profile = () => {
                           <TableBody>
                             {loadingTesis ? (
                               <TableRow>
-                                <TableCell colSpan={4} sx={{ textAlign: "center", py: 4 }}>
+                                <TableCell
+                                  colSpan={4}
+                                  sx={{ textAlign: "center", py: 4 }}
+                                >
                                   <CircularProgress />
                                 </TableCell>
                               </TableRow>
                             ) : tesisAsTutor.length > 0 ? (
                               tesisAsTutor.map((tesis) => (
-                                <TableRow key={tesis.id_tesis || tesis.id} hover>
-                                      <TableCell
+                                <TableRow
+                                  key={tesis.id_tesis || tesis.id}
+                                  hover
+                                >
+                                  <TableCell
+                                    sx={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    <Tooltip
+                                      title={
+                                        tesis.nombre ||
+                                        tesis.titulo ||
+                                        "Sin título"
+                                      }
+                                      open={
+                                        openTitleTooltip ===
+                                        (tesis.id_tesis || tesis.id)
+                                      }
+                                      arrow
+                                      placement="top"
+                                      PopperProps={{
+                                        modifiers: [
+                                          {
+                                            name: "offset",
+                                            options: { offset: [0, 8] },
+                                          },
+                                        ],
+                                      }}
+                                    >
+                                      <Box
+                                        data-tooltip-id={
+                                          tesis.id_tesis || tesis.id
+                                        }
+                                        onClick={() =>
+                                          showTitleTooltip(
+                                            tesis.id_tesis || tesis.id
+                                          )
+                                        }
                                         sx={{
-                                          overflow: "hidden",
-                                          textOverflow: "ellipsis",
-                                          whiteSpace: "nowrap",
+                                          cursor: "pointer",
+                                          display: "inline",
+                                          minWidth: 0,
                                         }}
                                       >
-                                        <Tooltip
-                                          title={tesis.nombre || tesis.titulo || "Sin título"}
-                                          open={openTitleTooltip === (tesis.id_tesis || tesis.id)}
-                                          arrow
-                                          placement="top"
-                                          PopperProps={{ modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] }}
+                                        <Typography
+                                          sx={{
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                          }}
                                         >
-                                          <Box data-tooltip-id={tesis.id_tesis || tesis.id} onClick={() => showTitleTooltip(tesis.id_tesis || tesis.id)} sx={{ cursor: "pointer", display: "inline", minWidth: 0 }}>
-                                            <Typography sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                              {tesis.nombre || tesis.titulo || "Sin título"}
-                                            </Typography>
-                                          </Box>
-                                        </Tooltip>
-                                      </TableCell>
+                                          {tesis.nombre ||
+                                            tesis.titulo ||
+                                            "Sin título"}
+                                        </Typography>
+                                      </Box>
+                                    </Tooltip>
+                                  </TableCell>
                                   <TableCell>
                                     <Chip
                                       label={
                                         tesis.estado
-                                          ? tesis.estado.charAt(0).toUpperCase() +
+                                          ? tesis.estado
+                                              .charAt(0)
+                                              .toUpperCase() +
                                             tesis.estado.slice(1).toLowerCase()
                                           : "N/A"
                                       }
                                       size="small"
                                       color={
-                                        tesis.estado?.toLowerCase() === "aprobado" ||
-                                        tesis.estado?.toLowerCase() === "aprobada"
+                                        tesis.estado?.toLowerCase() ===
+                                          "aprobado" ||
+                                        tesis.estado?.toLowerCase() ===
+                                          "aprobada"
                                           ? "success"
-                                          : tesis.estado?.toLowerCase() === "rechazado" ||
-                                            tesis.estado?.toLowerCase() === "rechazada"
+                                          : tesis.estado?.toLowerCase() ===
+                                              "rechazado" ||
+                                            tesis.estado?.toLowerCase() ===
+                                              "rechazada"
                                           ? "error"
                                           : "default"
                                       }
@@ -1247,7 +1396,9 @@ const Profile = () => {
                                       textOverflow: "ellipsis",
                                     }}
                                   >
-                                    {tesis.autores && Array.isArray(tesis.autores) && tesis.autores.length > 0 ? (
+                                    {tesis.autores &&
+                                    Array.isArray(tesis.autores) &&
+                                    tesis.autores.length > 0 ? (
                                       <>
                                         {tesis.autores.map((a, idx) => (
                                           <React.Fragment key={idx}>
@@ -1256,7 +1407,10 @@ const Profile = () => {
                                                 component="button"
                                                 variant="body2"
                                                 onClick={() =>
-                                                  navigateToProfile(a.ci, "estudiante")
+                                                  navigateToProfile(
+                                                    a.ci,
+                                                    "estudiante"
+                                                  )
                                                 }
                                                 sx={{
                                                   cursor: "pointer",
@@ -1264,7 +1418,8 @@ const Profile = () => {
                                                   color: "#1976d2",
                                                   fontWeight: 500,
                                                   "&:hover": {
-                                                    backgroundColor: "rgba(0,0,0,0.05)",
+                                                    backgroundColor:
+                                                      "rgba(0,0,0,0.05)",
                                                     textDecoration: "underline",
                                                     opacity: 1,
                                                   },
@@ -1272,16 +1427,21 @@ const Profile = () => {
                                               >
                                                 {a.nombre && a.apellido
                                                   ? `${a.nombre} ${a.apellido}`
-                                                  : a.nombre || a.nombre_completo || "N/A"}
+                                                  : a.nombre ||
+                                                    a.nombre_completo ||
+                                                    "N/A"}
                                               </Link>
                                             ) : (
                                               <span>
                                                 {a.nombre && a.apellido
                                                   ? `${a.nombre} ${a.apellido}`
-                                                  : a.nombre || a.nombre_completo || "N/A"}
+                                                  : a.nombre ||
+                                                    a.nombre_completo ||
+                                                    "N/A"}
                                               </span>
                                             )}
-                                            {idx < tesis.autores.length - 1 && ", "}
+                                            {idx < tesis.autores.length - 1 &&
+                                              ", "}
                                           </React.Fragment>
                                         ))}
                                       </>
@@ -1293,7 +1453,14 @@ const Profile = () => {
                               ))
                             ) : (
                               <TableRow>
-                                <TableCell colSpan={4} sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+                                <TableCell
+                                  colSpan={4}
+                                  sx={{
+                                    textAlign: "center",
+                                    py: 6,
+                                    color: "text.secondary",
+                                  }}
+                                >
                                   No hay tesis registradas como tutor
                                 </TableCell>
                               </TableRow>
@@ -1322,7 +1489,7 @@ const Profile = () => {
                         display: "flex",
                         alignItems: "center",
                         gap: 1,
-                        fontSize: { xs: "1.1rem", sm: "1.25rem" }
+                        fontSize: { xs: "1.1rem", sm: "1.25rem" },
                       }}
                     >
                       <GavelIcon color="primary" />
@@ -1333,75 +1500,146 @@ const Profile = () => {
                       tesisAsJurado.length > 0 ? (
                         tesisAsJurado.map((tesis) => {
                           const tesisKey = tesis.id_tesis || tesis.id;
-                          const authors = tesis.autores && Array.isArray(tesis.autores) ? tesis.autores.slice(0, 2) : [];
+                          const authors =
+                            tesis.autores && Array.isArray(tesis.autores)
+                              ? tesis.autores.slice(0, 2)
+                              : [];
 
                           return (
                             <Paper key={tesisKey} sx={{ p: 2, mb: 1 }}>
-                              <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  gap: 2,
+                                }}
+                              >
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                                  <Tooltip title={tesis.nombre || tesis.titulo || "Sin título"} open={openTitleTooltip === tesisKey} arrow>
-                                    <Box data-tooltip-id={tesisKey} onClick={() => showTitleTooltip(tesisKey)} sx={{ cursor: "pointer" }}>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                        {tesis.nombre || tesis.titulo || "Sin título"}
+                                  <Tooltip
+                                    title={
+                                      tesis.nombre ||
+                                      tesis.titulo ||
+                                      "Sin título"
+                                    }
+                                    open={openTitleTooltip === tesisKey}
+                                    arrow
+                                  >
+                                    <Box
+                                      data-tooltip-id={tesisKey}
+                                      onClick={() => showTitleTooltip(tesisKey)}
+                                      sx={{ cursor: "pointer" }}
+                                    >
+                                      <Typography
+                                        variant="subtitle2"
+                                        sx={{
+                                          fontWeight: "bold",
+                                          mb: 0.5,
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          whiteSpace: "nowrap",
+                                        }}
+                                      >
+                                        {tesis.nombre ||
+                                          tesis.titulo ||
+                                          "Sin título"}
                                       </Typography>
                                     </Box>
                                   </Tooltip>
-                                  <Typography variant="caption" color="text.secondary" noWrap>
-                                    {authors.length > 0 ? (
-                                      authors.map((a, idx) => (
-                                        a.ci ? (
-                                          <React.Fragment key={idx}>
-                                            <Typography
-                                              component="button"
-                                              variant="caption"
-                                              onClick={() => navigateToProfile(a.ci, "estudiante")}
-                                              sx={{
-                                                textDecoration: "none",
-                                                cursor: "pointer",
-                                                color: "text.secondary",
-                                                background: "none",
-                                                border: "none",
-                                                p: 0,
-                                                m: 0,
-                                                display: "inline",
-                                                "&:hover": {
-                                                  textDecoration: "underline",
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    noWrap
+                                  >
+                                    {authors.length > 0
+                                      ? authors.map((a, idx) =>
+                                          a.ci ? (
+                                            <React.Fragment key={idx}>
+                                              <Typography
+                                                component="button"
+                                                variant="caption"
+                                                onClick={() =>
+                                                  navigateToProfile(
+                                                    a.ci,
+                                                    "estudiante"
+                                                  )
+                                                }
+                                                sx={{
+                                                  textDecoration: "none",
+                                                  cursor: "pointer",
                                                   color: "text.secondary",
-                                                },
-                                                "&:focus": { outline: "none" },
-                                              }}
-                                            >
-                                              {a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}
-                                            </Typography>
-                                            {idx < authors.length - 1 && ", "}
-                                          </React.Fragment>
-                                        ) : (
-                                          <span key={idx}>{a.nombre && a.apellido ? `${a.nombre} ${a.apellido}` : a.nombre || a.nombre_completo || ""}{idx < authors.length - 1 && ", "}</span>
+                                                  background: "none",
+                                                  border: "none",
+                                                  p: 0,
+                                                  m: 0,
+                                                  display: "inline",
+                                                  "&:hover": {
+                                                    textDecoration: "underline",
+                                                    color: "text.secondary",
+                                                  },
+                                                  "&:focus": {
+                                                    outline: "none",
+                                                  },
+                                                }}
+                                              >
+                                                {a.nombre && a.apellido
+                                                  ? `${a.nombre} ${a.apellido}`
+                                                  : a.nombre ||
+                                                    a.nombre_completo ||
+                                                    ""}
+                                              </Typography>
+                                              {idx < authors.length - 1 && ", "}
+                                            </React.Fragment>
+                                          ) : (
+                                            <span key={idx}>
+                                              {a.nombre && a.apellido
+                                                ? `${a.nombre} ${a.apellido}`
+                                                : a.nombre ||
+                                                  a.nombre_completo ||
+                                                  ""}
+                                              {idx < authors.length - 1 && ", "}
+                                            </span>
+                                          )
                                         )
-                                      ))
-                                    ) : (
-                                      "N/A"
-                                    )}
+                                      : "N/A"}
                                   </Typography>
                                 </Box>
-                                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, ml: 1 }}>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
+                                    gap: 0.5,
+                                    ml: 1,
+                                  }}
+                                >
                                   <Chip
                                     label={
                                       tesis.estado
-                                        ? tesis.estado.charAt(0).toUpperCase() + tesis.estado.slice(1).toLowerCase()
+                                        ? tesis.estado.charAt(0).toUpperCase() +
+                                          tesis.estado.slice(1).toLowerCase()
                                         : "N/A"
                                     }
                                     size="small"
                                     color={
-                                      tesis.estado?.toLowerCase() === "aprobado" || tesis.estado?.toLowerCase() === "aprobada"
+                                      tesis.estado?.toLowerCase() ===
+                                        "aprobado" ||
+                                      tesis.estado?.toLowerCase() === "aprobada"
                                         ? "success"
-                                        : tesis.estado?.toLowerCase() === "rechazado" || tesis.estado?.toLowerCase() === "rechazada"
+                                        : tesis.estado?.toLowerCase() ===
+                                            "rechazado" ||
+                                          tesis.estado?.toLowerCase() ===
+                                            "rechazada"
                                         ? "error"
                                         : "default"
                                     }
                                   />
-                                  <Typography variant="caption" color="text.secondary">
-                                    {tesis.fecha ? dayjs(tesis.fecha).format("DD/MM/YYYY") : "N/A"}
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    {tesis.fecha
+                                      ? dayjs(tesis.fecha).format("DD/MM/YYYY")
+                                      : "N/A"}
                                   </Typography>
                                 </Box>
                               </Box>
@@ -1409,23 +1647,47 @@ const Profile = () => {
                           );
                         })
                       ) : (
-                        <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>No hay tesis registradas como jurado</Box>
+                        <Box
+                          sx={{
+                            textAlign: "center",
+                            py: 3,
+                            color: "text.secondary",
+                          }}
+                        >
+                          No hay tesis registradas como jurado
+                        </Box>
                       )
                     ) : (
-                      <TableContainer sx={{ maxHeight: { xs: 220, md: 300 }, minHeight: { xs: 120, md: 140 } }}>
-                        <Table size={isXs ? "small" : "medium"} sx={{ tableLayout: "fixed" }}>
+                      <TableContainer
+                        sx={{
+                          maxHeight: { xs: 220, md: 300 },
+                          minHeight: { xs: 120, md: 140 },
+                        }}
+                      >
+                        <Table
+                          size={isXs ? "small" : "medium"}
+                          sx={{ tableLayout: "fixed" }}
+                        >
                           <TableHead>
                             <TableRow>
-                              <TableCell sx={{ width: { xs: "auto", md: "40%" } }}>
+                              <TableCell
+                                sx={{ width: { xs: "auto", md: "40%" } }}
+                              >
                                 <strong>Título</strong>
                               </TableCell>
-                              <TableCell sx={{ width: { xs: "auto", md: "15%" } }}>
+                              <TableCell
+                                sx={{ width: { xs: "auto", md: "15%" } }}
+                              >
                                 <strong>Estado</strong>
                               </TableCell>
-                              <TableCell sx={{ width: { xs: "auto", md: "15%" } }}>
+                              <TableCell
+                                sx={{ width: { xs: "auto", md: "15%" } }}
+                              >
                                 <strong>Fecha</strong>
                               </TableCell>
-                              <TableCell sx={{ width: { xs: "auto", md: "30%" } }}>
+                              <TableCell
+                                sx={{ width: { xs: "auto", md: "30%" } }}
+                              >
                                 <strong>Autores</strong>
                               </TableCell>
                             </TableRow>
@@ -1433,13 +1695,19 @@ const Profile = () => {
                           <TableBody>
                             {loadingTesis ? (
                               <TableRow>
-                                <TableCell colSpan={4} sx={{ textAlign: "center", py: 4 }}>
+                                <TableCell
+                                  colSpan={4}
+                                  sx={{ textAlign: "center", py: 4 }}
+                                >
                                   <CircularProgress />
                                 </TableCell>
                               </TableRow>
                             ) : tesisAsJurado.length > 0 ? (
                               tesisAsJurado.map((tesis) => (
-                                <TableRow key={tesis.id_tesis || tesis.id} hover>
+                                <TableRow
+                                  key={tesis.id_tesis || tesis.id}
+                                  hover
+                                >
                                   <TableCell
                                     sx={{
                                       overflow: "hidden",
@@ -1448,15 +1716,51 @@ const Profile = () => {
                                     }}
                                   >
                                     <Tooltip
-                                      title={tesis.nombre || tesis.titulo || "Sin título"}
-                                      open={openTitleTooltip === (tesis.id_tesis || tesis.id)}
+                                      title={
+                                        tesis.nombre ||
+                                        tesis.titulo ||
+                                        "Sin título"
+                                      }
+                                      open={
+                                        openTitleTooltip ===
+                                        (tesis.id_tesis || tesis.id)
+                                      }
                                       arrow
                                       placement="top"
-                                      PopperProps={{ modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] }}
+                                      PopperProps={{
+                                        modifiers: [
+                                          {
+                                            name: "offset",
+                                            options: { offset: [0, 8] },
+                                          },
+                                        ],
+                                      }}
                                     >
-                                      <Box data-tooltip-id={tesis.id_tesis || tesis.id} onClick={() => showTitleTooltip(tesis.id_tesis || tesis.id)} sx={{ cursor: "pointer", display: "inline", minWidth: 0 }}>
-                                        <Typography sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                          {tesis.nombre || tesis.titulo || "Sin título"}
+                                      <Box
+                                        data-tooltip-id={
+                                          tesis.id_tesis || tesis.id
+                                        }
+                                        onClick={() =>
+                                          showTitleTooltip(
+                                            tesis.id_tesis || tesis.id
+                                          )
+                                        }
+                                        sx={{
+                                          cursor: "pointer",
+                                          display: "inline",
+                                          minWidth: 0,
+                                        }}
+                                      >
+                                        <Typography
+                                          sx={{
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                          }}
+                                        >
+                                          {tesis.nombre ||
+                                            tesis.titulo ||
+                                            "Sin título"}
                                         </Typography>
                                       </Box>
                                     </Tooltip>
@@ -1465,17 +1769,23 @@ const Profile = () => {
                                     <Chip
                                       label={
                                         tesis.estado
-                                          ? tesis.estado.charAt(0).toUpperCase() +
+                                          ? tesis.estado
+                                              .charAt(0)
+                                              .toUpperCase() +
                                             tesis.estado.slice(1).toLowerCase()
                                           : "N/A"
                                       }
                                       size="small"
                                       color={
-                                        tesis.estado?.toLowerCase() === "aprobado" ||
-                                        tesis.estado?.toLowerCase() === "aprobada"
+                                        tesis.estado?.toLowerCase() ===
+                                          "aprobado" ||
+                                        tesis.estado?.toLowerCase() ===
+                                          "aprobada"
                                           ? "success"
-                                          : tesis.estado?.toLowerCase() === "rechazado" ||
-                                            tesis.estado?.toLowerCase() === "rechazada"
+                                          : tesis.estado?.toLowerCase() ===
+                                              "rechazado" ||
+                                            tesis.estado?.toLowerCase() ===
+                                              "rechazada"
                                           ? "error"
                                           : "default"
                                       }
@@ -1492,7 +1802,9 @@ const Profile = () => {
                                       textOverflow: "ellipsis",
                                     }}
                                   >
-                                    {tesis.autores && Array.isArray(tesis.autores) && tesis.autores.length > 0 ? (
+                                    {tesis.autores &&
+                                    Array.isArray(tesis.autores) &&
+                                    tesis.autores.length > 0 ? (
                                       <>
                                         {tesis.autores.map((a, idx) => (
                                           <React.Fragment key={idx}>
@@ -1501,7 +1813,10 @@ const Profile = () => {
                                                 component="button"
                                                 variant="body2"
                                                 onClick={() =>
-                                                  navigateToProfile(a.ci, "estudiante")
+                                                  navigateToProfile(
+                                                    a.ci,
+                                                    "estudiante"
+                                                  )
                                                 }
                                                 sx={{
                                                   cursor: "pointer",
@@ -1509,7 +1824,8 @@ const Profile = () => {
                                                   color: "#1976d2",
                                                   fontWeight: 500,
                                                   "&:hover": {
-                                                    backgroundColor: "rgba(0,0,0,0.05)",
+                                                    backgroundColor:
+                                                      "rgba(0,0,0,0.05)",
                                                     textDecoration: "underline",
                                                     opacity: 1,
                                                   },
@@ -1517,16 +1833,21 @@ const Profile = () => {
                                               >
                                                 {a.nombre && a.apellido
                                                   ? `${a.nombre} ${a.apellido}`
-                                                  : a.nombre || a.nombre_completo || "N/A"}
+                                                  : a.nombre ||
+                                                    a.nombre_completo ||
+                                                    "N/A"}
                                               </Link>
                                             ) : (
                                               <span>
                                                 {a.nombre && a.apellido
                                                   ? `${a.nombre} ${a.apellido}`
-                                                  : a.nombre || a.nombre_completo || "N/A"}
+                                                  : a.nombre ||
+                                                    a.nombre_completo ||
+                                                    "N/A"}
                                               </span>
                                             )}
-                                            {idx < tesis.autores.length - 1 && ", "}
+                                            {idx < tesis.autores.length - 1 &&
+                                              ", "}
                                           </React.Fragment>
                                         ))}
                                       </>
@@ -1538,7 +1859,14 @@ const Profile = () => {
                               ))
                             ) : (
                               <TableRow>
-                                <TableCell colSpan={4} sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+                                <TableCell
+                                  colSpan={4}
+                                  sx={{
+                                    textAlign: "center",
+                                    py: 6,
+                                    color: "text.secondary",
+                                  }}
+                                >
                                   No hay tesis registradas como jurado
                                 </TableCell>
                               </TableRow>
@@ -1559,4 +1887,3 @@ const Profile = () => {
 };
 
 export default Profile;
-

@@ -4,15 +4,14 @@ import axios from "axios";
 import formatDate from "@/hooks/utils/formatDate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
-import EditIcon from "@mui/icons-material/Edit"; // 💡 Importado
-import Tooltip from "@mui/material/Tooltip"; // 💡 1. Importamos el componente Tooltip
+import EditIcon from "@mui/icons-material/Edit";
+import Tooltip from "@mui/material/Tooltip";
 import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import LoadingModal from "@/hooks/Modals/LoadingModal";
 import ConfirmationModal from "@/hooks/Modals/ConfirmationModal";
 import StatusSelect from "./StatusSelect";
-
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
@@ -82,7 +81,7 @@ const useDownloadTesis = (tesisId, setModalState) => {
       );
 
       const contentDisposition = response.headers["content-disposition"];
-      let filename = `tesis_${tesisId}.pdf`; 
+      let filename = `tesis_${tesisId}.pdf`;
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
         if (filenameMatch && filenameMatch.length > 1) {
@@ -97,7 +96,7 @@ const useDownloadTesis = (tesisId, setModalState) => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url); 
+      window.URL.revokeObjectURL(url);
 
       setModalState({
         isOpen: true,
@@ -125,7 +124,13 @@ const useDownloadTesis = (tesisId, setModalState) => {
 };
 
 // 💡 Acepta la nueva prop 'onEdit' y 'onStatusChange'
-const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange }) => {
+const Card = ({
+  data,
+  isLoading = false,
+  onTesisDeleted,
+  onEdit,
+  onStatusChange,
+}) => {
   const navigate = useNavigate();
 
   if (!data && !isLoading) {
@@ -147,12 +152,11 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
   };
 
   const getUserTypeColor = (userType) => {
-    // Return blue for all user types
     return "#1976d2";
   };
 
   const { handleDelete, isDeleting } = useDeleteTesis(
-    data?.id, 
+    data?.id,
     onTesisDeleted,
     setModalState
   );
@@ -218,14 +222,14 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
               Envuelve el título. Si el título es muy largo y se corta, 
               el usuario puede poner el mouse encima para verlo completo.
           */}
-          <Tooltip 
-            title={data.nombre} 
-            arrow 
+          <Tooltip
+            title={data.nombre}
+            arrow
             placement="top"
-            enterTouchDelay={0}    // Abre inmediatamente al tocar
+            enterTouchDelay={0} // Abre inmediatamente al tocar
             leaveTouchDelay={2500} // Se cierra solo a los 2.5 segundos
           >
-            <h2 
+            <h2
               className="text-lg font-semibold text-text-primary line-clamp-2 cursor-default"
               aria-label={data.nombre}
               onClick={(e) => e.stopPropagation()} // Evita que el click en el título abra el modal de edición
@@ -245,7 +249,7 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
             {formatDate(data.fecha)}
           </span>
           <span className="text-text-secondary text-sm">
-            {typeof data.sede === 'object' ? data.sede.nombre : data.sede}
+            {typeof data.sede === "object" ? data.sede.nombre : data.sede}
           </span>
         </div>
 
@@ -366,7 +370,9 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
                     },
                   }}
                 >
-                  {data.tutor.nombre || data.tutor.nombre_completo || "No asignado"}
+                  {data.tutor.nombre ||
+                    data.tutor.nombre_completo ||
+                    "No asignado"}
                 </Link>
               ) : (
                 data.tutor?.nombre || "No asignado"
@@ -376,40 +382,38 @@ const Card = ({ data, isLoading = false, onTesisDeleted, onEdit, onStatusChange 
           <p className="text-sm">
             <span className="text-text-secondary">Jurado:</span>
             <span className="text-text-primary ml-1">
-              {data.jurados && data.jurados.length > 0 ? (
-                data.jurados.map((jurado, idx) => (
-                  <React.Fragment key={idx}>
-                    {jurado.ci ? (
-                      <Link
-                        component="button"
-                        variant="body2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigateToProfile(jurado.ci, "profesor");
-                        }}
-                        sx={{
-                          cursor: "pointer",
-                          textDecoration: "none",
-                          color: getUserTypeColor("profesor"),
-                          fontWeight: 500,
-                          "&:hover": {
-                            backgroundColor: "rgba(0,0,0,0.05)",
-                            textDecoration: "underline",
-                            opacity: 1,
-                          },
-                        }}
-                      >
-                        {jurado.nombre || jurado.nombre_completo}
-                      </Link>
-                    ) : (
-                      <span>{jurado.nombre || jurado.nombre_completo}</span>
-                    )}
-                    {idx < data.jurados.length - 1 && ", "}
-                  </React.Fragment>
-                ))
-              ) : (
-                "No asignado"
-              )}
+              {data.jurados && data.jurados.length > 0
+                ? data.jurados.map((jurado, idx) => (
+                    <React.Fragment key={idx}>
+                      {jurado.ci ? (
+                        <Link
+                          component="button"
+                          variant="body2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigateToProfile(jurado.ci, "profesor");
+                          }}
+                          sx={{
+                            cursor: "pointer",
+                            textDecoration: "none",
+                            color: getUserTypeColor("profesor"),
+                            fontWeight: 500,
+                            "&:hover": {
+                              backgroundColor: "rgba(0,0,0,0.05)",
+                              textDecoration: "underline",
+                              opacity: 1,
+                            },
+                          }}
+                        >
+                          {jurado.nombre || jurado.nombre_completo}
+                        </Link>
+                      ) : (
+                        <span>{jurado.nombre || jurado.nombre_completo}</span>
+                      )}
+                      {idx < data.jurados.length - 1 && ", "}
+                    </React.Fragment>
+                  ))
+                : "No asignado"}
             </span>
           </p>
         </div>

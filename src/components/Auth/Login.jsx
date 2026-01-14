@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import axios from "axios";
+import authService from "@/services/auth.service";
 import handleInputChange from "@/hooks/utils/handleInputChange";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -43,11 +43,8 @@ const Login = () => {
     });
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/login`,
-        formData
-      );
-      const { token, user } = res.data;
+      const data = await authService.login(formData);
+      const { token, user } = data;
       login(user, token);
 
       console.log("Login exitoso:", user);
@@ -98,7 +95,9 @@ const Login = () => {
           alt="Logo UNEG"
           className="mx-auto w-24 h-24"
         />
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Iniciar sesión</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+          Iniciar sesión
+        </h1>
         <Box
           sx={{
             display: "flex",
@@ -157,7 +156,10 @@ const Login = () => {
 
         <p className="text-[var(--text-primary)]">
           ¿No tienes una cuenta?{" "}
-          <Link to="/signup" className="text-[var(--primary-main)] hover:underline">
+          <Link
+            to="/signup"
+            className="text-[var(--primary-main)] hover:underline"
+          >
             Regístrate
           </Link>
         </p>

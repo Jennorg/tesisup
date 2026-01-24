@@ -1,5 +1,18 @@
 import React from "react";
 
+/**
+ * Componente InputForm
+ * Componente reutilizable para campos de entrada y selección.
+ *
+ * @param {Object} props
+ * @param {string} props.label - Etiqueta del campo.
+ * @param {string} props.nombre - Atributo name del input.
+ * @param {string} props.className - Clases CSS adicionales.
+ * @param {Function} props.onChange - Manejador de cambios.
+ * @param {string|number} props.value - Valor actual.
+ * @param {string} props.type - Tipo de input (text, select, etc.).
+ * @param {Array} props.options - Opciones para el select (si type es select).
+ */
 const InputForm = ({
   label,
   nombre,

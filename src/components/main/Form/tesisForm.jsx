@@ -32,6 +32,7 @@ import LoadingModal from "@/hooks/Modals/LoadingModal";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
+// Estilo para ocultar el input de archivo estándar
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
   clipPath: "inset(50%)",
@@ -44,6 +45,11 @@ const VisuallyHiddenInput = styled("input")({
   width: 1,
 });
 
+/**
+ * Obtiene una etiqueta legible para mostrar en los selectores de personas.
+ * @param {Object|string} option - Objeto persona o cadena.
+ * @returns {string} Etiqueta formateada.
+ */
 const getPersonaLabel = (option) => {
   if (typeof option === "string") return option;
 
@@ -62,6 +68,17 @@ const getPersonaLabel = (option) => {
   return `${nombre} (CI: ${ciType}-${ci})`;
 };
 
+/**
+ * Componente de Formulario para Crear/Editar Tesis.
+ * Maneja la subida de archivos PDF y la asociación de metadatos (autores, tutor, jurados, etc.).
+ *
+ * @param {Object} props
+ * @param {Object} props.dropdownOptions - Opciones para los selectores (autores, profesores, sedes).
+ * @param {Function} props.onSuccess - Callback al completar el envío exitosamente.
+ * @param {Function} props.onClose - Callback para cerrar el formulario.
+ * @param {Function} props.onRequestCreateUser - Callback para solicitar creación rápida de usuarios.
+ * @param {Object} props.tesisToEdit - Objeto tesis si se está en modo edición.
+ */
 const TesisForm = forwardRef(
   (
     { dropdownOptions, onSuccess, onClose, onRequestCreateUser, tesisToEdit },
@@ -76,10 +93,10 @@ const TesisForm = forwardRef(
     const initialFormData = {
       id_tesis: "",
       nombre: "",
-      id_estudiantes: [],
+      id_estudiantes: [], // Array de CIs
       id_tutor: "",
       id_encargado: "",
-      id_jurados: [],
+      id_jurados: [], // Array de CIs, máx 3
       fecha: null,
       id_sede: "",
       estado: "",
@@ -97,9 +114,10 @@ const TesisForm = forwardRef(
 
     const [formSubmitted, setFormSubmitted] = useState(false);
 
-    // 💡 1. CORRECCIÓN: Valores en minúscula para coincidir con la BD
+    // Valores permitidos para el estado de la tesis
     const estados = ["aprobado", "rechazado", "pendiente"];
 
+    // Cargar datos si se está editando una tesis existente
     useEffect(() => {
       if (tesisToEdit) {
         console.log("Editando tesis:", tesisToEdit);
@@ -118,8 +136,8 @@ const TesisForm = forwardRef(
             dropdownOptions.sedes.find((s) => s.nombre === tesisToEdit.sede)
               ?.id ||
             "",
-          estado: tesisToEdit.estado || "", // Esto (ej: "aprobado") ahora coincidirá con el array 'estados'
-          archivo_pdf: null,
+          estado: tesisToEdit.estado || "",
+          archivo_pdf: null, // No se carga el archivo PDF existente para edición, solo se reemplaza si el usuario sube uno nuevo
           modo_envio: "normal",
         });
       } else {
@@ -127,6 +145,7 @@ const TesisForm = forwardRef(
       }
     }, [tesisToEdit]);
 
+    // Filtrar jurados para que no coincidan con el tutor seleccionado
     useEffect(() => {
       if (formData.id_tutor && formData.id_jurados.length > 0) {
         const filteredJurados = formData.id_jurados.filter(
@@ -160,6 +179,7 @@ const TesisForm = forwardRef(
       }
     };
 
+    // --- Manejo de Drag & Drop para el archivo ---
     const handleDragEvents = (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -186,8 +206,12 @@ const TesisForm = forwardRef(
       }
     };
 
+    /**
+     * Valida y envía el formulario al backend.
+     */
     const sendForm = async () => {
       const requiredFields = [
+        "id_tesis", // Código de tesis manual requerido
         "nombre",
         "id_tutor",
         "id_encargado",
@@ -196,6 +220,7 @@ const TesisForm = forwardRef(
         "estado",
       ];
 
+      // El archivo es obligatorio solo si es una nueva tesis
       if (!isEditing && !formData.archivo_pdf) {
         requiredFields.push("archivo_pdf");
       }
@@ -228,6 +253,7 @@ const TesisForm = forwardRef(
       });
       const datos = new FormData();
 
+      // Construcción del FormData
       Object.keys(formData).forEach((key) => {
         if (key === "archivo_pdf") {
           if (formData[key]) datos.append("archivo_pdf", formData[key]);
@@ -238,7 +264,7 @@ const TesisForm = forwardRef(
             datos.append(`id_estudiantes[${index}]`, ci);
           });
           if (formData[key].length > 0) {
-            datos.append("id_estudiante", formData[key][0]);
+            datos.append("id_estudiante", formData[key][0]); // Retrocompatibilidad si es necesaria
           }
         } else if (key === "id_jurados" && Array.isArray(formData[key])) {
           formData[key].forEach((ci, index) => {
@@ -313,6 +339,7 @@ const TesisForm = forwardRef(
       setFormSubmitted(false);
     };
 
+    // Función de filtrado personalizado para autocompletar
     const filterOptions = (options, params) => {
       const filtered = options.filter((option) => {
         const label = getPersonaLabel(option).toLowerCase();
@@ -322,6 +349,7 @@ const TesisForm = forwardRef(
         );
       });
 
+      // Permitir crear nueva opción si no existe
       if (params.inputValue && filtered.length === 0) {
         filtered.push({
           isNew: true,
@@ -356,6 +384,7 @@ const TesisForm = forwardRef(
             "&::-webkit-scrollbar-thumb:hover": { background: "#555" },
           }}
         >
+          {/* --- Carga de Archivo --- */}
           <Box
             component="label"
             htmlFor={
@@ -443,6 +472,17 @@ const TesisForm = forwardRef(
               </>
             )}
           </Box>
+
+          <TextField
+            fullWidth
+            label="Código de la Tesis"
+            name="id_tesis"
+            variant="filled"
+            value={formData.id_tesis}
+            onChange={(e) => handleInputChange(e.target.name, e.target.value)}
+            required
+            disabled={isEditing}
+          />
 
           <TextField
             fullWidth
@@ -631,6 +671,7 @@ const TesisForm = forwardRef(
             }}
           />
 
+          {/* Selección de Jurados */}
           <Autocomplete
             id="jurados-select"
             multiple
@@ -653,7 +694,7 @@ const TesisForm = forwardRef(
               })
               .filter(Boolean)}
             onChange={(event, newValue) => {
-              const limitedValue = newValue.slice(0, 3);
+              const limitedValue = newValue.slice(0, 3); // Límite de 3 jurados
               const selectedCis = limitedValue
                 .filter((v) => v && v.ci)
                 .map((v) => String(v.ci));
@@ -695,10 +736,8 @@ const TesisForm = forwardRef(
               onChange={(e) => handleInputChange(e.target.name, e.target.value)}
               disablePortal
             >
-              {/* 💡 5. MODIFICADO: Mapear 'estados' y capitalizar el texto para el usuario */}
               {estados.map((estadoValue) => (
                 <MenuItem key={estadoValue} value={estadoValue}>
-                  {/* Capitalizar la primera letra para mostrarla bonita en el dropdown */}
                   {estadoValue.charAt(0).toUpperCase() + estadoValue.slice(1)}
                 </MenuItem>
               ))}

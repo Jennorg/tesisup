@@ -16,8 +16,14 @@ import StatusSelect from "./StatusSelect";
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 // ----------------------------------------------------------------------
-// HOOK DE ELIMINACIÓN
+// HOOK PERSONALIZADO: Eliminación de Tesis
 // ----------------------------------------------------------------------
+/**
+ * Hook para manejar la lógica de eliminación de una tesis.
+ * @param {string|number} tesisId - ID de la tesis.
+ * @param {Function} onDeletedSuccess - Callback al completar la eliminación.
+ * @param {Function} setModalState - Función para actualizar el estado del modal de carga.
+ */
 const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -59,8 +65,13 @@ const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
 };
 
 // ----------------------------------------------------------------------
-// HOOK DE DESCARGA
+// HOOK PERSONALIZADO: Descarga de Tesis
 // ----------------------------------------------------------------------
+/**
+ * Hook para manejar la descarga de archivos PDF de tesis.
+ * @param {string|number} tesisId - ID de la tesis.
+ * @param {Function} setModalState - Función para actualizar el estado del modal.
+ */
 const useDownloadTesis = (tesisId, setModalState) => {
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -80,6 +91,7 @@ const useDownloadTesis = (tesisId, setModalState) => {
         },
       );
 
+      // Extracción del nombre del archivo desde las cabeceras
       const contentDisposition = response.headers["content-disposition"];
       let filename = `tesis_${tesisId}.pdf`;
       if (contentDisposition) {
@@ -89,6 +101,7 @@ const useDownloadTesis = (tesisId, setModalState) => {
         }
       }
 
+      // Crear enlace temporal para descargar el archivo
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -123,7 +136,17 @@ const useDownloadTesis = (tesisId, setModalState) => {
   return { handleDownload, isDownloading };
 };
 
-// 💡 Acepta la nueva prop 'onEdit' y 'onStatusChange'
+/**
+ * Componente Card
+ * Muestra la información resumida de una tesis y permite realizar acciones sobre ella.
+ *
+ * @param {Object} props
+ * @param {Object} props.data - Datos de la tesis.
+ * @param {boolean} props.isLoading - Estado de carga (muestra skeleton).
+ * @param {Function} props.onTesisDeleted - Callback tras eliminar.
+ * @param {Function} props.onEdit - Callback para editar la tesis.
+ * @param {Function} props.onStatusChange - Callback para cambiar el estado.
+ */
 const Card = ({
   data,
   isLoading = false,
@@ -145,6 +168,7 @@ const Card = ({
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+  // Navegar al perfil al hacer clic en un nombre
   const navigateToProfile = (ci, userType) => {
     if (ci && userType) {
       navigate(`/profile/${userType}/${ci}`);
@@ -166,6 +190,7 @@ const Card = ({
     setModalState,
   );
 
+  // Renderizar Skeleton si está cargando
   if (isLoading) {
     return (
       <div className="flex flex-col w-full gap-2 animate-pulse border-gray-800 border-2 p-4 rounded-lg h-full">
@@ -217,31 +242,31 @@ const Card = ({
       />
 
       <div className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full bg-background-paper relative">
+        {/* Etiqueta flotante con el ID de la tesis */}
         <span className="absolute top-2 right-2 text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
           Código: {data.id_tesis || data.id}
         </span>
+
+        {/* Contenedor del Título */}
         <div className="flex flex-col gap-1 pr-16">
-          {/* 💡 2. Implementación del Tooltip:
-              Envuelve el título. Si el título es muy largo y se corta, 
-              el usuario puede poner el mouse encima para verlo completo.
-          */}
           <Tooltip
             title={data.nombre}
             arrow
             placement="top"
-            enterTouchDelay={0} // Abre inmediatamente al tocar
-            leaveTouchDelay={2500} // Se cierra solo a los 2.5 segundos
+            enterTouchDelay={0}
+            leaveTouchDelay={2500}
           >
             <h2
               className="text-lg font-semibold text-text-primary line-clamp-2 cursor-default"
               aria-label={data.nombre}
-              onClick={(e) => e.stopPropagation()} // Evita que el click en el título abra el modal de edición
+              onClick={(e) => e.stopPropagation()}
             >
               {data.nombre}
             </h2>
           </Tooltip>
         </div>
 
+        {/* Información de Metadatos (Estado, Fecha, Sede) */}
         <div className="flex flex-wrap gap-2 items-center">
           <StatusSelect
             tesisId={data.id || data.id_tesis}
@@ -256,6 +281,7 @@ const Card = ({
           </span>
         </div>
 
+        {/* Detalles de Personas (Autores, Encargados, Tutores, Jurados) */}
         <div className="space-y-1 flex-1">
           <p className="text-sm">
             <span className="text-text-secondary">Autor:</span>
@@ -421,15 +447,15 @@ const Card = ({
           </p>
         </div>
 
+        {/* Botones de Acción */}
         <div className="flex flex-wrap gap-2 mt-auto">
-          {/* 💡 Botón de Editar (Añadido) */}
           <Button
             variant="outlined"
             size="small"
             startIcon={<EditIcon />}
             onClick={(e) => {
               e.stopPropagation();
-              onEdit(); // 💡 Llamar a la prop onEdit
+              onEdit();
             }}
             disabled={isDeleting || isDownloading || modalState.isOpen}
             sx={{

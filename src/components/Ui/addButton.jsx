@@ -1,6 +1,15 @@
 import React from "react";
 import { IoMdAdd } from "react-icons/io";
 
+/**
+ * Componente AddButton
+ * Botón flotante para alternar la visibilidad del menú o formulario de creación.
+ * Aunque parece ser un botón inferior derecho fijo, las clases 'absolute' sugieren que depende de un contenedor relativo.
+ *
+ * @param {Object} props
+ * @param {boolean} props.isTesisFormVisible - Estado actual de visibilidad.
+ * @param {Function} props.onToggleMenu - Función para cambiar la visibilidad.
+ */
 const AddButton = ({ isTesisFormVisible, onToggleMenu }) => {
   return (
     <button

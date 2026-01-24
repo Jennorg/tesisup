@@ -14,26 +14,39 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
+/**
+ * Componente de Inicio de Sesión (Login)
+ * Permite a los usuarios autenticarse ingresando correo y contraseña.
+ * Gestiona el estado de carga y errores mediante un modal interactivo.
+ */
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // Estado para controlar el modal de carga/éxito/error
   const [modalState, setModalState] = useState({
     isOpen: false,
     status: "loading",
     message: "",
   });
 
+  // Alternar visibilidad de contraseña
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   };
 
+  // Manejador genérico de cambios en inputs
   const handleInput = (e) => {
     handleInputChange(e, setFormData);
   };
 
+  /**
+   * Maneja el envío del formulario.
+   * Llama al servicio de autenticación y gestiona la respuesta.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setModalState({
@@ -45,6 +58,7 @@ const Login = () => {
     try {
       const data = await authService.login(formData);
       const { token, user } = data;
+      // Actualizar contexto global de autenticación
       login(user, token);
 
       console.log("Login exitoso:", user);
@@ -63,6 +77,10 @@ const Login = () => {
     }
   };
 
+  /**
+   * Callback para cerrar el modal.
+   * Si el login fue exitoso, redirige al usuario a la página principal.
+   */
   const handleCloseModal = useCallback(() => {
     if (modalState.status === "success") {
       navigate("/");
@@ -73,6 +91,7 @@ const Login = () => {
 
   return (
     <div className="flex w-dvw h-dvh bg-[var(--background-paper)] shadow-lg overflow-hidden">
+      {/* Sección con imagen de fondo (oculta en móviles) */}
       <div className="hidden md:flex flex-1">
         <img
           src="/img/fondo1.jpg"
@@ -80,12 +99,16 @@ const Login = () => {
           className="w-full h-full object-cover overflow-clip"
         />
       </div>
+
+      {/* Modal de estado */}
       <LoadingModal
         isOpen={modalState.isOpen}
         status={modalState.status}
         message={modalState.message}
         onClose={handleCloseModal}
       />
+
+      {/* Formulario de Login */}
       <form
         onSubmit={handleSubmit}
         className="flex flex-1 flex-col gap-4 p-6 text-center justify-center align-middle items-center"
@@ -98,6 +121,8 @@ const Login = () => {
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">
           Iniciar sesión
         </h1>
+
+        {/* Campo Email */}
         <Box
           sx={{
             display: "flex",
@@ -120,6 +145,7 @@ const Login = () => {
           />
         </Box>
 
+        {/* Campo Contraseña */}
         <Box
           sx={{
             display: "flex",

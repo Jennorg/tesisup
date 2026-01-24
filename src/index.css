@@ -1,8 +1,14 @@
+/**
+ * Hoja de estilos global de la aplicación.
+ * Define la configuración de Tailwind CSS, variables CSS para el sistema de temas (Light/Dark),
+ * y estilos base para elementos comunes (botones, enlaces, etc).
+ */
+
 @import "normalize.css";
 @import "tailwindcss";
 
 :root {
-  /* Color Palette */
+  /* Paleta de Colores (Tema Claro por defecto) */
   --primary-main: #164ba0;
   --primary-dark: #010080;
   --primary-light: #4a7dc3;
@@ -22,7 +28,7 @@
   --error-main: #f44336;
   --success-main: #4caf50;
 
-  /* Font */
+  /* Fuente Global */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -37,9 +43,9 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark mode overrides */
-[data-theme='dark'] {
-  --primary-main: #4a7dc3; /* Lighter blue for dark mode */
+/* Sobrescritura para Modo Oscuro (Dark Mode) */
+[data-theme="dark"] {
+  --primary-main: #4a7dc3; /* Azul más claro para contraste en oscuro */
   --primary-dark: #164ba0;
   --primary-light: #7da4d6;
   --primary-contrast-text: #000000;

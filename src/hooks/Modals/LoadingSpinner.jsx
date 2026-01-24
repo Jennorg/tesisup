@@ -1,11 +1,18 @@
-import { createPortal } from "react-dom"; // 💡 1. Importar createPortal
+import { createPortal } from "react-dom";
 import { FaSpinner } from "react-icons/fa";
 import { motion } from "framer-motion";
 
+/**
+ * Componente LoadingSpinner
+ * Spinner simple de pantalla completa para indicar carga global o bloqueo de UI.
+ *
+ * @param {Object} props
+ * @param {boolean} props.isOpen - Estado de visibilidad.
+ */
 export default function LoadingSpinner({ isOpen }) {
   if (!isOpen) return null;
 
-  // 💡 2. Definir el contenido
+  // Contenido centrado en pantalla completa
   const spinnerContent = (
     <div className="fixed inset-0 z-[1400] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <motion.div
@@ -18,6 +25,6 @@ export default function LoadingSpinner({ isOpen }) {
     </div>
   );
 
-  // 💡 3. Renderizar usando el Portal
+  // Usar Portal para montar en el body
   return createPortal(spinnerContent, document.body);
 }

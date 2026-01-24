@@ -3,6 +3,16 @@ import Modal from "@mui/material/Modal";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 
+/**
+ * Componente ConfirmationModal
+ * Modal genérico para solicitar confirmación del usuario antes de ejecutar una acción crítica.
+ *
+ * @param {Object} props
+ * @param {boolean} props.isOpen - Estado de visibilidad del modal.
+ * @param {string} props.message - Mensaje de pregunta o advertencia.
+ * @param {Function} props.onConfirm - Función a ejecutar al confirmar.
+ * @param {Function} props.onCancel - Función a ejecutar al cancelar.
+ */
 const ConfirmationModal = ({ isOpen, message, onConfirm, onCancel }) => {
   return (
     <Modal open={isOpen} onClose={onCancel}>

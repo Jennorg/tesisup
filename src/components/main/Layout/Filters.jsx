@@ -20,19 +20,25 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// Estado inicial para los filtros
 const initialFilters = {
   id_tesis: "",
   nombre: "",
-  autor: [], // Changed to array for multi-select
+  autor: [], // Array para selección múltiple
   encargado: "",
   fechaDesde: null,
   fechaHasta: null,
   tutor: "",
-  jurado: [], // Added jurado filter
+  jurado: [], // Array para selección múltiple
   sede: "",
   estado: "",
 };
 
+/**
+ * Función auxiliar para obtener la etiqueta legible de una persona (Estudiante, Profesor, etc.)
+ * @param {Object|string} option - Objeto persona o string si es un valor simple.
+ * @returns {string} Etiqueta formateada "Nombre (CI: ...)" o solo el nombre.
+ */
 const getPersonaLabel = (option) => {
   if (typeof option === "string") return option;
 
@@ -51,17 +57,25 @@ const getPersonaLabel = (option) => {
   return `${nombre} (CI: ${ciType}-${ci})`;
 };
 
+/**
+ * Componente Filters (Barra lateral de filtros)
+ *
+ * @param {Object} props
+ * @param {Function} props.onClose - Función para cerrar el panel de filtros.
+ * @param {Function} props.onApply - Función callback que recibe los filtros aplicados.
+ */
 const Filters = ({ onClose, onApply }) => {
   const [filters, setFilters] = useState(initialFilters);
   const [dropdownOptions, setDropdownOptions] = useState({
     autores: [], // Estudiantes
     encargados: [],
-    tutores: [], // Profesores
+    tutores: [], // Profesores (también usados como jurados)
     sedes: [],
   });
 
   const estados = ["aprobado", "rechazado", "pendiente"];
 
+  // Cargar las opciones para los desplegables al montar el componente
   useEffect(() => {
     const fetchDropdownOptions = async () => {
       try {
@@ -86,16 +100,22 @@ const Filters = ({ onClose, onApply }) => {
 
     fetchDropdownOptions();
   }, []);
+
+  /**
+   * Maneja el cambio en inputs de texto y selección simple.
+   */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Mantener como string para que coincida con los MenuItems
-    // Se convertirá a número solo al aplicar el filtro
+    // Se mantiene como string, la conversión ocurre al aplicar el filtro.
     setFilters({
       ...filters,
       [name]: value,
     });
   };
 
+  /**
+   * Maneja el cambio en selectores de fecha.
+   */
   const handleDateChange = (name) => (date) => {
     setFilters({
       ...filters,
@@ -103,21 +123,28 @@ const Filters = ({ onClose, onApply }) => {
     });
   };
 
+  /**
+   * Restablece los filtros a su estado inicial.
+   */
   const handleClearFilters = () => {
     setFilters(initialFilters);
     onApply?.(null); // Limpiar los filtros en el componente padre
   };
 
+  /**
+   * Aplica los filtros seleccionados, transformando los datos según lo requiera el backend.
+   */
   const handleFilter = () => {
-    // Mapear nombres de filtros a nombres que espera el backend
+    // Mapeo de claves frontend -> backend para campos simples numéricos
     const filterMapping = {
-      // autor: "id_estudiante", // Handled manually for arrays
+      // autor: "id_estudiante", // Manejado manualmente abajo por ser array
       encargado: "id_encargado",
       tutor: "id_tutor",
-      // jurado: "id_jurado", // Handled manually for arrays
+      // jurado: "id_jurado", // Manejado manualmente abajo por ser array
       sede: "id_sede",
     };
 
+    // Objeto base de filtros a aplicar
     const filtersToApply = {
       nombre: filters.nombre || undefined,
       fecha_desde: filters.fechaDesde
@@ -127,10 +154,11 @@ const Filters = ({ onClose, onApply }) => {
         ? dayjs(filters.fechaHasta).format("YYYY-MM-DD")
         : undefined,
       estado: filters.estado || undefined,
+      // Mapeo explícito: el input 'id_tesis' se envía como 'id'
       id: filters.id_tesis || undefined,
     };
 
-    // Mapear y convertir campos numéricos
+    // Mapear y convertir campos numéricos definidos en filterMapping
     Object.entries(filterMapping).forEach(([frontendKey, backendKey]) => {
       const value = filters[frontendKey];
       if (value && value !== "") {
@@ -141,12 +169,8 @@ const Filters = ({ onClose, onApply }) => {
       }
     });
 
-    // Handle array filters (autor and jurado)
+    // Manejar filtros de tipo array (selección múltiple)
     if (Array.isArray(filters.autor) && filters.autor.length > 0) {
-      // If backend expects multiple parameters with same name (e.g. id_estudiante=1&id_estudiante=2)
-      // or comma separated. For axios params serializer, arrays are usually handled well.
-      // Let's pass the array directly, axios will handle it as id_estudiante[]=1 or similar depending on config.
-      // But often backends expect a specific format. Let's assume standard array for now.
       filtersToApply["id_estudiante"] = filters.autor;
     }
 
@@ -154,7 +178,7 @@ const Filters = ({ onClose, onApply }) => {
       filtersToApply["id_jurado"] = filters.jurado;
     }
 
-    // Eliminar valores undefined para no enviar queries innecesarias
+    // Limpiar propiedades undefined para no enviar basura en la query
     Object.keys(filtersToApply).forEach((key) => {
       if (
         filtersToApply[key] === undefined ||
@@ -165,7 +189,6 @@ const Filters = ({ onClose, onApply }) => {
       }
     });
 
-    // Si no hay filtros aplicados, pasar null para limpiar
     const hasFilters = Object.keys(filtersToApply).length > 0;
     console.log("Filtrando con:", filtersToApply);
     onApply?.(hasFilters ? filtersToApply : null);
@@ -188,7 +211,7 @@ const Filters = ({ onClose, onApply }) => {
           flexDirection: "column",
         }}
       >
-        {/* Header */}
+        {/* Encabezado del panel */}
         <Box
           sx={{
             p: 2,
@@ -213,7 +236,7 @@ const Filters = ({ onClose, onApply }) => {
           )}
         </Box>
 
-        {/* Filters Content */}
+        {/* Contenido de Filtros */}
         <Box
           sx={{
             p: 2,
@@ -377,7 +400,7 @@ const Filters = ({ onClose, onApply }) => {
           <Autocomplete
             id="jurado-select"
             multiple
-            options={dropdownOptions.tutores} // Jurados are professors
+            options={dropdownOptions.tutores} // Los jurados son profesores
             getOptionLabel={getPersonaLabel}
             value={filters.jurado
               .map((id) =>
@@ -459,7 +482,7 @@ const Filters = ({ onClose, onApply }) => {
           </FormControl>
         </Box>
 
-        {/* Action Buttons */}
+        {/* Botones de Acción */}
         <Box
           sx={{
             p: 2,

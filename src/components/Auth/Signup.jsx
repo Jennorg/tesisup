@@ -27,6 +27,11 @@ import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
+/**
+ * Componente de Registro de Usuario (SignUp)
+ * Permite registrar nuevos usuarios (Estudiantes, Profesores, Encargados).
+ * Incluye validación de formulario, carga de sedes dinámicamente y login automático tras registro exitoso.
+ */
 const SignUp = () => {
   const [formData, setFormData] = useState({
     nombre: "",
@@ -42,7 +47,6 @@ const SignUp = () => {
 
   const [sedeOptions, setSedeOptions] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
-  const [imageError, setImageError] = useState(false);
   const [modalState, setModalState] = useState({
     isOpen: false,
     status: "loading",
@@ -51,6 +55,7 @@ const SignUp = () => {
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
 
+  // Obtener lista de sedes disponibles al montar el componente
   const fetchSedes = async () => {
     try {
       const data = await userService.getSedes();
@@ -73,6 +78,10 @@ const SignUp = () => {
     handleInputChange(e, setFormData);
   };
 
+  /**
+   * Maneja el envío del formulario de registro.
+   * Valida el tipo de usuario y prepara el payload para el endpoint correspondiente.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -100,6 +109,7 @@ const SignUp = () => {
       id_sede: parseInt(formData.id_sede),
     };
 
+    // Eliminar campo auxiliar user_type que no espera el backend
     delete payload.user_type;
 
     console.log("Datos enviados al servidor:", payload);
@@ -119,6 +129,7 @@ const SignUp = () => {
         status: "success",
         message: `${formData.user_type} creado correctamente.`,
       });
+
       // Intentar iniciar sesión automáticamente con las credenciales proporcionadas
       try {
         const loginData = await authService.login({
@@ -126,12 +137,14 @@ const SignUp = () => {
           password: formData.password,
         });
         const { token, user } = loginData;
+
         // Guardar token/usuario en el contexto global
         authLogin(user, token);
-        // Navegar a la main page ya autenticado
+
+        // Navegar a la página principal ya autenticado
         navigate("/");
       } catch (loginErr) {
-        // Si el login automático falla, mostrar mensaje y quedar en la página (o llevar al login)
+        // Si el login automático falla, notificar al usuario para login manual
         console.warn("Auto-login falló después del registro:", loginErr);
         setModalState({
           isOpen: true,
@@ -140,7 +153,6 @@ const SignUp = () => {
             loginErr.response?.data?.error ||
             "Registro exitoso, pero no se pudo iniciar sesión automáticamente. Inicia sesión manualmente.",
         });
-        // Redirigir al login para que el usuario inicie sesión manualmente
         navigate("/login");
       }
     } catch (err) {
@@ -162,7 +174,6 @@ const SignUp = () => {
 
   const handleCloseModal = useCallback(() => {
     if (modalState.status === "success") {
-      // Redirigir al main (vista principal) tras crear el usuario
       navigate("/");
     }
     setModalState({ isOpen: false, status: "loading", message: "" });
@@ -170,6 +181,7 @@ const SignUp = () => {
 
   return (
     <div className="flex w-dvw h-dvh bg-[var(--background-paper)] shadow-lg overflow-hidden">
+      {/* Panel izquierdo con imagen (oculto en móvil) */}
       <div className="hidden md:flex flex-1">
         <img
           src="/img/fondo1.jpg"
@@ -177,12 +189,16 @@ const SignUp = () => {
           className="w-full h-full object-cover overflow-clip"
         />
       </div>
+
+      {/* Modal de Feedback */}
       <LoadingModal
         isOpen={modalState.isOpen}
         status={modalState.status}
         message={modalState.message}
         onClose={handleCloseModal}
       />
+
+      {/* Formulario de Registro */}
       <form
         className="flex flex-1 flex-col gap-4 p-6 text-center align-middle items-center overflow-y-auto pt-8"
         onSubmit={handleSubmit}
@@ -203,7 +219,7 @@ const SignUp = () => {
           sx={{
             display: "flex",
             width: "90%",
-            gap: 2, // Espacio entre campos
+            gap: 2,
             alignItems: "flex-end",
             marginBottom: 2,
           }}
@@ -238,7 +254,7 @@ const SignUp = () => {
           </Box>
         </Box>
 
-        {/* Correo (mantiene columna completa) */}
+        {/* Correo */}
         <Box
           sx={{
             display: "flex",
@@ -259,7 +275,7 @@ const SignUp = () => {
           />
         </Box>
 
-        {/* Tipo de usuario (mantiene columna completa) */}
+        {/* Tipo de usuario */}
         <Box
           sx={{
             display: "flex",
@@ -290,11 +306,11 @@ const SignUp = () => {
             alignItems: "flex-end",
             width: "90%",
             marginBottom: 2,
-            gap: 1, // Espacio reducido para cédula
+            gap: 1,
           }}
         >
           <BadgeOutlinedIcon sx={{ color: "action.active", mr: 1, my: 0.5 }} />
-          {/* Tipo de Cédula (ocupa menos espacio) */}
+          {/* Tipo de Cédula */}
           <FormControl variant="standard" sx={{ minWidth: 80 }}>
             <InputLabel>Tipo</InputLabel>
             <Select
@@ -309,7 +325,7 @@ const SignUp = () => {
           <NumbersOutlinedIcon
             sx={{ color: "action.active", mr: 1, my: 0.5 }}
           />
-          {/* Número de Cédula (ocupa el resto del espacio) */}
+          {/* Número de Cédula */}
           <TextField
             fullWidth
             label="Cédula"
@@ -323,7 +339,7 @@ const SignUp = () => {
 
         {/* -------------------- FIN CAMPOS AGRUPADOS -------------------- */}
 
-        {/* Teléfono (mantiene columna completa) */}
+        {/* Teléfono */}
         <Box
           sx={{
             display: "flex",
@@ -346,7 +362,7 @@ const SignUp = () => {
           />
         </Box>
 
-        {/* Sede (mantiene columna completa) */}
+        {/* Sede */}
         <Box
           sx={{
             display: "flex",
@@ -375,7 +391,7 @@ const SignUp = () => {
           </FormControl>
         </Box>
 
-        {/* Contraseña (mantiene columna completa) */}
+        {/* Contraseña */}
         <Box
           sx={{
             display: "flex",

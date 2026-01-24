@@ -1,61 +1,68 @@
 import React, { useState, useEffect, useRef } from "react";
 import Content from "@/components/main/Layout/Content";
 import tesisService from "@/services/tesis.service";
-import TesisForm from "@/components/main/Form/ManagementForm.jsx"; // Tu alias para ManagementForm
+import TesisForm from "@/components/main/Form/ManagementForm.jsx"; // Formulario de gestión
 import Header from "@/components/main/Layout/Header";
 import Filters from "@/components/main/Layout/Filters";
-import CustomPagination from "@/components/Ui/Pagination"; // Importado para la paginación
+import CustomPagination from "@/components/Ui/Pagination";
 import LoadingModal from "@/hooks/Modals/LoadingModal";
 import { Button, Menu, MenuItem } from "@mui/material";
 import SortIcon from "@mui/icons-material/Sort";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
+/**
+ * Componente Principal (MainPage)
+ * Gestiona la visualización de tesis, filtros, paginación, modales de creación/edición y descarga.
+ */
 const MainPage = () => {
+  // Estados de UI y Datos
   const [isTesisFormVisible, setIsTesisFormVisible] = useState(false);
-  const [reloadTesisKey, setReloadTesisKey] = useState(0);
+  const [reloadTesisKey, setReloadTesisKey] = useState(0); // Forzar recarga de lista
   const [activeFilters, setActiveFilters] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tesisEncontradas, setTesisEncontradas] = useState([]);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [haBuscado, setHaBuscado] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(""); // Añadido para la nueva lógica
+  const [searchQuery, setSearchQuery] = useState("");
   const [errorMessage, setErrorMessage] = useState(null);
   const tesisFormRef = useRef(null);
 
-  // Estado para el ordenamiento - initialize from localStorage
+  // -- Configuración de Ordenamiento --
+  // Se inicializa leyendo del localStorage para persistir preferencia del usuario
   const [sortConfig, setSortConfig] = useState(() => {
     const savedSort = localStorage.getItem("sortConfig");
     return savedSort ? JSON.parse(savedSort) : { key: null, direction: null };
   });
 
-  // Persist sortConfig to localStorage whenever it changes
+  // Guardar configuración de orden en localStorage al cambiar
   useEffect(() => {
     localStorage.setItem("sortConfig", JSON.stringify(sortConfig));
   }, [sortConfig]);
-  // Anchor for attribute menu
+
+  // Ancla para el menú de ordenamiento
   const [anchorEl, setAnchorEl] = useState(null);
-  // Estado para la paginación (de la nueva lógica)
+
+  // -- Estado de Paginación --
   const [paginationData, setPaginationData] = useState({
     page: 1,
     limit: 9,
     total: 0,
   });
 
-  // Estado para guardar la tesis que se va a editar
+  // Estado para la tesis que se está editando actualmente
   const [tesisToEdit, setTesisToEdit] = useState(null);
 
-  // Estado para el modal de descarga
+  // Estado para el modal de descarga masiva
   const [downloadModal, setDownloadModal] = useState({
     isOpen: false,
     status: "loading",
     message: "",
   });
 
-  // useEffect para cerrar el modal al hacer clic fuera
+  // Cerrar modales al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // ... (tu lógica de clic fuera, sin cambios)
       const isClickInsideForm =
         tesisFormRef.current && tesisFormRef.current.contains(event.target);
       const isClickOnDropdown = event.target.closest(".MuiMenu-root");
@@ -82,7 +89,9 @@ const MainPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isTesisFormVisible]);
 
-  // useEffect para cargar los datos (lógica de paginación)
+  /**
+   * Obtiene la lista de tesis desde el backend aplicando filtros, paginación y ordenamiento.
+   */
   const fetchTesis = async () => {
     setIsLoading(true);
     setHaBuscado(true);
@@ -93,12 +102,14 @@ const MainPage = () => {
         page: paginationData.page,
         limit: paginationData.limit,
       });
-      // Add sorting parameters if set
+
+      // Añadir parámetros de ordenamiento
       if (sortConfig.key && sortConfig.direction) {
         params.append("sortBy", sortConfig.key);
         params.append("order", sortConfig.direction);
       }
 
+      // Añadir filtros activos
       if (activeFilters) {
         Object.entries(activeFilters).forEach(([key, value]) => {
           if (value !== null && value !== undefined && value !== "") {
@@ -111,13 +122,13 @@ const MainPage = () => {
         });
       }
 
+      // Añadir búsqueda por texto
       if (searchQuery) {
         params.append("cadena", searchQuery);
       }
 
       const response = await tesisService.getAll(params);
 
-      // tesisService.getAll returns response.data (which is { data: [...], total: ... })
       if (response && Array.isArray(response.data)) {
         setTesisEncontradas(response.data);
         setPaginationData((prev) => ({
@@ -143,6 +154,7 @@ const MainPage = () => {
     }
   };
 
+  // Efecto para recargar tesis cuando cambian los parámetros
   useEffect(() => {
     fetchTesis();
   }, [
@@ -154,25 +166,25 @@ const MainPage = () => {
     sortConfig,
   ]);
 
-  // Función para manejar el clic de "Editar"
+  // Manejador para abrir el formulario en modo edición
   const handleEditTesis = (tesisData) => {
     setTesisToEdit(tesisData);
     setIsTesisFormVisible(true);
   };
 
-  // Funciones de cierre y éxito actualizadas
   const handleCloseModal = () => {
     setIsTesisFormVisible(false);
     setTesisToEdit(null);
   };
 
+  // Recargar lista tras una acción exitosa (crear/editar/eliminar)
   const handleSuccessModal = () => {
-    setReloadTesisKey((k) => k + 1); // Recargar la lista
+    setReloadTesisKey((k) => k + 1);
     setIsTesisFormVisible(false);
     setTesisToEdit(null);
   };
 
-  // Función para actualizar el estado de una tesis
+  // Actualización optimista del estado de una tesis en la lista
   const handleStatusChange = (tesisId, newStatus) => {
     setTesisEncontradas((prevTesis) =>
       prevTesis.map((tesis) => {
@@ -185,9 +197,11 @@ const MainPage = () => {
     );
   };
 
-  // --- FUNCIÓN DE DESCARGA AÑADIDA ---
+  /**
+   * Maneja la descarga masiva de todas las tesis.
+   * Utiliza Server-Sent Events (SSE) para mostrar progreso en tiempo real.
+   */
   const handleDownloadAll = async () => {
-    // Mostrar modal de carga
     setDownloadModal({
       isOpen: true,
       status: "loading",
@@ -195,14 +209,12 @@ const MainPage = () => {
     });
 
     let eventSource = null;
-    let isDownloading = false; // Flag para evitar múltiples descargas
+    let isDownloading = false;
 
-    // Función auxiliar para descargar el archivo
+    // Función interna para descargar el archivo final (ZIP)
     const downloadFile = async (downloadPath) => {
       if (isDownloading) {
-        console.log(
-          "La descarga ya está en progreso, ignorando llamada duplicada",
-        );
+        console.log("Descarga ya en progreso, ignorando.");
         return;
       }
       isDownloading = true;
@@ -234,63 +246,58 @@ const MainPage = () => {
         );
 
         const contentType = headers["content-type"];
-
-        // Verificar que sea un ZIP
         const isZip = contentType && contentType.includes("application/zip");
         const firstBytes = await blob.slice(0, 2).text();
 
+        // Validación básica de ZIP (PK header)
         if (!isZip || firstBytes !== "PK") {
           const text = await blob.text();
           try {
             const errorData = JSON.parse(text);
             throw new Error(
-              errorData.message ||
-                "Error: La respuesta no es un archivo ZIP válido",
+              errorData.message || "Error: La respuesta no es un ZIP válido",
             );
           } catch (parseError) {
-            throw new Error("Error: La respuesta no es un archivo ZIP válido");
+            throw new Error("Error: La respuesta no es un ZIP válido");
           }
         }
 
-        // Crear una URL para el blob y un enlace para la descarga
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
 
-        // Extraer el nombre del archivo de las cabeceras si está disponible
+        // Intentar obtener nombre del archivo
         const contentDisposition = headers["content-disposition"];
-        let filename = "todas_las_tesis.zip"; // Nombre por defecto
+        let filename = "todas_las_tesis.zip";
         if (contentDisposition) {
           const filenameMatch = contentDisposition.match(
             /filename="?([^";]+)"?/,
           );
           if (filenameMatch && filenameMatch.length > 1) {
-            filename = filenameMatch[1].replace(/_+$/, ""); // Remove trailing underscores
+            filename = filenameMatch[1].replace(/_+$/, "");
           }
         }
         link.setAttribute("download", filename);
 
-        // Simular clic para iniciar la descarga y luego limpiar
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
         window.URL.revokeObjectURL(url);
 
-        // Mostrar modal de éxito
         setDownloadModal({
           isOpen: true,
           status: "success",
           message: "¡Descarga completada exitosamente!",
         });
       } catch (error) {
-        console.error("Error al descargar el archivo:", error);
+        console.error("Error al descargar archivo:", error);
         isDownloading = false;
         throw error;
       }
     };
 
     try {
-      // Paso 1: Iniciar el proceso de descarga y obtener el jobId
+      // 1. Iniciar Job de descarga
       const { jobId, progressUrl, streamUrl } =
         await tesisService.initiateDownloadAll();
 
@@ -306,11 +313,7 @@ const MainPage = () => {
         message: "Procesando tesis... Por favor espera.",
       });
 
-      // Paso 2: Usar Server-Sent Events (SSE) para recibir actualizaciones de progreso
-      // Note: EventSource doesn't support custom headers easily without polyfills,
-      // but usually cookie-based auth works if configured.
-      // If we need headers, we might need a different approach or a library like event-source-polyfill
-      // However, we'll assume the URL contains a token or cookies work as before.
+      // 2. Conectar a SSE para progreso
       const sseUrl = `${import.meta.env.VITE_API_URL}${
         streamUrl || progressUrl || `/tesis/download/progress/${jobId}/stream`
       }`;
@@ -321,37 +324,29 @@ const MainPage = () => {
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log("Evento SSE recibido:", data);
-
           const { total, processed, current, status, percentage, downloadUrl } =
             data;
 
-          if (
-            status === "completed" ||
-            status === "done" ||
-            status === "finished"
-          ) {
-            // El proceso está completo
+          if (["completed", "done", "finished"].includes(status)) {
+            // Proceso completado en servidor, iniciar descarga de archivo
             console.log("Proceso completado, iniciando descarga...");
             if (eventSource) {
               eventSource.close();
               eventSource = null;
             }
 
-            // Descargar el archivo usando el downloadUrl proporcionado
             const finalDownloadUrl =
               downloadUrl || `/tesis/download/result/${jobId}`;
             downloadFile(finalDownloadUrl).catch((error) => {
-              console.error("Error al descargar:", error);
               setDownloadModal({
                 isOpen: true,
                 status: "error",
                 message: error.message || "Error al descargar el archivo",
               });
             });
-          } else if (status === "error" || status === "failed") {
-            // Hubo un error
-            console.error("Error en el proceso:", data);
+          } else if (["error", "failed"].includes(status)) {
+            // Error en servidor
+            console.error("Error en proceso:", data);
             if (eventSource) {
               eventSource.close();
               eventSource = null;
@@ -362,7 +357,7 @@ const MainPage = () => {
               message: data.message || "Error al procesar las tesis",
             });
           } else if (total && processed !== undefined) {
-            // Mostrar progreso numérico
+            // Progreso numérico
             const percent =
               percentage !== undefined
                 ? percentage
@@ -374,22 +369,15 @@ const MainPage = () => {
                 current ? ` - ${current}` : ""
               }`,
             });
-          } else if (current) {
-            // Mostrar tesis actual
-            setDownloadModal({
-              isOpen: true,
-              status: "loading",
-              message: `Procesando tesis: ${current}...`,
-            });
           } else if (percentage !== undefined) {
-            // Mostrar solo porcentaje
+            // Progreso porcentual
             setDownloadModal({
               isOpen: true,
               status: "loading",
               message: `Procesando tesis... ${percentage}% completado`,
             });
           } else {
-            // Si no hay información específica, mostrar mensaje genérico
+            // Mensaje por defecto
             setDownloadModal({
               isOpen: true,
               status: "loading",
@@ -397,17 +385,15 @@ const MainPage = () => {
             });
           }
         } catch (error) {
-          console.error("Error al parsear evento SSE:", error);
+          console.error("Error parseando evento SSE:", error);
         }
       };
 
       eventSource.onerror = (error) => {
         console.error("Error en SSE:", error);
-        // Si el evento se cierra normalmente (readyState === 2), no es un error
         if (eventSource && eventSource.readyState === EventSource.CLOSED) {
           console.log("Conexión SSE cerrada normalmente");
         } else {
-          // Solo mostrar error si no estamos descargando
           if (!isDownloading) {
             setDownloadModal({
               isOpen: true,
@@ -419,31 +405,30 @@ const MainPage = () => {
         }
       };
     } catch (error) {
-      // Cerrar SSE si está abierto
       if (eventSource) {
         eventSource.close();
         eventSource = null;
       }
-      console.error("Error al descargar las tesis:", error);
+      console.error("Error al iniciar descarga:", error);
 
-      // Intentar parsear el error si viene como JSON
       let errorMessage = "Error al descargar las tesis. Intenta de nuevo.";
       if (error.response?.data) {
-        if (typeof error.response.data === "string") {
+        // Intentar extraer mensaje de error del backend
+        const errData = error.response.data;
+        if (typeof errData === "string") {
           try {
-            const errorData = JSON.parse(error.response.data);
-            errorMessage = errorData.message || errorMessage;
+            const parsed = JSON.parse(errData);
+            errorMessage = parsed.message || errorMessage;
           } catch (e) {
-            errorMessage = error.response.data;
+            errorMessage = errData;
           }
         } else {
-          errorMessage = error.response.data.message || errorMessage;
+          errorMessage = errData.message || errorMessage;
         }
       } else if (error.message) {
         errorMessage = error.message;
       }
 
-      // Mostrar modal de error
       setDownloadModal({
         isOpen: true,
         status: "error",
@@ -460,12 +445,11 @@ const MainPage = () => {
     });
   };
 
-  // Handler para la paginación
   const handlePageChange = (newPage) => {
     setPaginationData((prev) => ({ ...prev, page: newPage }));
   };
 
-  // Handlers para el menú de selección de atributo
+  // Manejo de Menú de Ordenamiento
   const handleAttributeMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -474,54 +458,23 @@ const MainPage = () => {
     setAnchorEl(null);
   };
 
-  // Reset pagination page when sorting changes
+  // Reiniciar a página 1 si cambia el orden
   useEffect(() => {
     setPaginationData((prev) => ({ ...prev, page: 1 }));
   }, [sortConfig]);
 
   const handleSelectAttribute = (key) => {
-    // Set selected attribute with default ascending direction
-    setSortConfig({ key, direction: "asc" });
+    setSortConfig({ key, direction: "asc" }); // Default ascendente
     handleAttributeMenuClose();
   };
 
-  // Handler para alternar dirección del atributo actual
   const handleToggleDirection = () => {
     setSortConfig((prev) => {
-      if (!prev.key) return prev; // No attribute selected
+      if (!prev.key) return prev;
       const newDirection = prev.direction === "asc" ? "desc" : "asc";
       return { ...prev, direction: newDirection };
     });
   };
-
-  // Función para ordenar las tesis (now handled by backend, but keeping for client-side if needed)
-  const getSortedTesis = () => {
-    if (!sortConfig.key || !sortConfig.direction) {
-      return tesisEncontradas;
-    }
-
-    const sorted = [...tesisEncontradas].sort((a, b) => {
-      let aValue, bValue;
-
-      if (sortConfig.key === "fecha") {
-        aValue = new Date(a.fecha);
-        bValue = new Date(b.fecha);
-      } else if (sortConfig.key === "nombre") {
-        aValue = (a.nombre || "").toLowerCase();
-        bValue = (b.nombre || "").toLowerCase();
-      }
-
-      if (sortConfig.direction === "asc") {
-        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-      } else {
-        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-      }
-    });
-
-    return sorted;
-  };
-
-  const sortedTesis = getSortedTesis();
 
   return (
     <div className="flex flex-col h-dvh">
@@ -530,17 +483,17 @@ const MainPage = () => {
         setHaBuscado={setHaBuscado}
         isFilterVisible={isFilterVisible}
         onToggleFilter={setIsFilterVisible}
-        setPaginationData={setPaginationData} // Prop para la nueva lógica
-        setSearchQuery={setSearchQuery} // Prop para la nueva lógica
+        setPaginationData={setPaginationData}
+        setSearchQuery={setSearchQuery}
       />
       <main className="relative z-10 flex-grow pr-4 pt-4 pl-4 overflow-y-auto transition-all duration-300">
-        {/* --- H1 Y BOTONES DE DESCARGA Y ORDENAMIENTO --- */}
+        {/* Encabezado Principal y Controles */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
           <h1 className="text-2xl font-bold text-text-primary text-center md:text-left">
             Gestión de Tesis
           </h1>
           <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2">
-            {/* Botón para seleccionar atributo */}
+            {/* Botón Selección de Atributo de Orden */}
             <Button
               variant="outlined"
               startIcon={<SortIcon />}
@@ -561,7 +514,6 @@ const MainPage = () => {
                   : "Nombre"
                 : "Sin orden"}
             </Button>
-            {/* Menú de selección de atributo */}
             <Menu
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
@@ -574,7 +526,8 @@ const MainPage = () => {
                 Nombre
               </MenuItem>
             </Menu>
-            {/* Botón para alternar dirección */}
+
+            {/* Botón Dirección de Orden Asc/Desc */}
             <Button
               variant="outlined"
               startIcon={
@@ -602,6 +555,7 @@ const MainPage = () => {
                   : "Desc"
                 : "Orden"}
             </Button>
+
             <button
               onClick={handleDownloadAll}
               className="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-300 w-full sm:w-auto"
@@ -611,9 +565,10 @@ const MainPage = () => {
           </div>
         </div>
 
+        {/* Contenido Principal (Lista de Tarjetas) */}
         <Content
           isTesisFormVisible={isTesisFormVisible}
-          setIsTesisFormVisible={setIsTesisFormVisible} // Para el botón "Añadir"
+          setIsTesisFormVisible={setIsTesisFormVisible}
           isLoading={isLoading}
           tesisEncontradas={tesisEncontradas}
           haBuscado={haBuscado}
@@ -623,7 +578,7 @@ const MainPage = () => {
           error={errorMessage}
         />
 
-        {/* Lógica de paginación */}
+        {/* Componente de Paginación */}
         {paginationData.total > paginationData.limit && (
           <CustomPagination
             page={paginationData.page}
@@ -634,7 +589,7 @@ const MainPage = () => {
         )}
       </main>
 
-      {/* Panel de Filtros Absoluto */}
+      {/* Panel Lateral de Filtros */}
       <div
         className={`absolute top-0 left-0 h-full z-[60] transition-transform duration-300 ease-in-out ${
           isFilterVisible ? "translate-x-0" : "-translate-x-full"
@@ -644,12 +599,12 @@ const MainPage = () => {
           onClose={() => setIsFilterVisible(false)}
           onApply={(f) => {
             setActiveFilters(f);
-            setPaginationData((prev) => ({ ...prev, page: 1 })); // Resetear paginación
+            setPaginationData((prev) => ({ ...prev, page: 1 })); // Resetear al filtrar
           }}
         />
       </div>
 
-      {/* Modal de Tesis (Crear o Editar) */}
+      {/* Modales */}
       {isTesisFormVisible ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background bg-opacity-50 backdrop-blur-sm p-4">
           <div className="w-full max-w-[95%] md:max-w-[800px] lg:max-w-[900px] xl:max-w-[1000px]">
@@ -663,7 +618,6 @@ const MainPage = () => {
         </div>
       ) : null}
 
-      {/* Modal de Descarga */}
       <LoadingModal
         isOpen={downloadModal.isOpen}
         status={downloadModal.status}

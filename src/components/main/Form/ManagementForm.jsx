@@ -15,23 +15,32 @@ import PersonaForm from "./PersonaForm.jsx";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
-// Contenedor del Tab (Modificado para NO desmontar los hijos)
+// Contenedor del Tab (Personalizado para mantener el estado de los componentes montados)
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
   return (
     <div
       role="tabpanel"
-      hidden={value !== index} // <-- Esto ya oculta el panel
+      hidden={value !== index}
       id={`form-tabpanel-${index}`}
       aria-labelledby={`form-tab-${index}`}
       {...other}
     >
-      {/* Se eliminó la condición 'value === index &&' para conservar el estado */}
+      {/* Se eliminó la condición 'value === index &&' para conservar el estado al cambiar tabs */}
       <Box sx={{ pt: 3, pb: 3, px: 1 }}>{children}</Box>
     </div>
   );
 }
 
+/**
+ * Componente ManagementForm
+ * Contenedor principal de pestañas para la gestión de Tesis y Personas (Estudiantes, Profesores, Encargados).
+ *
+ * @param {Object} props
+ * @param {Function} props.onSuccess - Callback para operación exitosa.
+ * @param {Function} props.onClose - Callback para cerrar el formulario.
+ * @param {Object} props.tesisToEdit - Tesis a editar, si aplica.
+ */
 const ManagementForm = forwardRef((props, ref) => {
   const [activeTab, setActiveTab] = useState(0);
 
@@ -42,16 +51,19 @@ const ManagementForm = forwardRef((props, ref) => {
     estudiantes: [],
   });
 
-  // Estado para guardar la tesis a editar
+  // Estado para guardar datos de pre-llenado al crear usuarios desde el formulario de tesis
   const [prefillData, setPrefillData] = useState(null);
 
-  // Nuevo useEffect para forzar la pestaña de Tesis si estamos editando
+  // Forzar la pestaña de Tesis si estamos editando una tesis existente
   useEffect(() => {
     if (props.tesisToEdit) {
-      setActiveTab(0); // Forzar la pestaña 0 (Tesis)
+      setActiveTab(0);
     }
   }, [props.tesisToEdit]);
 
+  /**
+   * Carga las opciones disponibles para los selectores (personas, sedes).
+   */
   const loadFormOptions = useCallback(async () => {
     try {
       const [profesoresRes, encargadosRes, sedesRes, estudiantesRes] =
@@ -88,12 +100,14 @@ const ManagementForm = forwardRef((props, ref) => {
     setPrefillData(null); // Limpiar el pre-llenado si el usuario cambia de pestaña manualmente
   };
 
-  // Función que maneja la solicitud de TesisForm para cambiar de pestaña
+  /**
+   * Maneja la solicitud desde TesisForm para crear un nuevo usuario rápidamente.
+   * Cambia a la pestaña correspondiente y pre-llena el nombre.
+   */
   const handleRequestCreateUser = (type, name) => {
     console.log("Solicitud para crear:", type, "con nombre:", name);
-    setPrefillData({ type, name }); // Guarda el nombre y tipo
+    setPrefillData({ type, name });
 
-    // Cambia a la pestaña correspondiente
     if (type === "estudiante") {
       setActiveTab(1);
     } else if (type === "profesor") {
@@ -142,7 +156,7 @@ const ManagementForm = forwardRef((props, ref) => {
           onSuccess={props.onSuccess}
           onClose={props.onClose}
           onRequestCreateUser={handleRequestCreateUser}
-          tesisToEdit={props.tesisToEdit} // Pasar 'tesisToEdit' al TesisForm
+          tesisToEdit={props.tesisToEdit}
         />
       </TabPanel>
 
@@ -151,8 +165,8 @@ const ManagementForm = forwardRef((props, ref) => {
         <PersonaForm
           role="estudiante"
           onUserCreated={loadFormOptions}
-          prefillData={prefillData} // Pasar los datos de pre-llenado
-          onPrefillConsumed={() => setPrefillData(null)} // Función para limpiar
+          prefillData={prefillData}
+          onPrefillConsumed={() => setPrefillData(null)}
         />
       </TabPanel>
 

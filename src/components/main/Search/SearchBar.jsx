@@ -1,12 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import { GoSearch } from "react-icons/go";
 
+/**
+ * Componente SearchBar
+ * Barra de búsqueda con funcionalidad de "debounce" para optimizar las peticiones.
+ *
+ * @param {Object} props
+ * @param {Function} props.setSearchQuery - Función para actualizar la consulta de búsqueda en el componente padre.
+ * @param {Function} props.setPaginationData - Función para reiniciar la paginación al buscar.
+ */
 const SearchBar = ({ setSearchQuery, setPaginationData }) => {
   const [searchValue, setSearchValue] = useState("");
   const timeoutRef = useRef(null);
 
+  // Limpiar timeout al desmontar el componente para evitar fugas de memoria
   useEffect(() => {
-    // Limpiar timeout al desmontar
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -18,22 +26,22 @@ const SearchBar = ({ setSearchQuery, setPaginationData }) => {
     const value = e.target.value;
     setSearchValue(value);
 
-    // Limpiar timeout anterior
+    // Limpiar timeout anterior si el usuario sigue escribiendo
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Si el valor está vacío, limpiar la búsqueda inmediatamente
+    // Si el valor está vacío, limpiar la búsqueda inmediatamente sin esperar
     if (value.trim() === "") {
       setSearchQuery("");
       setPaginationData((prev) => ({ ...prev, page: 1 }));
       return;
     }
 
-    // Crear nuevo timeout para debounce
+    // Crear nuevo timeout para ejecutar la búsqueda después de 300ms de inactividad (debounce)
     timeoutRef.current = setTimeout(() => {
       setSearchQuery(value.trim());
-      // Resetear a la primera página cuando se busca
+      // Resetear a la primera página cuando se realiza una nueva búsqueda
       setPaginationData((prev) => ({ ...prev, page: 1 }));
     }, 300);
   };

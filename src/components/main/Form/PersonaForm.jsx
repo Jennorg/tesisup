@@ -20,7 +20,17 @@ import LoadingModal from "@/hooks/Modals/LoadingModal";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
-// 💡 1. PROPS ACTUALIZADAS: Recibe 'prefillData' y 'onPrefillConsumed'
+/**
+ * Componente PersonaForm
+ * Formulario genérico para crear usuarios de diferentes roles (estudiante, profesor, encargado).
+ *
+ * @param {Object} props
+ * @param {string} props.role - Rol del usuario a crear ('estudiante', 'profesor', 'encargado').
+ * @param {Function} props.onUserCreated - Callback tras la creación exitosa.
+ * @param {Array} props.sedes - Lista de sedes (solo para rol encargado).
+ * @param {Object} props.prefillData - Datos para pre-llenar (nombre, tipo) si viene de una solicitud rápida.
+ * @param {Function} props.onPrefillConsumed - Callback para limpiar datos de pre-llenado.
+ */
 const PersonaForm = ({
   role,
   onUserCreated,
@@ -48,21 +58,19 @@ const PersonaForm = ({
   const [newUserData, setNewUserData] = useState(initialData);
   const [showPassword, setShowPassword] = useState(false);
 
-  // 💡 2. NUEVO USEEFFECT: Observa prefillData para pre-llenar el formulario
+  // Efecto para pre-llenar datos si se solicita desde TesisForm
   useEffect(() => {
-    // Si recibimos prefillData Y el tipo coincide con el rol de este formulario
     if (prefillData && prefillData.type === role) {
       const nameParts = prefillData.name.trim().split(" ");
       const nombre = nameParts[0] || "";
       const apellido = nameParts.slice(1).join(" ") || "";
 
       setNewUserData((prev) => ({
-        ...initialData, // Limpia el formulario
+        ...initialData,
         nombre: nombre,
         apellido: apellido,
       }));
 
-      // Limpia el pre-llenado en el padre para que no se reutilice
       onPrefillConsumed();
     }
   }, [prefillData, role, onPrefillConsumed]);
@@ -93,6 +101,7 @@ const PersonaForm = ({
       const ciString = String(newUserData.ci);
       const ciTypeString = String(newUserData.ci_type || "V");
 
+      // Email y teléfono son opcionales para algunos roles, usar valores por defecto temporales si es necesario
       const emailToSend = isEncargado
         ? String(newUserData.email)
         : newUserData.email || `temporal${ciString}@uneg.edu.ve`;

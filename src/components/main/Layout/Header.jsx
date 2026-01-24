@@ -7,13 +7,11 @@ import SearchBar from "@/components/main/Search/SearchBar";
 import LogoContainer from "@/components/Ui/LogoContainer";
 
 import Avatar from "@mui/material/Avatar";
-import Stack from "@mui/material/Stack";
 import { deepOrange } from "@mui/material/colors";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import PersonIcon from "@mui/icons-material/Person";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
@@ -24,6 +22,23 @@ import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
+/**
+ * Componente Header
+ * Barra superior de navegación que contiene:
+ * - Logo
+ * - Barra de búsqueda
+ * - Controles de tema (Claro/Oscuro)
+ * - Botón para alternar visibilidad de filtros
+ * - Avatar de usuario y menú desplegable
+ *
+ * @param {Object} props
+ * @param {Function} props.setIsLoading - Función para actualizar estado de carga.
+ * @param {Function} props.setHaBuscado - Función para marcar que se realizó búsqueda.
+ * @param {Function} props.onToggleFilter - Función para alternar visibilidad de filtros.
+ * @param {boolean} props.isFilterVisible - Estado actual de visibilidad de filtros.
+ * @param {Function} props.setPaginationData - Función para reiniciar paginación al buscar.
+ * @param {Function} props.setSearchQuery - Función para actualizar la cadena de búsqueda.
+ */
 const Header = ({
   setIsLoading,
   setHaBuscado,
@@ -38,6 +53,7 @@ const Header = ({
   const { mode, toggleColorMode } = useContext(ThemeContext);
   const open = Boolean(anchorEl);
 
+  // Obtener inicial del usuario para el avatar
   const avatarLetter = user?.nombre ? user.nombre.charAt(0).toUpperCase() : "U";
 
   const handleAvatarClick = (event) => {
@@ -65,12 +81,12 @@ const Header = ({
     <header className="sticky top-0 z-50 w-full transition-all duration-300 p-1">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-[auto_1fr_auto] gap-4 items-center h-20 md:h-24">
-          {/* Logo Section */}
+          {/* Sección Logo */}
           <div className="flex-shrink-0 flex items-center">
             <LogoContainer />
           </div>
 
-          {/* Search Section */}
+          {/* Sección Búsqueda */}
           <div className="flex justify-center w-full px-2 md:px-8">
             <div className="w-full max-w-2xl">
               <SearchBar
@@ -80,8 +96,9 @@ const Header = ({
             </div>
           </div>
 
-          {/* Actions Section */}
+          {/* Sección Acciones (Filtros, Tema, Perfil) */}
           <div className="flex items-center justify-end gap-2 md:gap-4">
+            {/* Botón Filtros */}
             <IconButton
               onClick={() => onToggleFilter(!isFilterVisible)}
               className="transition-transform hover:scale-105"
@@ -91,6 +108,7 @@ const Header = ({
               <FilterListIcon />
             </IconButton>
 
+            {/* Alternar Tema */}
             <IconButton
               onClick={toggleColorMode}
               color="inherit"
@@ -105,6 +123,7 @@ const Header = ({
               sx={{ mx: 1, height: 24, alignSelf: "center" }}
             />
 
+            {/* Avatar de Usuario */}
             <Avatar
               sx={{
                 bgcolor: deepOrange[500],
@@ -127,6 +146,8 @@ const Header = ({
             >
               {avatarLetter}
             </Avatar>
+
+            {/* Menú de Usuario */}
             <Menu
               id="avatar-menu"
               anchorEl={anchorEl}

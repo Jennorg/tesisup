@@ -1,18 +1,29 @@
 import React from "react";
 import Card from "@/components/main/Card/Card";
 
+/**
+ * Componente CardList
+ * Renderiza una cuadrícula de tarjetas de tesis.
+ *
+ * @param {Object} props
+ * @param {boolean} props.isLoading - Muestra esqueletos de carga si es true.
+ * @param {Array} props.tesisEncontradas - Array de objetos de tesis a mostrar.
+ * @param {Function} props.onEditTesis - Función al hacer clic en editar.
+ * @param {boolean} props.haBuscado - Indica si se ha realizado una búsqueda.
+ * @param {string|Object} props.error - Objeto o mensaje de error.
+ * @param {Function} props.onTesisDeleted - Callback tras eliminar una tesis.
+ * @param {Function} props.onStatusChange - Callback al cambiar estado de una tesis.
+ */
 const CardList = ({
   isLoading,
   tesisEncontradas,
   onEditTesis,
-  haBuscado, // Se mantiene para saber si mostrar el mensaje de "no encontrados"
-  error, // Opcional: para manejar errores desde MainPage
-  onTesisDeleted, // Para refrescar la lista
-  onStatusChange, // Para actualizar el estado de una tesis
+  haBuscado,
+  error,
+  onTesisDeleted,
+  onStatusChange,
 }) => {
-  // El componente ahora es mucho más simple. Solo se encarga de renderizar.
-
-  // Renderiza los esqueletos de carga
+  // Renderiza los esqueletos de carga si está cargando
   if (isLoading) {
     return (
       <div className="w-full">
@@ -27,16 +38,16 @@ const CardList = ({
     );
   }
 
-  // Renderiza un mensaje de error si lo hay
+  // Renderiza mensaje de error
   if (error) {
     return (
       <div className="col-span-full text-center py-8 text-red-500">
-        <p>Error al cargar las tesis: {error.message}</p>
+        <p>Error al cargar las tesis: {error.message || error}</p>
       </div>
     );
   }
 
-  // Renderiza el mensaje de "no encontrados" solo si se ha buscado y no hay resultados
+  // Renderiza mensaje de "sin resultados"
   if (haBuscado && tesisEncontradas.length === 0) {
     return (
       <div className="col-span-full text-center py-8 text-gray-500">
@@ -45,17 +56,14 @@ const CardList = ({
     );
   }
 
-  // Renderiza la lista de tesis
+  // Renderiza la lista de tarjetas
   return (
     <div className="w-full">
       <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
         {tesisEncontradas.map((tesisItem) => (
-          <li
-            key={tesisItem.id_tesis || tesisItem.id}
-            className="w-full"
-          >
+          <li key={tesisItem.id_tesis || tesisItem.id} className="w-full">
             <Card
-              data={tesisItem} // Asumimos que la data ya viene completa
+              data={tesisItem}
               onTesisDeleted={onTesisDeleted}
               onEdit={() => onEditTesis(tesisItem)}
               onStatusChange={onStatusChange}

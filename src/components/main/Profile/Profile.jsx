@@ -50,22 +50,35 @@ import dayjs from "dayjs";
 const API_URL = import.meta.env.VITE_API_URL;
 const VITE_API_URL = API_URL || "http://localhost:8080/api";
 
+/**
+ * Componente de Perfil de Usuario
+ * Muestra información detallada del usuario (estudiante, profesor, encargado).
+ * Permite editar información y, en caso de profesores, ver y descargar tesis relacionadas.
+ */
 const Profile = () => {
   const theme = useTheme();
+  // MediaQuery para diseño responsivo
   const isXs = useMediaQuery(theme.breakpoints.down("sm"));
   const isSm = useMediaQuery(theme.breakpoints.up("sm"));
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  // Obtener parámetros de URL para ver perfil de otro usuario
   const { userType: urlUserType, ci: urlCi } = useParams();
+
+  // Estados de datos
   const [profileData, setProfileData] = useState(null);
   const [sedeData, setSedeData] = useState(null);
   const [tesisAsTutor, setTesisAsTutor] = useState([]);
   const [tesisAsJurado, setTesisAsJurado] = useState([]);
   const [allTesisData, setAllTesisData] = useState([]);
+
+  // Estados de UI
   const [loading, setLoading] = useState(true);
   const [loadingTesis, setLoadingTesis] = useState(false);
   const [error, setError] = useState(null);
   const [viewingUserType, setViewingUserType] = useState(null);
+
+  // Estados de edición
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     nombre: "",
@@ -74,6 +87,8 @@ const Profile = () => {
     telefono: "",
   });
   const [saving, setSaving] = useState(false);
+
+  // Control de tooltip en móviles
   const [openTitleTooltip, setOpenTitleTooltip] = useState(null);
   const tooltipTimerRef = useRef(null);
 
@@ -96,20 +111,20 @@ const Profile = () => {
       tooltipTimerRef.current = null;
     }, 3500);
   };
-  // Close tooltip when user taps/clicks outside the currently open tooltip
+
+  // Cerrar tooltip al hacer clic fuera
   useEffect(() => {
     if (openTitleTooltip == null) return;
 
     const onPointerDown = (e) => {
       try {
         const target = e.target;
-        // If the click is inside the element that opened the tooltip, ignore
         const selector = `[data-tooltip-id="${openTitleTooltip}"]`;
         if (target && target.closest && target.closest(selector)) {
           return;
         }
       } catch (err) {
-        // ignore
+        // Ignorar errores
       }
       if (tooltipTimerRef.current) {
         clearTimeout(tooltipTimerRef.current);
@@ -121,6 +136,8 @@ const Profile = () => {
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [openTitleTooltip]);
+
+  // Cargar datos del perfil
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!user || !token) {
@@ -132,12 +149,10 @@ const Profile = () => {
       setLoading(true);
 
       try {
-        // Si hay parámetros en la URL, usar esos; si no, usar el usuario autenticado
         const targetCi = urlCi || user.ci;
         const targetUserType =
           urlUserType?.toLowerCase() || user.user_type?.toLowerCase();
 
-        // Determinar el endpoint según el tipo de usuario
         let endpoint = "";
         const userType = targetUserType;
 
@@ -146,7 +161,6 @@ const Profile = () => {
         let data = null;
 
         if (userType === "estudiante") {
-          // Use userService.getByCi which handles the logic
           data = await userService.getByCi("estudiante", targetCi);
         } else if (userType === "profesor") {
           data = await userService.getByCi("profesor", targetCi);
@@ -158,7 +172,7 @@ const Profile = () => {
 
         setProfileData(data);
 
-        // Si es encargado, obtener información de la sede
+        // Cargar datos de sede para encargados
         if (userType === "encargado" && data.id_sede) {
           try {
             const sedeData = await userService.getSedeById(data.id_sede);
@@ -166,33 +180,31 @@ const Profile = () => {
           } catch (sedeError) {
             console.error(
               "Error al obtener información de la sede:",
-              sedeError
+              sedeError,
             );
           }
         }
 
-        // Si es profesor, obtener todas las tesis y datos relacionados
+        // Para profesores, cargar tesis asociadas
         if (userType === "profesor") {
           setLoadingTesis(true);
           try {
-            // Obtener todas las tesis con paginación (obtener todas las páginas)
             let allTesis = [];
             let page = 1;
             let hasMore = true;
-            const limit = 100; // Obtener 100 por página para minimizar requests
+            const limit = 100;
 
+            // Cargar todas las páginas de tesis
             while (hasMore) {
               const responseData = await tesisService.getAll({ page, limit });
               const tesisPage = responseData.data || [];
               allTesis = [...allTesis, ...tesisPage];
 
-              // Verificar si hay más páginas
               const total = responseData.total || 0;
               hasMore = page * limit < total;
               page++;
             }
 
-            // Obtener datos relacionados
             const [profesores, encargados, estudiantes, sedes] =
               await Promise.all([
                 userService.getProfesores(),
@@ -201,21 +213,18 @@ const Profile = () => {
                 userService.getSedes(),
               ]);
 
-            // Normalize data structures from services if needed (services usually return data array directly if possible, but let's be safe)
             const profesoresList = profesores.data || profesores;
             const encargadosList = encargados.data || encargados;
             const estudiantesList = estudiantes.data || estudiantes;
             const sedesList = sedes.data || sedes;
 
-            // Enriquecer datos de tesis con información relacionada
+            // Enriquecer datos de tesis
             const enrichedTesis = allTesis.map((tesis) => {
-              // Las tesis ya vienen con autores y jurados desde el backend
-              // Solo necesitamos enriquecer con datos adicionales si es necesario
               const tutor = profesoresList.find(
-                (p) => String(p.ci) === String(tesis.id_tutor)
+                (p) => String(p.ci) === String(tesis.id_tutor),
               );
               const encargado = encargadosList.find(
-                (e) => String(e.ci) === String(tesis.id_encargado)
+                (e) => String(e.ci) === String(tesis.id_encargado),
               );
               const sede = sedesList.find((s) => s.id === tesis.id_sede);
 
@@ -229,18 +238,17 @@ const Profile = () => {
 
             setAllTesisData(enrichedTesis);
 
-            // Filtrar tesis donde el profesor es tutor
+            // Filtrar tesis como tutor
             const tutorTesis = enrichedTesis.filter(
-              (t) => String(t.id_tutor) === String(targetCi)
+              (t) => String(t.id_tutor) === String(targetCi),
             );
             setTesisAsTutor(tutorTesis);
 
-            // Filtrar tesis donde el profesor es jurado
-            // El backend devuelve un array 'jurados' con objetos { ci, nombre, apellido, ci_type }
+            // Filtrar tesis como jurado
             const juradoTesis = enrichedTesis.filter((t) => {
               if (t.jurados && Array.isArray(t.jurados)) {
                 return t.jurados.some(
-                  (jurado) => String(jurado.ci) === String(targetCi)
+                  (jurado) => String(jurado.ci) === String(targetCi),
                 );
               }
               return false;
@@ -258,7 +266,7 @@ const Profile = () => {
         setError(
           err.response?.data?.error ||
             err.message ||
-            "Error al cargar el perfil"
+            "Error al cargar el perfil",
         );
       } finally {
         setLoading(false);
@@ -286,14 +294,13 @@ const Profile = () => {
     return colors[type?.toLowerCase()] || "default";
   };
 
-  // Función helper para navegar al perfil de un usuario
   const navigateToProfile = (ci, userType) => {
     if (ci && userType) {
       navigate(`/profile/${userType}/${ci}`);
     }
   };
 
-  // Función para iniciar edición
+  // Manejo de edición
   const handleStartEdit = () => {
     if (profileData) {
       setEditData({
@@ -306,7 +313,6 @@ const Profile = () => {
     }
   };
 
-  // Función para cancelar edición
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditData({
@@ -317,7 +323,6 @@ const Profile = () => {
     });
   };
 
-  // Función para guardar cambios
   const handleSaveEdit = async () => {
     if (!profileData || !token) return;
 
@@ -327,7 +332,6 @@ const Profile = () => {
       const userType = viewingUserType || profileData.user_type?.toLowerCase();
 
       if (userType === "profesor" || userType === "estudiante") {
-        // Preparar payload con todos los campos necesarios
         const payload = {
           ci: parseInt(targetCi),
           ci_type: profileData.ci_type || "V",
@@ -341,7 +345,6 @@ const Profile = () => {
 
         await userService.update(userType, targetCi, payload);
 
-        // Actualizar los datos del perfil
         setProfileData({
           ...profileData,
           nombre: editData.nombre,
@@ -360,22 +363,22 @@ const Profile = () => {
         err.response?.data?.error ||
           err.response?.data?.message ||
           err.response?.data ||
-          "Error al guardar los cambios"
+          "Error al guardar los cambios",
       );
     } finally {
       setSaving(false);
     }
   };
 
+  // Generar reporte Excel de tesis
   const handleDownloadExcel = () => {
     const displayData = profileData || user;
 
-    // Combinar todas las tesis con su rol
     const allTesisWithRole = [
       ...tesisAsTutor.map((t) => ({ ...t, rol: "Tutor" })),
       ...tesisAsJurado.map((t) => ({ ...t, rol: "Jurado" })),
     ];
-    // Preparar datos para Excel con columnas ordenadas y formateo
+
     const headers = [
       "Título",
       "ID Tesis",
@@ -398,7 +401,7 @@ const Profile = () => {
               .map((a) =>
                 a.nombre && a.apellido
                   ? `${a.nombre} ${a.apellido}`
-                  : a.nombre || a.nombre_completo || ""
+                  : a.nombre || a.nombre_completo || "",
               )
               .filter(Boolean)
               .join(", ")
@@ -421,7 +424,7 @@ const Profile = () => {
               .map((j) =>
                 j.nombre && j.apellido
                   ? `${j.nombre} ${j.apellido}`
-                  : j.nombre || j.nombre_completo || ""
+                  : j.nombre || j.nombre_completo || "",
               )
               .filter(Boolean)
               .join(", ")
@@ -438,7 +441,6 @@ const Profile = () => {
               .join(", ")
           : "";
 
-      // Fecha: si existe, conviértela a objeto Date para que Excel la reconozca
       const fechaVal = tesis.fecha
         ? dayjs(tesis.fecha).isValid()
           ? dayjs(tesis.fecha).toDate()
@@ -462,10 +464,8 @@ const Profile = () => {
       ]);
     });
 
-    // Crear worksheet desde AOA (array of arrays) para controlar encabezados y orden
     const ws = XLSX.utils.aoa_to_sheet(rows);
 
-    // Establecer anchos de columnas para mejor legibilidad
     ws["!cols"] = [
       { wch: 40 }, // Título
       { wch: 12 }, // ID
@@ -479,8 +479,7 @@ const Profile = () => {
       { wch: 20 }, // Sede
     ];
 
-    // Aplicar estilos de encabezado (fondo, color, negrita) y bordes a toda la tabla.
-    const headerFill = { patternType: "solid", fgColor: { rgb: "FF2F6BFF" } }; // azul
+    const headerFill = { patternType: "solid", fgColor: { rgb: "FF2F6BFF" } };
     const headerFont = { bold: true, color: { rgb: "FFFFFFFF" }, sz: 12 };
     const thinBorder = {
       top: { style: "thin", color: { rgb: "FF000000" } },
@@ -497,10 +496,8 @@ const Profile = () => {
         const addr = XLSX.utils.encode_cell({ c, r });
         if (!ws[addr]) continue;
 
-        // Asegurarnos de no perder estilos previos
         ws[addr].s = ws[addr].s || {};
 
-        // Encabezado: fondo y fuente blanca centrada
         if (r === 0) {
           ws[addr].s.font = headerFont;
           ws[addr].s.fill = headerFill;
@@ -510,35 +507,28 @@ const Profile = () => {
             wrapText: true,
           };
         } else {
-          // Celdas de datos: alineación y ajuste para columnas largas
           ws[addr].s.alignment = {
             horizontal:
               c === 0 || c === 5 || c === 6 || c === 7 ? "left" : "center",
             vertical: "center",
             wrapText: true,
           };
-          // Si es columna Fecha (índice 4), forzar formato de fecha
           if (c === 4 && ws[addr].v instanceof Date) {
             ws[addr].t = "d";
             ws[addr].z = "DD/MM/YYYY";
           }
         }
-
-        // Añadir bordes a todas las celdas
         ws[addr].s.border = thinBorder;
       }
     }
 
-    // Autofiltrar y congelar fila de encabezado
     ws["!autofilter"] = {
       ref: `A1:${XLSX.utils.encode_col(headers.length - 1)}1`,
     };
 
-    // Workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Tesis");
 
-    // Views: congelar primera fila
     wb.Workbook = wb.Workbook || {};
     wb.Workbook.Views = wb.Workbook.Views || [];
     wb.Workbook.Views.push({
@@ -548,19 +538,16 @@ const Profile = () => {
       activeTab: 0,
     });
 
-    // Generar nombre del archivo
     const fileName = `Tesis_${
       displayData?.nombre || "Profesor"
     }_${dayjs().format("YYYY-MM-DD")}.xlsx`;
 
-    // Escribir archivo
     XLSX.writeFile(wb, fileName);
   };
 
   if (loading && !profileData) {
     return (
       <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: "1200px", mx: "auto" }}>
-        {/* Botón de regreso */}
         <IconButton
           onClick={() => navigate(-1)}
           sx={{ mb: { xs: 1, sm: 2 } }}
@@ -570,7 +557,6 @@ const Profile = () => {
         </IconButton>
 
         <Card sx={{ overflow: "visible" }}>
-          {/* Header skeleton */}
           <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
             <Box
               sx={{
@@ -594,7 +580,6 @@ const Profile = () => {
           </Box>
 
           <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-            {/* Información Personal skeleton */}
             <Box sx={{ mb: 3 }}>
               <Skeleton variant="text" width="40%" height={32} />
               <Skeleton
@@ -606,8 +591,6 @@ const Profile = () => {
               <Skeleton variant="text" width="90%" height={20} />
               <Skeleton variant="text" width="85%" height={20} />
             </Box>
-
-            {/* Más secciones skeleton */}
             <Box sx={{ mb: 3 }}>
               <Skeleton variant="text" width="35%" height={32} />
               <Skeleton
@@ -646,7 +629,6 @@ const Profile = () => {
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: "1200px", mx: "auto" }}>
-      {/* Botón de regreso */}
       <IconButton
         onClick={() => navigate(-1)}
         sx={{ mb: { xs: 1, sm: 2 } }}
@@ -655,7 +637,6 @@ const Profile = () => {
         <ArrowBackIcon />
       </IconButton>
 
-      {/* Card principal del perfil */}
       <Card
         sx={{
           boxShadow: 3,
@@ -663,7 +644,7 @@ const Profile = () => {
           overflow: "hidden",
         }}
       >
-        {/* Header del perfil con avatar */}
+        {/* Cabecera del Perfil con degradado dinámico según rol */}
         <Box
           sx={{
             background: `linear-gradient(135deg, ${
@@ -734,7 +715,7 @@ const Profile = () => {
 
         <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
           <Grid container spacing={{ xs: 2, sm: 3 }}>
-            {/* Información Personal */}
+            {/* Sección de Información Personal */}
             <Grid item xs={12}>
               <Paper
                 elevation={0}
@@ -766,10 +747,10 @@ const Profile = () => {
                     <PersonIcon color="primary" />
                     Información Personal
                   </Typography>
-                  {/* Botón de editar solo para encargados viendo perfil de profesor o estudiante */}
+                  {/* Edición habilitada solo para encargados */}
                   {user?.user_type?.toLowerCase() === "encargado" &&
                     ["profesor", "estudiante"].includes(
-                      viewingUserType || profileData?.user_type?.toLowerCase()
+                      viewingUserType || profileData?.user_type?.toLowerCase(),
                     ) && (
                       <Box
                         sx={{
@@ -848,7 +829,7 @@ const Profile = () => {
                         user?.user_type?.toLowerCase() === "encargado" &&
                         ["profesor", "estudiante"].includes(
                           viewingUserType ||
-                            profileData?.user_type?.toLowerCase()
+                            profileData?.user_type?.toLowerCase(),
                         ) ? (
                           <TextField
                             fullWidth
@@ -885,7 +866,7 @@ const Profile = () => {
                         user?.user_type?.toLowerCase() === "encargado" &&
                         ["profesor", "estudiante"].includes(
                           viewingUserType ||
-                            profileData?.user_type?.toLowerCase()
+                            profileData?.user_type?.toLowerCase(),
                         ) ? (
                           <TextField
                             fullWidth
@@ -909,11 +890,11 @@ const Profile = () => {
                     </Box>
                   </Grid>
 
-                  {/* Campos de nombre y apellido editables */}
+                  {/* Campos editables para Nombre y Apellido */}
                   {isEditing &&
                     user?.user_type?.toLowerCase() === "encargado" &&
                     ["profesor", "estudiante"].includes(
-                      viewingUserType || profileData?.user_type?.toLowerCase()
+                      viewingUserType || profileData?.user_type?.toLowerCase(),
                     ) && (
                       <>
                         <Grid item xs={12} sm={6} md={4}>
@@ -950,7 +931,7 @@ const Profile = () => {
               </Paper>
             </Grid>
 
-            {/* Información específica según el tipo de usuario */}
+            {/* Información para Encargados */}
             {(viewingUserType || user?.user_type?.toLowerCase()) ===
               "encargado" && (
               <Grid item xs={12}>
@@ -996,6 +977,7 @@ const Profile = () => {
               </Grid>
             )}
 
+            {/* Información para Estudiantes */}
             {(viewingUserType || user?.user_type?.toLowerCase()) ===
               "estudiante" && (
               <Grid item xs={12}>
@@ -1028,6 +1010,7 @@ const Profile = () => {
               </Grid>
             )}
 
+            {/* Información para Profesores (Tesis) */}
             {(viewingUserType || user?.user_type?.toLowerCase()) ===
               "profesor" && (
               <>
@@ -1154,7 +1137,7 @@ const Profile = () => {
                                                 onClick={() =>
                                                   navigateToProfile(
                                                     a.ci,
-                                                    "estudiante"
+                                                    "estudiante",
                                                   )
                                                 }
                                                 sx={{
@@ -1192,7 +1175,7 @@ const Profile = () => {
                                                   ""}
                                               {idx < authors.length - 1 && ", "}
                                             </span>
-                                          )
+                                          ),
                                         )
                                       : "N/A"}
                                   </Typography>
@@ -1336,7 +1319,7 @@ const Profile = () => {
                                         }
                                         onClick={() =>
                                           showTitleTooltip(
-                                            tesis.id_tesis || tesis.id
+                                            tesis.id_tesis || tesis.id,
                                           )
                                         }
                                         sx={{
@@ -1409,7 +1392,7 @@ const Profile = () => {
                                                 onClick={() =>
                                                   navigateToProfile(
                                                     a.ci,
-                                                    "estudiante"
+                                                    "estudiante",
                                                   )
                                                 }
                                                 sx={{
@@ -1560,7 +1543,7 @@ const Profile = () => {
                                                 onClick={() =>
                                                   navigateToProfile(
                                                     a.ci,
-                                                    "estudiante"
+                                                    "estudiante",
                                                   )
                                                 }
                                                 sx={{
@@ -1598,7 +1581,7 @@ const Profile = () => {
                                                   ""}
                                               {idx < authors.length - 1 && ", "}
                                             </span>
-                                          )
+                                          ),
                                         )
                                       : "N/A"}
                                   </Typography>
@@ -1742,7 +1725,7 @@ const Profile = () => {
                                         }
                                         onClick={() =>
                                           showTitleTooltip(
-                                            tesis.id_tesis || tesis.id
+                                            tesis.id_tesis || tesis.id,
                                           )
                                         }
                                         sx={{
@@ -1815,7 +1798,7 @@ const Profile = () => {
                                                 onClick={() =>
                                                   navigateToProfile(
                                                     a.ci,
-                                                    "estudiante"
+                                                    "estudiante",
                                                   )
                                                 }
                                                 sx={{

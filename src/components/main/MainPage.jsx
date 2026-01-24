@@ -60,7 +60,7 @@ const MainPage = () => {
         tesisFormRef.current && tesisFormRef.current.contains(event.target);
       const isClickOnDropdown = event.target.closest(".MuiMenu-root");
       const isClickOnDatePicker = event.target.closest(
-        ".MuiPickersPopper-root"
+        ".MuiPickersPopper-root",
       );
       const isClickOnDialog = event.target.closest(".MuiDialog-root");
       const isClickOnDialogBackdrop = event.target.closest(".MuiBackdrop-root");
@@ -136,7 +136,7 @@ const MainPage = () => {
       setErrorMessage(
         error?.message?.includes("Network")
           ? "Error de conexión: no se pudo contactar al servidor."
-          : "Error al obtener los datos de tesis."
+          : "Error al obtener los datos de tesis.",
       );
     } finally {
       setIsLoading(false);
@@ -181,7 +181,7 @@ const MainPage = () => {
           return { ...tesis, estado: newStatus };
         }
         return tesis;
-      })
+      }),
     );
   };
 
@@ -201,7 +201,7 @@ const MainPage = () => {
     const downloadFile = async (downloadPath) => {
       if (isDownloading) {
         console.log(
-          "La descarga ya está en progreso, ignorando llamada duplicada"
+          "La descarga ya está en progreso, ignorando llamada duplicada",
         );
         return;
       }
@@ -222,7 +222,7 @@ const MainPage = () => {
           (progressEvent) => {
             if (progressEvent.total) {
               const percentCompleted = Math.round(
-                (progressEvent.loaded * 100) / progressEvent.total
+                (progressEvent.loaded * 100) / progressEvent.total,
               );
               setDownloadModal({
                 isOpen: true,
@@ -230,7 +230,7 @@ const MainPage = () => {
                 message: `Descargando archivo... ${percentCompleted}% completado`,
               });
             }
-          }
+          },
         );
 
         const contentType = headers["content-type"];
@@ -245,7 +245,7 @@ const MainPage = () => {
             const errorData = JSON.parse(text);
             throw new Error(
               errorData.message ||
-                "Error: La respuesta no es un archivo ZIP válido"
+                "Error: La respuesta no es un archivo ZIP válido",
             );
           } catch (parseError) {
             throw new Error("Error: La respuesta no es un archivo ZIP válido");
@@ -262,7 +262,7 @@ const MainPage = () => {
         let filename = "todas_las_tesis.zip"; // Nombre por defecto
         if (contentDisposition) {
           const filenameMatch = contentDisposition.match(
-            /filename="?([^";]+)"?/
+            /filename="?([^";]+)"?/,
           );
           if (filenameMatch && filenameMatch.length > 1) {
             filename = filenameMatch[1].replace(/_+$/, ""); // Remove trailing underscores
@@ -636,7 +636,7 @@ const MainPage = () => {
 
       {/* Panel de Filtros Absoluto */}
       <div
-        className={`absolute top-0 left-0 h-full z-30 transition-transform duration-300 ease-in-out ${
+        className={`absolute top-0 left-0 h-full z-[60] transition-transform duration-300 ease-in-out ${
           isFilterVisible ? "translate-x-0" : "-translate-x-full"
         } w-full md:w-[400px]`}
       >

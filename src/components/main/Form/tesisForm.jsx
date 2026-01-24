@@ -65,7 +65,7 @@ const getPersonaLabel = (option) => {
 const TesisForm = forwardRef(
   (
     { dropdownOptions, onSuccess, onClose, onRequestCreateUser, tesisToEdit },
-    ref
+    ref,
   ) => {
     const [isDragging, setIsDragging] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -109,7 +109,7 @@ const TesisForm = forwardRef(
           id_estudiantes: (tesisToEdit.autores || []).map((a) => String(a.ci)),
           id_tutor: String(tesisToEdit.tutor?.ci || tesisToEdit.id_tutor || ""),
           id_encargado: String(
-            tesisToEdit.encargado?.ci || tesisToEdit.id_encargado || ""
+            tesisToEdit.encargado?.ci || tesisToEdit.id_encargado || "",
           ),
           id_jurados: (tesisToEdit.jurados || []).map((j) => String(j.ci)),
           fecha: tesisToEdit.fecha ? dayjs(tesisToEdit.fecha) : null,
@@ -130,7 +130,7 @@ const TesisForm = forwardRef(
     useEffect(() => {
       if (formData.id_tutor && formData.id_jurados.length > 0) {
         const filteredJurados = formData.id_jurados.filter(
-          (ci) => String(ci) !== String(formData.id_tutor)
+          (ci) => String(ci) !== String(formData.id_tutor),
         );
         if (filteredJurados.length !== formData.id_jurados.length) {
           handleInputChange("id_jurados", filteredJurados);
@@ -276,7 +276,7 @@ const TesisForm = forwardRef(
       } catch (err) {
         console.error(
           "Error al enviar:",
-          err.response?.data?.error || err.message
+          err.response?.data?.error || err.message,
         );
         setFormSubmitted(false);
         setModalState({
@@ -462,13 +462,13 @@ const TesisForm = forwardRef(
             value={formData.id_estudiantes
               .map((ci) => {
                 const estudiante = dropdownOptions.estudiantes.find(
-                  (e) => String(e.ci) === String(ci)
+                  (e) => String(e.ci) === String(ci),
                 );
                 if (estudiante) return estudiante;
                 // Fallback: buscar en tesisToEdit
                 return (
                   tesisToEdit?.autores?.find(
-                    (a) => String(a.ci) === String(ci)
+                    (a) => String(a.ci) === String(ci),
                   ) || null
                 );
               })
@@ -521,7 +521,7 @@ const TesisForm = forwardRef(
             options={dropdownOptions.profesores}
             value={
               dropdownOptions.profesores.find(
-                (p) => String(p.ci) === formData.id_tutor
+                (p) => String(p.ci) === formData.id_tutor,
               ) ||
               (tesisToEdit?.tutor &&
               String(tesisToEdit.tutor.ci) === formData.id_tutor
@@ -563,7 +563,7 @@ const TesisForm = forwardRef(
             getOptionLabel={getPersonaLabel}
             value={
               dropdownOptions.encargados.find(
-                (e) => String(e.ci) === formData.id_encargado
+                (e) => String(e.ci) === formData.id_encargado,
               ) ||
               (tesisToEdit?.encargado &&
               String(tesisToEdit.encargado.ci) === formData.id_encargado
@@ -580,7 +580,7 @@ const TesisForm = forwardRef(
               }
               handleInputChange(
                 "id_encargado",
-                newValue ? String(newValue.ci) : ""
+                newValue ? String(newValue.ci) : "",
               );
             }}
             disablePortal
@@ -635,19 +635,19 @@ const TesisForm = forwardRef(
             id="jurados-select"
             multiple
             options={dropdownOptions.profesores.filter(
-              (p) => String(p.ci) !== formData.id_tutor
+              (p) => String(p.ci) !== formData.id_tutor,
             )}
             getOptionLabel={getPersonaLabel}
             value={formData.id_jurados
               .map((ci) => {
                 const profesor = dropdownOptions.profesores.find(
-                  (p) => String(p.ci) === String(ci)
+                  (p) => String(p.ci) === String(ci),
                 );
                 if (profesor) return profesor;
                 // Fallback: buscar en tesisToEdit
                 return (
                   tesisToEdit?.jurados?.find(
-                    (j) => String(j.ci) === String(ci)
+                    (j) => String(j.ci) === String(ci),
                   ) || null
                 );
               })
@@ -732,7 +732,7 @@ const TesisForm = forwardRef(
         />
       </LocalizationProvider>
     );
-  }
+  },
 );
 
 export default TesisForm;

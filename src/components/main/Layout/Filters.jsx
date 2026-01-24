@@ -21,6 +21,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 const API_URL = import.meta.env.VITE_API_URL;
 
 const initialFilters = {
+  id_tesis: "",
   nombre: "",
   autor: [], // Changed to array for multi-select
   encargado: "",
@@ -34,14 +35,18 @@ const initialFilters = {
 
 const getPersonaLabel = (option) => {
   if (typeof option === "string") return option;
-  
-  const nombre = option.nombre_completo || `${option.nombre || ''} ${option.apellido || ''}`.trim() || option.nombre || "";
+
+  const nombre =
+    option.nombre_completo ||
+    `${option.nombre || ""} ${option.apellido || ""}`.trim() ||
+    option.nombre ||
+    "";
   const ciType = option.ci_type || "V";
   const ci = option.ci || option.id || "";
-  
+
   // Si no hay CI/ID, solo mostrar el nombre
   if (!ci) return nombre;
-  
+
   // Formato: "Nombre (CI: V-123456)"
   return `${nombre} (CI: ${ciType}-${ci})`;
 };
@@ -122,6 +127,7 @@ const Filters = ({ onClose, onApply }) => {
         ? dayjs(filters.fechaHasta).format("YYYY-MM-DD")
         : undefined,
       estado: filters.estado || undefined,
+      id: filters.id_tesis || undefined,
     };
 
     // Mapear y convertir campos numéricos
@@ -222,6 +228,16 @@ const Filters = ({ onClose, onApply }) => {
           }}
         >
           <TextField
+            id="id-tesis"
+            name="id_tesis"
+            label="Código de Tesis"
+            variant="filled"
+            value={filters.id_tesis}
+            onChange={handleInputChange}
+            fullWidth
+          />
+
+          <TextField
             id="nombre-tesis"
             name="nombre"
             label="Nombre de la Tesis"
@@ -236,14 +252,18 @@ const Filters = ({ onClose, onApply }) => {
             multiple
             options={dropdownOptions.autores}
             getOptionLabel={getPersonaLabel}
-            value={filters.autor.map(id => 
-              dropdownOptions.autores.find(a => String(a.ci ?? a.id) === String(id))
-            ).filter(Boolean)}
+            value={filters.autor
+              .map((id) =>
+                dropdownOptions.autores.find(
+                  (a) => String(a.ci ?? a.id) === String(id),
+                ),
+              )
+              .filter(Boolean)}
             onChange={(event, newValue) => {
               handleInputChange({
                 target: {
                   name: "autor",
-                  value: newValue.map(v => String(v.ci ?? v.id)),
+                  value: newValue.map((v) => String(v.ci ?? v.id)),
                 },
               });
             }}
@@ -274,7 +294,7 @@ const Filters = ({ onClose, onApply }) => {
             getOptionLabel={getPersonaLabel}
             value={
               dropdownOptions.encargados.find(
-                (e) => String(e.ci ?? e.id) === String(filters.encargado)
+                (e) => String(e.ci ?? e.id) === String(filters.encargado),
               ) || null
             }
             onChange={(event, newValue) => {
@@ -337,7 +357,7 @@ const Filters = ({ onClose, onApply }) => {
             getOptionLabel={getPersonaLabel}
             value={
               dropdownOptions.tutores.find(
-                (t) => String(t.ci ?? t.id) === String(filters.tutor)
+                (t) => String(t.ci ?? t.id) === String(filters.tutor),
               ) || null
             }
             onChange={(event, newValue) => {
@@ -349,12 +369,7 @@ const Filters = ({ onClose, onApply }) => {
               });
             }}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Tutor"
-                variant="filled"
-                fullWidth
-              />
+              <TextField {...params} label="Tutor" variant="filled" fullWidth />
             )}
             noOptionsText="No se encontraron tutores"
           />
@@ -364,14 +379,18 @@ const Filters = ({ onClose, onApply }) => {
             multiple
             options={dropdownOptions.tutores} // Jurados are professors
             getOptionLabel={getPersonaLabel}
-            value={filters.jurado.map(id => 
-              dropdownOptions.tutores.find(t => String(t.ci ?? t.id) === String(id))
-            ).filter(Boolean)}
+            value={filters.jurado
+              .map((id) =>
+                dropdownOptions.tutores.find(
+                  (t) => String(t.ci ?? t.id) === String(id),
+                ),
+              )
+              .filter(Boolean)}
             onChange={(event, newValue) => {
               handleInputChange({
                 target: {
                   name: "jurado",
-                  value: newValue.map(v => String(v.ci ?? v.id)),
+                  value: newValue.map((v) => String(v.ci ?? v.id)),
                 },
               });
             }}
@@ -402,7 +421,7 @@ const Filters = ({ onClose, onApply }) => {
             getOptionLabel={(option) => option.nombre}
             value={
               dropdownOptions.sedes.find(
-                (s) => String(s.id) === String(filters.sede)
+                (s) => String(s.id) === String(filters.sede),
               ) || null
             }
             onChange={(event, newValue) => {
@@ -414,12 +433,7 @@ const Filters = ({ onClose, onApply }) => {
               });
             }}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Sede"
-                variant="filled"
-                fullWidth
-              />
+              <TextField {...params} label="Sede" variant="filled" fullWidth />
             )}
             noOptionsText="No se encontraron sedes"
           />

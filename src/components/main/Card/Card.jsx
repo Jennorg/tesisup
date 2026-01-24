@@ -42,7 +42,7 @@ const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
     } catch (err) {
       console.error(
         "Error al eliminar la tesis:",
-        err.response?.data.error || err.message
+        err.response?.data.error || err.message,
       );
       setModalState({
         isOpen: true,
@@ -77,7 +77,7 @@ const useDownloadTesis = (tesisId, setModalState) => {
         `${VITE_API_URL}/tesis/${tesisId}/download`,
         {
           responseType: "blob",
-        }
+        },
       );
 
       const contentDisposition = response.headers["content-disposition"];
@@ -106,7 +106,7 @@ const useDownloadTesis = (tesisId, setModalState) => {
     } catch (err) {
       console.error(
         "Error al descargar la tesis:",
-        err.response?.data.error || err.message
+        err.response?.data.error || err.message,
       );
       setModalState({
         isOpen: true,
@@ -158,12 +158,12 @@ const Card = ({
   const { handleDelete, isDeleting } = useDeleteTesis(
     data?.id,
     onTesisDeleted,
-    setModalState
+    setModalState,
   );
 
   const { handleDownload, isDownloading } = useDownloadTesis(
     data?.id,
-    setModalState
+    setModalState,
   );
 
   if (isLoading) {
@@ -216,8 +216,11 @@ const Card = ({
         onCancel={() => setIsConfirmOpen(false)}
       />
 
-      <div className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full bg-background-paper">
-        <div className="flex flex-col gap-1">
+      <div className="flex flex-col border-2 border-primary rounded-lg p-4 w-full gap-3 h-full bg-background-paper relative">
+        <span className="absolute top-2 right-2 text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
+          Código: {data.id_tesis || data.id}
+        </span>
+        <div className="flex flex-col gap-1 pr-16">
           {/* 💡 2. Implementación del Tooltip:
               Envuelve el título. Si el título es muy largo y se corta, 
               el usuario puede poner el mouse encima para verlo completo.

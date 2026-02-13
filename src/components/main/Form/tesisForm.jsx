@@ -230,7 +230,7 @@ const TesisForm = forwardRef(
           setModalState({
             isOpen: true,
             status: "error",
-            message: "Por favor, rellene todos los campos obligatorios.",
+            message: "Por favor, rellene todos los campos obligatorios",
           });
           return;
         }
@@ -240,7 +240,7 @@ const TesisForm = forwardRef(
         setModalState({
           isOpen: true,
           status: "error",
-          message: "Debe seleccionar al menos un Autor/Estudiante.",
+          message: "Debe seleccionar al menos un Autor/Estudiante",
         });
         return;
       }
@@ -324,7 +324,7 @@ const TesisForm = forwardRef(
       if (fileInputRef.current) {
         try {
           fileInputRef.current.value = "";
-        } catch (e) {}
+        } catch (e) { }
       }
     };
 
@@ -400,8 +400,8 @@ const TesisForm = forwardRef(
               borderColor: isDragging
                 ? "primary.main"
                 : formData.archivo_pdf
-                ? "success.main"
-                : "grey.400",
+                  ? "success.main"
+                  : "grey.400",
               borderRadius: 1,
               p: { xs: 2, sm: 3 },
               textAlign: "center",
@@ -410,8 +410,8 @@ const TesisForm = forwardRef(
               backgroundColor: isDragging
                 ? "action.hover"
                 : formData.archivo_pdf
-                ? "success.light"
-                : "transparent",
+                  ? "success.light"
+                  : "transparent",
               opacity: isLoading ? 0.6 : 1,
               color: formData.archivo_pdf ? "success.dark" : "inherit",
             }}
@@ -564,7 +564,7 @@ const TesisForm = forwardRef(
                 (p) => String(p.ci) === formData.id_tutor,
               ) ||
               (tesisToEdit?.tutor &&
-              String(tesisToEdit.tutor.ci) === formData.id_tutor
+                String(tesisToEdit.tutor.ci) === formData.id_tutor
                 ? tesisToEdit.tutor
                 : null) ||
               null
@@ -606,7 +606,7 @@ const TesisForm = forwardRef(
                 (e) => String(e.ci) === formData.id_encargado,
               ) ||
               (tesisToEdit?.encargado &&
-              String(tesisToEdit.encargado.ci) === formData.id_encargado
+                String(tesisToEdit.encargado.ci) === formData.id_encargado
                 ? tesisToEdit.encargado
                 : null) ||
               null
@@ -758,8 +758,8 @@ const TesisForm = forwardRef(
                 ? "Actualizando..."
                 : "Enviando..."
               : isEditing
-              ? "Actualizar Tesis"
-              : "Subir PDF"}
+                ? "Actualizar Tesis"
+                : "Subir PDF"}
           </Button>
         </Box>
 

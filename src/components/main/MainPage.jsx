@@ -146,8 +146,8 @@ const MainPage = () => {
       setPaginationData((prev) => ({ ...prev, total: 0 }));
       setErrorMessage(
         error?.message?.includes("Network")
-          ? "Error de conexión: no se pudo contactar al servidor."
-          : "Error al obtener los datos de tesis.",
+          ? "Error de conexión: no se pudo contactar al servidor"
+          : "Error al obtener los datos de tesis",
       );
     } finally {
       setIsLoading(false);
@@ -310,13 +310,12 @@ const MainPage = () => {
       setDownloadModal({
         isOpen: true,
         status: "loading",
-        message: "Procesando tesis... Por favor espera.",
+        message: "Procesando tesis... Por favor espera",
       });
 
       // 2. Conectar a SSE para progreso
-      const sseUrl = `${import.meta.env.VITE_API_URL}${
-        streamUrl || progressUrl || `/tesis/download/progress/${jobId}/stream`
-      }`;
+      const sseUrl = `${import.meta.env.VITE_API_URL}${streamUrl || progressUrl || `/tesis/download/progress/${jobId}/stream`
+        }`;
       console.log("Conectando a SSE:", sseUrl);
 
       eventSource = new EventSource(sseUrl);
@@ -365,9 +364,8 @@ const MainPage = () => {
             setDownloadModal({
               isOpen: true,
               status: "loading",
-              message: `Procesando tesis... ${processed} de ${total} (${percent}%)${
-                current ? ` - ${current}` : ""
-              }`,
+              message: `Procesando tesis... ${processed} de ${total} (${percent}%)${current ? ` - ${current}` : ""
+                }`,
             });
           } else if (percentage !== undefined) {
             // Progreso porcentual
@@ -591,9 +589,8 @@ const MainPage = () => {
 
       {/* Panel Lateral de Filtros */}
       <div
-        className={`absolute top-0 left-0 h-full z-[60] transition-transform duration-300 ease-in-out ${
-          isFilterVisible ? "translate-x-0" : "-translate-x-full"
-        } w-full md:w-[400px]`}
+        className={`absolute top-0 left-0 h-full z-[60] transition-transform duration-300 ease-in-out ${isFilterVisible ? "translate-x-0" : "-translate-x-full"
+          } w-full md:w-[400px]`}
       >
         <Filters
           onClose={() => setIsFilterVisible(false)}

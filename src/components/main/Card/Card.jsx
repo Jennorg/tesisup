@@ -41,7 +41,7 @@ const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
       setModalState({
         isOpen: true,
         status: "success",
-        message: "Tesis eliminada con éxito.",
+        message: "Tesis eliminada con éxito",
       });
 
       onDeletedSuccess();
@@ -55,7 +55,7 @@ const useDeleteTesis = (tesisId, onDeletedSuccess, setModalState) => {
         status: "error",
         message:
           err.response?.data.error ||
-          "Error al eliminar la tesis. Intente de nuevo.",
+          "Error al eliminar la tesis. Intente de nuevo",
       });
     } finally {
       setIsDeleting(false);
@@ -413,35 +413,35 @@ const Card = ({
             <span className="text-text-primary ml-1">
               {data.jurados && data.jurados.length > 0
                 ? data.jurados.map((jurado, idx) => (
-                    <React.Fragment key={idx}>
-                      {jurado.ci ? (
-                        <Link
-                          component="button"
-                          variant="body2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigateToProfile(jurado.ci, "profesor");
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            textDecoration: "none",
-                            color: getUserTypeColor("profesor"),
-                            fontWeight: 500,
-                            "&:hover": {
-                              backgroundColor: "rgba(0,0,0,0.05)",
-                              textDecoration: "underline",
-                              opacity: 1,
-                            },
-                          }}
-                        >
-                          {jurado.nombre || jurado.nombre_completo}
-                        </Link>
-                      ) : (
-                        <span>{jurado.nombre || jurado.nombre_completo}</span>
-                      )}
-                      {idx < data.jurados.length - 1 && ", "}
-                    </React.Fragment>
-                  ))
+                  <React.Fragment key={idx}>
+                    {jurado.ci ? (
+                      <Link
+                        component="button"
+                        variant="body2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateToProfile(jurado.ci, "profesor");
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          textDecoration: "none",
+                          color: getUserTypeColor("profesor"),
+                          fontWeight: 500,
+                          "&:hover": {
+                            backgroundColor: "rgba(0,0,0,0.05)",
+                            textDecoration: "underline",
+                            opacity: 1,
+                          },
+                        }}
+                      >
+                        {jurado.nombre || jurado.nombre_completo}
+                      </Link>
+                    ) : (
+                      <span>{jurado.nombre || jurado.nombre_completo}</span>
+                    )}
+                    {idx < data.jurados.length - 1 && ", "}
+                  </React.Fragment>
+                ))
                 : "No asignado"}
             </span>
           </p>

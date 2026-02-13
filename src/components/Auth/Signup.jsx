@@ -127,7 +127,7 @@ const SignUp = () => {
       setModalState({
         isOpen: true,
         status: "success",
-        message: `${formData.user_type} creado correctamente.`,
+        message: `${formData.user_type} creado correctamente`,
       });
 
       // Intentar iniciar sesión automáticamente con las credenciales proporcionadas
@@ -151,7 +151,7 @@ const SignUp = () => {
           status: "error",
           message:
             loginErr.response?.data?.error ||
-            "Registro exitoso, pero no se pudo iniciar sesión automáticamente. Inicia sesión manualmente.",
+            "Registro exitoso, pero no se pudo iniciar sesión automáticamente. Inicia sesión manualmente",
         });
         navigate("/login");
       }

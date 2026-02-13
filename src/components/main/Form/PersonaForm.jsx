@@ -85,11 +85,6 @@ const PersonaForm = ({
   };
 
   const handleCreateUser = async () => {
-    let endpoint = "";
-    if (role === "estudiante") endpoint = "estudiantes";
-    else if (role === "profesor") endpoint = "profesor";
-    else if (role === "encargado") endpoint = "encargado";
-
     setModalState({
       isOpen: true,
       status: "loading",
@@ -129,7 +124,7 @@ const PersonaForm = ({
         delete payload.id_sede;
       }
 
-      await authService.register(endpoint, payload);
+      await authService.register(role, payload);
 
       if (onUserCreated) {
         onUserCreated();

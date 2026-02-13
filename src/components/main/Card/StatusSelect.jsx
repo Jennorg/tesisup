@@ -113,7 +113,7 @@ const StatusSelect = ({ tesisId, currentStatus, onStatusChange }) => {
       setModalState({
         isOpen: true,
         status: "success",
-        message: "Estado actualizado con éxito.",
+        message: "Estado actualizado con éxito",
       });
     } catch (err) {
       console.error("Error al actualizar el estado:", err);

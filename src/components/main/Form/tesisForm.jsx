@@ -774,4 +774,5 @@ const TesisForm = forwardRef(
   },
 );
 
-export default TesisForm;
+// Memoizar el componente para evitar re-renderizados innecesarios si las props no cambian
+export default React.memo(TesisForm);

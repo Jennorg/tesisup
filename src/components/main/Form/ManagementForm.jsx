@@ -7,6 +7,8 @@ import {
   School as ProfesorIcon,
   SupervisorAccount as EncargadoIcon,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 
 // Importa los formularios separados
 import TesisForm from "./tesisForm.jsx";
@@ -43,6 +45,9 @@ function TabPanel(props) {
  */
 const ManagementForm = forwardRef((props, ref) => {
   const [activeTab, setActiveTab] = useState(0);
+  const theme = useTheme();
+  // isMobile será true en pantallas menores a 'md' (900px por defecto)
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const [dropdownOptions, setDropdownOptions] = useState({
     profesores: [],
@@ -104,7 +109,7 @@ const ManagementForm = forwardRef((props, ref) => {
    * Maneja la solicitud desde TesisForm para crear un nuevo usuario rápidamente.
    * Cambia a la pestaña correspondiente y pre-llena el nombre.
    */
-  const handleRequestCreateUser = (type, name) => {
+  const handleRequestCreateUser = useCallback((type, name) => {
     console.log("Solicitud para crear:", type, "con nombre:", name);
     setPrefillData({ type, name });
 
@@ -115,7 +120,11 @@ const ManagementForm = forwardRef((props, ref) => {
     } else if (type === "encargado") {
       setActiveTab(3);
     }
-  };
+  }, []);
+
+  const handlePrefillConsumed = useCallback(() => {
+    setPrefillData(null);
+  }, []);
 
   return (
     <Box
@@ -139,8 +148,21 @@ const ManagementForm = forwardRef((props, ref) => {
           value={activeTab}
           onChange={handleTabChange}
           aria-label="Formularios de gestión"
-          variant="scrollable"
-          scrollButtons="auto"
+          // En móvil scrollable, en escritorio centrado
+          variant={isMobile ? "scrollable" : "fullWidth"}
+          scrollButtons={isMobile ? "auto" : false}
+          centered={!isMobile}
+          sx={{
+            "& .MuiTab-root": {
+              "&:hover": {
+                backgroundColor: "transparent",
+                color: "primary.main",
+                "& .MuiSvgIcon-root": {
+                  color: "primary.main",
+                },
+              },
+            },
+          }}
         >
           <Tab icon={<TesisIcon />} label="Tesis" id="form-tab-0" />
           <Tab icon={<EstudianteIcon />} label="Estudiante" id="form-tab-1" />
@@ -166,7 +188,7 @@ const ManagementForm = forwardRef((props, ref) => {
           role="estudiante"
           onUserCreated={loadFormOptions}
           prefillData={prefillData}
-          onPrefillConsumed={() => setPrefillData(null)}
+          onPrefillConsumed={handlePrefillConsumed}
         />
       </TabPanel>
 
@@ -176,7 +198,7 @@ const ManagementForm = forwardRef((props, ref) => {
           role="profesor"
           onUserCreated={loadFormOptions}
           prefillData={prefillData}
-          onPrefillConsumed={() => setPrefillData(null)}
+          onPrefillConsumed={handlePrefillConsumed}
         />
       </TabPanel>
 
@@ -187,7 +209,7 @@ const ManagementForm = forwardRef((props, ref) => {
           onUserCreated={loadFormOptions}
           sedes={dropdownOptions.sedes}
           prefillData={prefillData}
-          onPrefillConsumed={() => setPrefillData(null)}
+          onPrefillConsumed={handlePrefillConsumed}
         />
       </TabPanel>
     </Box>

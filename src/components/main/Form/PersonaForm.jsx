@@ -133,9 +133,8 @@ const PersonaForm = ({
       setModalState({
         isOpen: true,
         status: "success",
-        message: `${
-          role.charAt(0).toUpperCase() + role.slice(1)
-        } creado correctamente.`,
+        message: `${role.charAt(0).toUpperCase() + role.slice(1)
+          } creado correctamente.`,
       });
 
       setNewUserData(initialData);
@@ -361,4 +360,5 @@ const PersonaForm = ({
   );
 };
 
-export default PersonaForm;
+// Memoizar el componente para evitar re-renderizados innecesarios
+export default React.memo(PersonaForm);

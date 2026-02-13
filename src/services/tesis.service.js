@@ -31,7 +31,11 @@ const tesisService = {
    * @returns {Promise<Object>} Respuesta del servidor tras la creación.
    */
   create: async (data) => {
-    const response = await api.post("/tesis", data);
+    const response = await api.post("/tesis", data, {
+      headers: {
+        "Content-Type": undefined,
+      },
+    });
     return response.data;
   },
 
@@ -42,7 +46,11 @@ const tesisService = {
    * @returns {Promise<Object>} Respuesta del servidor tras la actualización.
    */
   update: async (id, data) => {
-    const response = await api.put(`/tesis/${id}`, data);
+    const response = await api.put(`/tesis/${id}`, data, {
+      headers: {
+        "Content-Type": undefined,
+      },
+    });
     return response.data;
   },
 

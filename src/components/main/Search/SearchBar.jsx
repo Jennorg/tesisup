@@ -50,7 +50,7 @@ const SearchBar = ({ setSearchQuery, setPaginationData }) => {
     <div className="flex max-h-12 w-full place-items-center border-2 rounded-lg relative transition-all duration-200 overflow-hidden">
       <input
         type="text"
-        className="w-full pr-8 py-2 bg-transparent focus:outline-none"
+        className="w-full pr-8 py-2 pl-4 bg-transparent focus:outline-none"
         placeholder="Buscar tesis"
         value={searchValue}
         onChange={handleInput}

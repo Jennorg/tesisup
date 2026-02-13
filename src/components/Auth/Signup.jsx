@@ -425,9 +425,9 @@ const SignUp = () => {
             }}
           />
         </Box>
-        <p className="text-white">
+        <p className="text-[var(--text-primary)]">
           ¿Ya tienes una cuenta?{" "}
-          <Link to="/login" className="text-blue-500 hover:underline">
+          <Link to="/login" className="text-[var(--primary-main)] hover:underline">
             Inicia sesión
           </Link>
         </p>
@@ -435,13 +435,13 @@ const SignUp = () => {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-red-500 text-white rounded"
+            className="px-4 py-2 bg-[var(--error-main)] text-[var(--primary-contrast-text)] rounded"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-green-500 text-white rounded"
+            className="px-4 py-2 bg-[var(--success-main)] text-[var(--primary-contrast-text)] rounded"
             disabled={modalState.isOpen && modalState.status === "loading"}
           >
             {modalState.isOpen && modalState.status === "loading"

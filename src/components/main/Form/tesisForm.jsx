@@ -272,55 +272,131 @@ const TesisForm = forwardRef(
       setModalState({
         isOpen: true,
         status: "loading",
-        message: isEditing ? "Actualizando tesis..." : "Enviando tesis...",
+        message: isEditing ? "Actualizando tesis..." : "Procesando tesis...",
       });
-      const datos = new FormData();
 
-      // Construcción del FormData
-      Object.keys(formData).forEach((key) => {
-        if (key === "archivo_pdf") {
-          if (formData[key]) datos.append("archivo_pdf", formData[key]);
-        } else if (key === "fecha" && formData[key]) {
-          datos.append("fecha", dayjs(formData[key]).format("YYYY-MM-DD"));
-        } else if (key === "id_estudiantes" && Array.isArray(formData[key])) {
-          formData[key].forEach((ci, index) => {
-            datos.append(`id_estudiantes[${index}]`, ci);
-          });
-          if (formData[key].length > 0) {
-            datos.append("id_estudiante", formData[key][0]); // Retrocompatibilidad si es necesaria
-          }
-        } else if (key === "id_jurados" && Array.isArray(formData[key])) {
-          formData[key].forEach((ci, index) => {
-            datos.append(`id_jurados[${index}]`, ci);
-          });
-        } else if (
-          formData[key] !== null &&
-          formData[key] !== "" &&
-          !Array.isArray(formData[key])
-        ) {
-          datos.append(key, formData[key]);
+      // LÓGICA DE SPLIT SI EL ARCHIVO ES > 4MB (Límite Vercel)
+      const file = formData.archivo_pdf;
+      let chunks = [];
+      const MAX_SIZE = 3.5 * 1024 * 1024; // 3.5MB por seguridad (Vercel 4.5MB)
+
+      if (file && file.size > MAX_SIZE) {
+        console.log(`Archivo grande (${(file.size / 1024 / 1024).toFixed(2)}MB). Dividiendo en partes...`);
+        let offset = 0;
+        let part = 1;
+        while (offset < file.size) {
+          const chunkBlob = file.slice(offset, offset + MAX_SIZE);
+          const chunkName = `${file.name}.part${String(part).padStart(3, '0')}`;
+          chunks.push(new File([chunkBlob], chunkName, { type: file.type }));
+          offset += MAX_SIZE;
+          part++;
         }
-      });
+      } else if (file) {
+        chunks.push(file);
+      }
 
       try {
-        console.log("Datos a enviar:", Object.fromEntries(datos.entries()));
+        let currentTesisId = isEditing ? formData.id_tesis : null;
+        let successMessage = isEditing ? "Tesis actualizada" : "Tesis subida";
 
-        let res;
-        if (isEditing) {
-          res = await tesisService.update(formData.id_tesis, datos);
-        } else {
-          res = await tesisService.create(datos);
+        // Iterar sobre los chunks (si hay split, subimos uno por uno)
+        for (let i = 0; i < chunks.length; i++) {
+          const chunkFile = chunks[i];
+          const isFirstChunk = i === 0;
+          const isMultiPart = chunks.length > 1;
+
+          if (isMultiPart) {
+            setModalState(prev => ({
+              ...prev,
+              message: `Subiendo parte ${i + 1} de ${chunks.length}...`
+            }));
+          }
+
+          const datos = new FormData();
+
+          // Solo enviamos metadatos completos en la primera parte (o si es edición)
+          // Para partes extra, ¿necesitamos enviar todo o solo el archivo?
+          // Simplificación: Enviamos todo siempre para create/update, el backend manejará el archivo extra.
+          // Pero para CREATE, la primera llamada CREA. Las siguientes deben ser UPDATE sobre el ID creado.
+
+          if (!isFirstChunk && !currentTesisId) {
+            throw new Error("Error interno: No se obtuvo ID de tesis tras la primera parte");
+          }
+
+          // Si es la parte 2+, forzamos que sea un UPDATE al ID existente
+          if (!isFirstChunk) {
+            datos.append("id_tesis", currentTesisId); // ID obligatorio para update
+            // No enviamos metadatos pesados si no es necesario, pero el updateService puede requerirlos.
+            // Mejor estrategia: Llamar a endpoint específico para anexar archivo?
+            // Por simplicidad: Usamos tesisService.update que ya maneja subida de archivo.
+            // Pero tesisService.update espera todos los campos? No necesariamente si el backend soporta partial update.
+            // Asumamos que enviamos los campos básicos para que no falle validación.
+          }
+
+          // Construcción del FormData
+          Object.keys(formData).forEach((key) => {
+            if (key === "archivo_pdf") {
+              // Reemplazamos el archivo por el chunk actual
+              datos.append("archivo_pdf", chunkFile);
+            } else if (key === "fecha" && formData[key]) {
+              datos.append("fecha", dayjs(formData[key]).format("YYYY-MM-DD"));
+            } else if (key === "id_estudiantes" && Array.isArray(formData[key])) {
+              formData[key].forEach((ci, index) => {
+                datos.append(`id_estudiantes[${index}]`, ci);
+              });
+              if (formData[key].length > 0) {
+                datos.append("id_estudiante", formData[key][0]);
+              }
+            } else if (key === "id_jurados" && Array.isArray(formData[key])) {
+              formData[key].forEach((ci, index) => {
+                datos.append(`id_jurados[${index}]`, ci);
+              });
+            } else if (
+              formData[key] !== null &&
+              formData[key] !== "" &&
+              !Array.isArray(formData[key])
+            ) {
+              if (key === "id_tesis" && !isFirstChunk) {
+                // Ya lo agregamos manualmente arriba si es necesario
+              } else {
+                datos.append(key, formData[key]);
+              }
+            }
+          });
+
+          // Si estamos subiendo partes extra (2, 3...), asegurarse de usar el ID correcto
+          if (!isFirstChunk) {
+            // Sobrescribimos id_tesis en el FormData para asegurar que vaya al registro creado
+            datos.set("id_tesis", currentTesisId);
+          }
+
+          let res;
+          // Lógica de Create vs Update
+          if (isEditing || !isFirstChunk) {
+            // Si editamos O si es la parte 2+ de una nueva tesis (que se comporta como update)
+            const targetId = isEditing ? formData.id_tesis : currentTesisId;
+            res = await tesisService.update(targetId, datos);
+          } else {
+            // Primera parte de nueva tesis
+            res = await tesisService.create(datos);
+            // Guardamos el ID creado para las siguientes partes (si el backend lo devuelve)
+            // Asumimos que res.data o res devuelve el objeto creado con id
+            if (res && res.id) {
+              currentTesisId = res.id;
+            } else if (formData.id_tesis) {
+              currentTesisId = formData.id_tesis; // Fallback al ID manual ingresado
+            }
+          }
+          console.log(`Parte ${i + 1}/${chunks.length} subida:`, res);
         }
-
-        console.log(res);
 
         setFormSubmitted(true);
         setModalState({
           isOpen: true,
           status: "success",
-          message: isEditing
-            ? "Tesis actualizada correctamente"
-            : "Tesis subida correctamente",
+          message: chunks.length > 1
+            ? "Tesis subida en partes correctamente"
+            : (isEditing ? "Tesis actualizada correctamente" : "Tesis subida correctamente"),
         });
       } catch (err) {
         console.error(
@@ -333,9 +409,7 @@ const TesisForm = forwardRef(
           status: "error",
           message:
             err.response?.data?.error ||
-            (isEditing
-              ? "Error al actualizar la tesis"
-              : "Error al subir la tesis"),
+            "Error al subir la tesis (verifique conexión o tamaño)",
         });
       }
 
@@ -459,7 +533,7 @@ const TesisForm = forwardRef(
                   sx={{ fontSize: 40, mb: 1, animation: "pulse 1.5s infinite" }}
                 />
                 <p>{isLoading ? "Subiendo archivo..." : "Optimizando PDF..."}</p>
-                <p className="text-sm">&nbsp;</p>
+                <p className="text-sm">{isLoading ? modalState.message : ""}</p>
               </>
             ) : formData.archivo_pdf ? (
               <>

@@ -50,6 +50,8 @@ const VisuallyHiddenInput = styled("input")({
  * @param {Object|string} option - Objeto persona o cadena.
  * @returns {string} Etiqueta formateada.
  */
+import { compressPDF } from "@/utils/pdfCompressor";
+
 const getPersonaLabel = (option) => {
   if (typeof option === "string") return option;
 
@@ -86,6 +88,7 @@ const TesisForm = forwardRef(
   ) => {
     const [isDragging, setIsDragging] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
     const fileInputRef = useRef(null);
 
     const isEditing = !!tesisToEdit;
@@ -168,8 +171,28 @@ const TesisForm = forwardRef(
       }));
     };
 
-    const handleFileChange = (e) => {
-      setFormData((prev) => ({ ...prev, archivo_pdf: e.target.files[0] }));
+    const handleFileChange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Si el archivo pesa más de 4MB, intentamos comprimirlo
+      if (file.size > 4 * 1024 * 1024) {
+        setIsCompressing(true);
+        // Limpiar archivo previo mientras se comprime
+        setFormData((prev) => ({ ...prev, archivo_pdf: null }));
+        try {
+          console.log("Iniciando compresión de PDF...");
+          const compressed = await compressPDF(file);
+          setFormData((prev) => ({ ...prev, archivo_pdf: compressed }));
+        } catch (err) {
+          console.error("Error en compresión, usando original:", err);
+          setFormData((prev) => ({ ...prev, archivo_pdf: file }));
+        } finally {
+          setIsCompressing(false);
+        }
+      } else {
+        setFormData((prev) => ({ ...prev, archivo_pdf: file }));
+      }
     };
 
     const removeFile = () => {
@@ -405,7 +428,7 @@ const TesisForm = forwardRef(
               borderRadius: 1,
               p: { xs: 2, sm: 3 },
               textAlign: "center",
-              cursor: formData.archivo_pdf || isLoading ? "default" : "pointer",
+              cursor: formData.archivo_pdf || isLoading || isCompressing ? "default" : "pointer",
               transition: "border-color 0.3s, background-color 0.3s",
               backgroundColor: isDragging
                 ? "action.hover"
@@ -427,15 +450,15 @@ const TesisForm = forwardRef(
                   : "application/pdf"
               }
               required={!isEditing}
-              disabled={!!formData.archivo_pdf || isLoading}
+              disabled={!!formData.archivo_pdf || isLoading || isCompressing}
             />
 
-            {isLoading ? (
+            {isLoading || isCompressing ? (
               <>
                 <CloudUploadIcon
                   sx={{ fontSize: 40, mb: 1, animation: "pulse 1.5s infinite" }}
                 />
-                <p>Subiendo archivo...</p>
+                <p>{isLoading ? "Subiendo archivo..." : "Optimizando PDF..."}</p>
                 <p className="text-sm">&nbsp;</p>
               </>
             ) : formData.archivo_pdf ? (

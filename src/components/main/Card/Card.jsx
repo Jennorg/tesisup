@@ -136,6 +136,17 @@ const useDownloadTesis = (tesisId, setModalState) => {
   return { handleDownload, isDownloading };
 };
 
+
+const formatDisplayName = (person) => {
+  if (!person) return "No asignado";
+  const nombre = person.nombre || person.nombre_completo || "";
+  const apellido = person.apellido || "";
+  const pn = nombre.trim().split(/\s+/)[0];
+  const pa = apellido.trim().split(/\s+/)[0];
+  if (pn) return pa ? `${pn} ${pa}` : pn;
+  return "No asignado";
+};
+
 /**
  * Componente Card
  * Muestra la información resumida de una tesis y permite realizar acciones sobre ella.
@@ -156,9 +167,7 @@ const Card = ({
 }) => {
   const navigate = useNavigate();
 
-  if (!data && !isLoading) {
-    return null;
-  }
+
 
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -189,6 +198,10 @@ const Card = ({
     data?.id,
     setModalState,
   );
+
+  if (!data && !isLoading) {
+    return null;
+  }
 
   // Renderizar Skeleton si está cargando
   if (isLoading) {
@@ -309,10 +322,10 @@ const Card = ({
                           },
                         }}
                       >
-                        {autor.nombre || autor.nombre_completo}
+                        {formatDisplayName(autor)}
                       </Link>
                     ) : (
-                      <span>{autor.nombre || autor.nombre_completo}</span>
+                      <span>{formatDisplayName(autor)}</span>
                     )}
                     {idx < data.autores.length - 1 && ", "}
                   </React.Fragment>
@@ -337,7 +350,7 @@ const Card = ({
                     },
                   }}
                 >
-                  {data.autor.nombre || data.autor.nombre_completo}
+                  {formatDisplayName(data.autor)}
                 </Link>
               ) : (
                 "No asignado"
@@ -367,12 +380,10 @@ const Card = ({
                     },
                   }}
                 >
-                  {data.encargado.nombre ||
-                    data.encargado.nombre_completo ||
-                    "No asignado"}
+                  {formatDisplayName(data.encargado)}
                 </Link>
               ) : (
-                data.encargado?.nombre || "No asignado"
+                formatDisplayName(data.encargado)
               )}
             </span>
           </p>
@@ -399,12 +410,10 @@ const Card = ({
                     },
                   }}
                 >
-                  {data.tutor.nombre ||
-                    data.tutor.nombre_completo ||
-                    "No asignado"}
+                  {formatDisplayName(data.tutor)}
                 </Link>
               ) : (
-                data.tutor?.nombre || "No asignado"
+                formatDisplayName(data.tutor)
               )}
             </span>
           </p>
@@ -434,10 +443,10 @@ const Card = ({
                           },
                         }}
                       >
-                        {jurado.nombre || jurado.nombre_completo}
+                        {formatDisplayName(jurado)}
                       </Link>
                     ) : (
-                      <span>{jurado.nombre || jurado.nombre_completo}</span>
+                      <span>{formatDisplayName(jurado)}</span>
                     )}
                     {idx < data.jurados.length - 1 && ", "}
                   </React.Fragment>
